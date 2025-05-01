@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Assign Salesperson</title>
+</head>
+<body>
+    <h2>Assign Salesperson to {{ customer['company_name'] }}</h2>
+    <form method="POST" action="{{ url_for('assign_customer_submit', customer_id=customer['customer_id']) }}">
+        <label for="salesperson_id">Select Salesperson:</label>
+        <select name="salesperson_id" id="salesperson_id">
+            <option value="">-- Select --</option>
+            {% for salesperson in salespeople %}
+                <option value="{{ salesperson['salesperson_id'] }}" {% if salesperson['salesperson_id'] == current_assigned_id %}selected{% endif %}>
+                    {{ salesperson['salesperson_name'] }}
+                </option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <input type="submit" value="Assign">
+    </form>
+    <br>
+    <p><a href="{{ url_for('customer_detail', customer_id=customer['customer_id']) }}">Back to Customer Details</a></p>
+</body>
+</html>
