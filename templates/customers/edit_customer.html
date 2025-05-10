@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Customer{% endblock %}
+
+{% block extra_styles %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #64748b;
+        --success-color: #22c55e;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --error-color: #ef4444;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        line-height: 1.5;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: none;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #475569;
+        transform: translateY(-1px);
+    }
+
+    .form-container {
+        background-color: var(--card-background);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .section-title {
+        grid-column: 1 / -1;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 1.5rem 0 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-title:first-child {
+        margin-top: 0;
+    }
+
+    .form-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .form-input {
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background-color: var(--background-color);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    .error-message {
+        color: var(--error-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .submit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        font-size: 1rem;
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+
+    .submit-button:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    .required-indicator {
+        color: var(--error-color);
+        margin-left: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 1rem;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .action-buttons {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1 class="page-title">Edit Customer</h1>
+        <div class="action-buttons">
+            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-secondary">
+                Back to Customer
+            </a>
+            <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary">
+                Back to List
+            </a>
+            {% if session['role'] == 'manager' %}
+            <a href="{{ url_for('manager_dashboard') }}" class="btn btn-secondary">
+                Back to Dashboard
+            </a>
+            {% else %}
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+                Back to Dashboard
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form method="POST">
+            <div class="form-grid">
+                <h3 class="section-title">Company Information</h3>
+                
+                <div class="form-group">
+                    <label for="company_name" class="form-label">
+                        Company Name<span class="required-indicator">*</span>
+                    </label>
+                    <input type="text" id="company_name" name="company_name" class="form-input" value="{{ customer.company_name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="company_industry" class="form-label">Industry</label>
+                    <select id="company_industry" name="company_industry" class="form-input form-select">
+                        <option value="">-- اختر قطاع الشركة --</option>
+                        <option value="تجارة / بيع بالتجزئة" {% if customer.company_industry == 'تجارة / بيع بالتجزئة' %}selected{% endif %}>تجارة / بيع بالتجزئة</option>
+                        <option value="تأجير سيارات / أساطيل / نقل" {% if customer.company_industry == 'تأجير سيارات / أساطيل / نقل' %}selected{% endif %}>تأجير سيارات / أساطيل / نقل</option>
+                        <option value="الخدمات اللوجستية" {% if customer.company_industry == 'الخدمات اللوجستية' %}selected{% endif %}>الخدمات اللوجستية</option>
+                        <option value="القطاع الحكومي / العام / منظمات" {% if customer.company_industry == 'القطاع الحكومي / العام / منظمات' %}selected{% endif %}>القطاع الحكومي / العام / منظمات</option>
+                        <option value="القطاع المالي (بنوك / تمويل / تأمين)" {% if customer.company_industry == 'القطاع المالي (بنوك / تمويل / تأمين)' %}selected{% endif %}>القطاع المالي (بنوك / تمويل / تأمين)</option>
+                        <option value="الصناعة والتصنيع" {% if customer.company_industry == 'الصناعة والتصنيع' %}selected{% endif %}>الصناعة والتصنيع</option>
+                        <option value="الإنشاءات / المقاولات" {% if customer.company_industry == 'الإنشاءات / المقاولات' %}selected{% endif %}>الإنشاءات / المقاولات</option>
+                        <option value="النفط والطاقة / البترول" {% if customer.company_industry == 'النفط والطاقة / البترول' %}selected{% endif %}>النفط والطاقة / البترول</option>
+                        <option value="الرعاية الصحية / المستشفيات / الصيدلة" {% if customer.company_industry == 'الرعاية الصحية / المستشفيات / الصيدلة' %}selected{% endif %}>الرعاية الصحية / المستشفيات / الصيدلة</option>
+                        <option value="قطاع السياحة" {% if customer.company_industry == 'قطاع السياحة' %}selected{% endif %}>قطاع السياحة</option>
+                        <option value="قطاع الزراعة" {% if customer.company_industry == 'قطاع الزراعة' %}selected{% endif %}>قطاع الزراعة</option>
+                        <option value="Other" {% if customer.company_industry == 'Other' %}selected{% endif %}>أخرى</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="company_address" class="form-label">Company Address</label>
+                    <textarea id="company_address" name="company_address" class="form-input" rows="3">{{ customer.company_address }}</textarea>
+                </div>
+
+                <h3 class="section-title">Contact Information</h3>
+
+                <div class="form-group">
+                    <label for="contact_person" class="form-label">Contact Person</label>
+                    <input type="text" id="contact_person" name="contact_person" class="form-input" value="{{ customer.contact_person }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_person_position" class="form-label">Contact Position</label>
+                    <select id="contact_person_position" name="contact_person_position" class="form-input form-select">
+                        <option value="">-- اختر منصب جهة الاتصال --</option>
+                        <option value="مدير مشتريات" {% if customer.contact_person_position == 'مدير مشتريات' %}selected{% endif %}>مدير مشتريات</option>
+                        <option value="مدير تشغيل" {% if customer.contact_person_position == 'مدير تشغيل' %}selected{% endif %}>مدير تشغيل</option>
+                        <option value="مدير عمليات" {% if customer.contact_person_position == 'مدير عمليات' %}selected{% endif %}>مدير عمليات</option>
+                        <option value="مدير صيانة" {% if customer.contact_person_position == 'مدير صيانة' %}selected{% endif %}>مدير صيانة</option>
+                        <option value="مدير تطوير" {% if customer.contact_person_position == 'مدير تطوير' %}selected{% endif %}>مدير تطوير</option>
+                        <option value="مندوب مشتريات" {% if customer.contact_person_position == 'مندوب مشتريات' %}selected{% endif %}>مندوب مشتريات</option>
+                        <option value="مدير أسطول" {% if customer.contact_person_position == 'مدير أسطول' %}selected{% endif %}>مدير أسطول</option>
+                        <option value="مدير عام" {% if customer.contact_person_position == 'مدير عام' %}selected{% endif %}>مدير عام</option>
+                        <option value="أخرى" {% if customer.contact_person_position == 'أخرى' %}selected{% endif %}>أخرى</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone_number" class="form-label">
+                        Phone Number<span class="required-indicator">*</span>
+                    </label>
+                    <input type="tel" id="phone_number" name="phone_number" class="form-input" value="{{ customer.phone_number }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email_address" class="form-label">Email Address</label>
+                    <input type="email" id="email_address" name="email_address" class="form-input" value="{{ customer.email_address }}">
+                </div>
+
+                <h3 class="section-title">Lead Information</h3>
+
+                <div class="form-group">
+                    <label for="lead_source" class="form-label">Lead Source</label>
+                    <select id="lead_source" name="lead_source" class="form-input form-select">
+                        <option value="">-- اختر مصدر العميل --</option>
+                        <option value="زيارة مقر العميل" {% if customer.lead_source == 'زيارة مقر العميل' %}selected{% endif %}>زيارة مقر العميل</option>
+                        <option value="مكالمة هاتفيه" {% if customer.lead_source == 'مكالمة هاتفيه' %}selected{% endif %}>مكالمة هاتفيه</option>
+                        <option value="توصية من عميل" {% if customer.lead_source == 'توصية من عميل' %}selected{% endif %}>توصية من عميل</option>
+                        <option value="الموقع الألكتروني" {% if customer.lead_source == 'الموقع الألكتروني' %}selected{% endif %}>الموقع الألكتروني</option>
+                        <option value="زيارة للفرع" {% if customer.lead_source == 'زيارة للفرع' %}selected{% endif %}>زيارة للفرع</option>
+                        <option value="حملات أعلانيه" {% if customer.lead_source == 'حملات أعلانيه' %}selected{% endif %}>حملات أعلانيه</option>
+                        <option value="Other" {% if customer.lead_source == 'Other' %}selected{% endif %}>أخرى</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="initial_interest" class="form-label">Initial Interest</label>
+                    <input type="text" id="initial_interest" name="initial_interest" class="form-input" value="{{ customer.initial_interest }}">
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+
+            <button type="submit" class="submit-button">Update Customer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        const companyName = document.getElementById('company_name').value;
+        const phoneNumber = document.getElementById('phone_number').value;
+        
+        if (!companyName || !phoneNumber) {
+            event.preventDefault();
+            alert('Please fill in all required fields');
+        }
+    });
+</script>
+{% endblock %}

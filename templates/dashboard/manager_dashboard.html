@@ -1,0 +1,1007 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block extra_styles %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #64748b;
+        --success-color: #22c55e;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+    }
+
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    .welcome-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .welcome-header h1 {
+        font-size: 1.5rem;
+        color: var(--text-primary);
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .header-nav {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-nav a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .header-nav a:hover {
+        color: var(--primary-color);
+        background-color: var(--background-color);
+    }
+
+    .header-nav a.active {
+        color: var(--primary-color);
+        background-color: var(--background-color);
+    }
+
+    .header-nav .logout-btn {
+        color: #ef4444;
+        margin-left: 0.5rem;
+    }
+
+    .header-nav .logout-btn:hover {
+        color: #dc2626;
+        background-color: #fee2e2;
+    }
+
+    /* Updated Button Styles */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        border: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #475569;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #16a34a;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-icon {
+        padding: 0.5rem;
+        min-width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .btn-block {
+        width: 100%;
+    }
+
+    .tab-content {
+        display: none;
+        padding: 1.5rem 0;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .table-container {
+        margin-bottom: 1.5rem;
+        background-color: var(--card-background);
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        width: 100%;
+    }
+
+    .customers-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+        padding: 1.25rem;
+    }
+
+    .customer-card {
+        background: var(--card-background);
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .customer-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .customer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .customer-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .customer-name a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .customer-name a:hover {
+        text-decoration: underline;
+    }
+
+    .customer-stage {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        background-color: var(--background-color);
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .customer-details {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .customer-detail {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .customer-detail-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 100px;
+        text-align: left;
+    }
+
+    .customer-detail-value {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    .customer-footer {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .customer-salesperson {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .customer-salesperson::before {
+        content: "👤";
+    }
+
+    .customer-dates {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .customer-date {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        text-align: left;
+    }
+
+    @media (max-width: 1400px) {
+        .customers-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .customers-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .customers-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chart-section {
+        margin-bottom: 1.5rem;
+        background-color: var(--card-background);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .chart-container {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .chart-container > div {
+        flex: 1;
+    }
+
+    .chart-container > div:first-child {
+        flex: 1.2;
+    }
+
+    .chart-container > div:last-child {
+        flex: 0.8;
+    }
+
+    .stage-details-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background-color: var(--card-background);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        font-size: 0.875rem;
+    }
+
+    .stage-details-table th,
+    .stage-details-table td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .stage-details-table th {
+        background-color: var(--background-color);
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .stage-details-table td {
+        white-space: nowrap;
+    }
+
+    .stage-details-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .stage-details-table tr:hover {
+        background-color: var(--background-color);
+    }
+
+    .stage-details-table .total-row {
+        font-weight: 600;
+        background-color: var(--background-color);
+    }
+
+    .stage-details-table .total-row td {
+        border-top: 2px solid var(--border-color);
+    }
+
+    .stage-details {
+        margin-bottom: 1.5rem;
+    }
+
+    .stage-header {
+        display: flex;
+        align-items: center;
+        background-color: var(--background-color);
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+
+    .stage-header:hover {
+        background-color: #e2e8f0;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .stage-header h3 {
+        margin: 0;
+        flex-grow: 1;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .stage-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        padding: 0.75rem 0;
+    }
+
+    .company-card {
+        background-color: var(--card-background);
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .company-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .company-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 1rem;
+        flex-grow: 1;
+    }
+
+    .followup-info {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .followup-count {
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid var(--border-color);
+        white-space: nowrap;
+    }
+
+    .company-detail {
+        margin-bottom: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .company-detail span {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .table-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1.5rem 0;
+        gap: 0.75rem;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: flex-end;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: 0.375rem;
+    }
+
+    .pagination .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.25rem;
+        height: 2.25rem;
+        padding: 0 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        background-color: var(--card-background);
+    }
+
+    .pagination .page-link:hover {
+        background-color: var(--background-color);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+    }
+
+    .pagination .page-link.active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    .pagination .page-link:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .search-filter-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1.25rem;
+        background: var(--card-background);
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        flex-wrap: wrap;
+    }
+
+    .search-box-container {
+        flex: 1;
+        min-width: 280px;
+    }
+
+    .search-box {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        background-color: var(--background-color);
+        transition: all 0.2s ease;
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background-color: white;
+    }
+
+    .search-box::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .filter-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        background-color: var(--background-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 180px;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background-color: white;
+    }
+
+    .filter-select option {
+        padding: 0.5rem;
+        background-color: white;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .table-container {
+            margin: 0 -1rem;
+            border-radius: 0;
+        }
+
+        .stage-content {
+            grid-template-columns: 1fr;
+        }
+
+        .table-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .pagination {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-filter-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .search-box-container, .filter-select {
+            width: 100%;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+    }
+
+    /* Tab Navigation - Simple, Soft, Compact */
+    .tab-bar {
+        display: flex;
+        gap: 2.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        background: none;
+        box-shadow: none;
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 0 0 0;
+    }
+    .tab-link {
+        background: none;
+        border: none;
+        outline: none;
+        box-shadow: none;
+        color: var(--text-secondary);
+        font-size: 1.25rem;
+        font-weight: 500;
+        padding: 0 0 0.25rem 0;
+        margin: 0;
+        cursor: pointer;
+        transition: color 0.2s;
+        border-radius: 0;
+        position: relative;
+    }
+    .tab-link.active {
+        color: var(--primary-color);
+    }
+    .tab-link.active::after {
+        content: '';
+        display: block;
+        height: 3px;
+        width: 100%;
+        background: var(--primary-color);
+        border-radius: 0;
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+    }
+    .tab-link:hover {
+        color: var(--primary-color);
+        background: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="welcome-header">
+        <h1>Welcome, {{ salesperson_name }}!</h1>
+        <div class="header-nav">
+            <a href="#leads" onclick="openTab('leads')" class="active">Leads</a>
+            <a href="#sales-team" onclick="openTab('sales-team')">Sales Team</a>
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('dashboard.admin_dashboard') }}">Admin Tool</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div id="leads" class="tab-content active">
+        <div class="search-filter-container">
+            <div class="search-box-container">
+                <input type="text" id="search_box" class="search-box" placeholder="Search by company name, contact person, or phone..." value="{{ request.args.get('search', '') }}">
+            </div>
+            
+            <div class="filter-group">
+                <label for="salesperson_filter" class="filter-label">Salesperson</label>
+                <select id="salesperson_filter" class="filter-select" onchange="applyFilters()">
+                    <option value="">All Salespeople</option>
+                    {% for salesperson in salespeople %}
+                    <option value="{{ salesperson.salesperson_id }}" {% if request.args.get('salesperson_id')|int == salesperson.salesperson_id %}selected{% endif %}>
+                        {{ salesperson.first_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="stage_filter" class="filter-label">Sales Stage</label>
+                <select id="stage_filter" class="filter-select" onchange="applyFilters()">
+                    <option value="">All Stages</option>
+                    {% for stage in sales_stages %}
+                    <option value="{{ stage }}" {% if request.args.get('stage') == stage %}selected{% endif %}>
+                        {{ stage }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="customers-grid">
+                {% for customer in customers %}
+                <div class="customer-card">
+                    <div class="customer-header">
+                        <h3 class="customer-name">
+                            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}">
+                                {{ customer.company_name }}
+                            </a>
+                        </h3>
+                        <span class="customer-stage">{{ customer.current_sales_stage or 'N/A' }}</span>
+                    </div>
+                    <div class="customer-details">
+                        <div class="customer-detail">
+                            <span class="customer-detail-label">Contact Person:</span>
+                            <span class="customer-detail-value">{{ customer.contact_person or 'N/A' }}</span>
+                        </div>
+                        <div class="customer-detail">
+                            <span class="customer-detail-label">Position:</span>
+                            <span class="customer-detail-value">{{ customer.contact_person_position or 'N/A' }}</span>
+                        </div>
+                        <div class="customer-detail">
+                            <span class="customer-detail-label">Phone:</span>
+                            <span class="customer-detail-value">{{ customer.phone_number or 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <div class="customer-footer">
+                        <div class="customer-salesperson">
+                            {{ customer.assigned_salesperson or 'N/A' }}
+                        </div>
+                        <div class="customer-dates">
+                            <div class="customer-date">
+                                Created: {{ customer.date_added }}
+                            </div>
+                            <div class="customer-date">
+                                Last Contact: {{ customer.last_contact_date or 'N/A' }}
+                            </div>
+                            <div class="customer-date">
+                                Next Follow-up: {{ customer.next_followup_date or 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="table-actions">
+            <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">Create New Customer</a>
+            <ul class="pagination">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a href="{{ url_for('dashboard.manager_dashboard', page=page - 1, salesperson_id=request.args.get('salesperson_id', ''), stage=request.args.get('stage', ''), search=request.args.get('search', '')) }}" class="page-link">&laquo;</a>
+                </li>
+                {% endif %}
+
+                {% set start_page = [1, page - 2]|max %}
+                {% set end_page = [total_pages, page + 2]|min %}
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item">
+                    <a href="{{ url_for('dashboard.manager_dashboard', page=p, salesperson_id=request.args.get('salesperson_id', ''), stage=request.args.get('stage', ''), search=request.args.get('search', '')) }}" 
+                       class="page-link {% if p == page %}active{% endif %}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a href="{{ url_for('dashboard.manager_dashboard', page=page + 1, salesperson_id=request.args.get('salesperson_id', ''), stage=request.args.get('stage', ''), search=request.args.get('search', '')) }}" class="page-link">&raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="chart-section">
+            <h2>Sales Stage Analysis</h2>
+            <div class="chart-container">
+                <div>
+                    <canvas id="salesStageChart"></canvas>
+                </div>
+                <div>
+                    <table class="stage-details-table">
+                        <thead>
+                            <tr>
+                                <th>Stage</th>
+                                <th>Count</th>
+                                <th>Total Value</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stage, data in sales_stage_counts.items() %}
+                            <tr>
+                                <td>{{ stage }}</td>
+                                <td>{{ data.count }}</td>
+                                <td>ر.س {{ "{:,.0f}".format(data.total_value|float) }}</td>
+                                <td>{{ data.percentage }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="total-row">
+                                <td>Total</td>
+                                <td>{{ total_customers_filtered }}</td>
+                                <td>ر.س {{ "{:,.0f}".format(sales_stage_counts.values()|sum(attribute='total_value')|float) }}</td>
+                                <td>100%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="stage-details">
+            <h2>Sales Pipeline</h2>
+            {% for stage, data in pipeline_by_stage.items() %}
+            <div class="stage-section">
+                <div class="stage-header" onclick="toggleStage('{{ stage|replace(' ', '_') }}')">
+                    <h3>{{ stage }}</h3>
+                    <span>Total Value: ر.س {{ "{:,.0f}".format(data.total_value|float) }}</span>
+                    <span class="toggle-icon" id="toggle-icon-{{ stage|replace(' ', '_') }}">▼</span>
+                </div>
+                <div id="{{ stage|replace(' ', '_') }}" class="stage-content">
+                    {% for company in data.companies %}
+                    <div class="company-card">
+                        <div class="company-header">
+                            <div class="company-name">
+                                <a href="{{ url_for('customers.customer_detail', customer_id=company.customer_id) }}">{{ company.company }}</a>
+                            </div>
+                            <div class="followup-count">No.Followup {{ company.followup_count }}</div>
+                        </div>
+                        <div class="company-details">
+                            <div class="company-detail"><span>Contact Person:</span> {{ company.contact_person or 'N/A' }}</div>
+                            <div class="company-detail"><span>Phone:</span> {{ company.phone_number or 'N/A' }}</div>
+                            <div class="company-detail"><span>Salesperson:</span> {{ company.salesperson }}</div>
+                            <div class="company-detail"><span>Next Action:</span> {{ company.next_action or 'N/A' }}</div>
+                            <div class="company-detail"><span>Due Date:</span> {{ company.next_action_date or 'N/A' }}</div>
+                            <div class="company-detail"><span>Value:</span> {{ company.deal_value or 'N/A' }}</div>
+                            <div class="company-detail"><span>Last Contact:</span> {{ company.last_contact_date or 'N/A' }}</div>
+                            <div class="company-detail"><span>Summary:</span> {{ company.summary or 'N/A' }}</div>
+                        </div>
+                        <div class="company-actions">
+                            <a href="{{ url_for('customers.assign_customer', customer_id=company.customer_id) }}" class="btn btn-secondary">Change Salesperson</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="sales-team" class="tab-content">
+        <div class="action-buttons">
+            <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">Add New Salesperson</a>
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('users.salespeople_list') }}" class="btn btn-secondary">View All Users</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function openTab(tabName) {
+    var i, tabContent, tabButtons;
+    tabContent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabContent.length; i++) {
+        tabContent[i].classList.remove("active");
+    }
+    tabButtons = document.getElementsByClassName("tab");
+    for (i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove("active");
+    }
+    document.getElementById(tabName).classList.add("active");
+    event.currentTarget.classList.add("active");
+}
+
+function toggleStage(stageId) {
+    const content = document.getElementById(stageId);
+    const icon = document.getElementById('toggle-icon-' + stageId);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'grid';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+    }
+}
+
+// Debounce function to limit how often a function can be called
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Add event listener for search box with debouncing
+document.getElementById('search_box').addEventListener('input', debounce(function() {
+    applyFilters();
+}, 500)); // Wait for 500ms after user stops typing
+
+function applyFilters() {
+    const salespersonId = document.getElementById('salesperson_filter').value;
+    const stage = document.getElementById('stage_filter').value;
+    const search = document.getElementById('search_box').value.trim();
+    
+    // Build the URL with all parameters
+    let url = window.location.pathname;
+    const params = new URLSearchParams();
+    
+    if (salespersonId) {
+        params.append('salesperson_id', salespersonId);
+    }
+    if (stage) {
+        params.append('stage', stage);
+    }
+    if (search) {
+        params.append('search', search);
+    }
+    
+    // Add page parameter to reset to first page when filtering
+    params.append('page', '1');
+    
+    // Append the query string to the URL
+    const queryString = params.toString();
+    if (queryString) {
+        url += '?' + queryString;
+    }
+    
+    // Navigate to the new URL
+    window.location.href = url;
+}
+
+// Sales Stage Chart
+const ctx = document.getElementById('salesStageChart').getContext('2d');
+const salesStages = {{ sales_stage_counts.keys()|list|tojson }};
+const stageCounts = {{ sales_stage_counts.values()|list|tojson }};
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: salesStages,
+        datasets: [{
+            label: 'عدد العملاء',
+            data: stageCounts.map(item => item.count),
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 159, 64, 0.7)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            },
+            title: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'عدد العملاء'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+<!-- TEST123 -->
+<div class="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 py-0 md:py-1">
+    <div class="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 w-full">
+        <label for="salesperson_filter" class="text-sm font-medium text-gray-600">Sales Person:</label>
+        <select id="salesperson_filter" name="salesperson_filter" onchange="applyFilters()" class="appearance-none border-0 border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base font-medium w-44 md:w-56 focus:border-blue-500 focus:outline-none transition-colors duration-150">
+            <option value="" {% if not request.args.get('salesperson_id') %}selected{% endif %}>All Salespeople</option>
+            {% for salesperson in salespeople %}
+            <option value="{{ salesperson.salesperson_id }}" {% if request.args.get('salesperson_id') == salesperson.salesperson_id|string %}selected{% endif %}>{{ salesperson.first_name }}</option>
+            {% endfor %}
+        </select>
+        <label for="stage_filter" class="text-sm font-medium text-gray-600">Sales Stage:</label>
+        <select id="stage_filter" name="stage_filter" onchange="applyFilters()" class="appearance-none border-0 border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base font-medium w-44 md:w-56 focus:border-blue-500 focus:outline-none transition-colors duration-150">
+            <option value="" {% if not request.args.get('stage') %}selected{% endif %}>All Stages</option>
+            <option value="N/A" {% if request.args.get('stage') == 'N/A' %}selected{% endif %}>N/A</option>
+            {% for stage in sales_stages %}
+            <option value="{{ stage }}" {% if request.args.get('stage') == stage %}selected{% endif %}>{{ stage }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="flex-grow flex items-center md:justify-end">
+        <input type="text" id="search_box" name="search" placeholder="Search by company, phone, salesperson, or stage"
+               value="{{ request.args.get('search', '') }}"
+               onkeyup="debounceSearch()"
+               class="w-full md:w-[32rem] border-0 border-b-2 border-blue-400 bg-transparent px-6 py-3 text-lg font-medium text-center focus:border-blue-600 focus:outline-none transition-colors duration-150 placeholder-gray-400 mx-auto" />
+    </div>
+</div>
+
+<script>
+let searchTimeout;
+
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 300); // Wait for 300ms after user stops typing
+}
+
+function applyFilters() {
+    const salespersonId = document.getElementById('salesperson_filter').value;
+    const stage = document.getElementById('stage_filter').value;
+    const search = document.getElementById('search_box').value.trim();
+    
+    let url = '/manager/dashboard?';
+    const params = [];
+    
+    if (salespersonId) params.push(`salesperson_id=${encodeURIComponent(salespersonId)}`);
+    if (stage) params.push(`stage=${encodeURIComponent(stage)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    
+    url += params.join('&');
+    window.location.href = url;
+}
+</script> 

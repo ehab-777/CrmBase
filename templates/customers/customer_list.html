@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Customer List{% endblock %}
+
+{% block extra_styles %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #64748b;
+        --success-color: #22c55e;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* Updated Button Styles */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        border: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #475569;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #16a34a;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-icon {
+        padding: 0.5rem;
+        min-width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .btn-block {
+        width: 100%;
+    }
+
+    .search-filter-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 300px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: 12px center;
+        padding-left: 40px;
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        background-color: white;
+        color: var(--text-primary);
+        font-size: 1rem;
+        min-width: 200px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .customer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .customer-card {
+        background-color: var(--card-background);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .customer-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .customer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .customer-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .customer-name:hover {
+        color: var(--primary-color);
+    }
+
+    .customer-stage {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: var(--background-color);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .customer-info {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        min-width: 100px;
+    }
+
+    .info-value {
+        color: var(--text-primary);
+        font-size: 0.875rem;
+    }
+
+    .customer-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .potential-value {
+        font-weight: 600;
+        color: var(--success-color);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .potential-value::before {
+        content: "💰";
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .page-item {
+        list-style: none;
+    }
+
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        padding: 0 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        background-color: var(--card-background);
+    }
+
+    .page-link:hover {
+        background-color: var(--background-color);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+    }
+
+    .page-link.active {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: var(--card-background);
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state h2 {
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+    }
+
+    .dashboard-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        background-color: var(--secondary-color);
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-link:hover {
+        background-color: #475569;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 1rem;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .action-buttons {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .btn {
+            flex: 1;
+        }
+
+        .search-filter-container {
+            flex-direction: column;
+        }
+
+        .search-box,
+        .filter-select {
+            width: 100%;
+        }
+
+        .customer-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1 class="page-title">Customers</h1>
+        <div class="action-buttons">
+            <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add Customer
+            </a>
+            <a href="{{ url_for('dashboard.manager_dashboard' if session.get('role') in ['admin', 'manager'] else 'dashboard.dashboard') }}" class="dashboard-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="search-filter-container">
+        <input type="text" class="search-box" placeholder="Search by company, contact, phone, or stage..." 
+               id="searchInput" value="{{ search_term or '' }}" onkeyup="debounceSearch()">
+        <select class="filter-select" id="stageFilter" onchange="applyFilters()">
+            <option value="">All Stages</option>
+            <option value="N/A" {% if current_stage == 'N/A' %}selected{% endif %}>N/A</option>
+            {% for stage in sales_stages %}
+            <option value="{{ stage }}" {% if current_stage == stage %}selected{% endif %}>{{ stage }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if customers %}
+    <div class="customer-grid">
+        {% for customer in customers %}
+        <div class="customer-card">
+            <div class="customer-header">
+                <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="customer-name">
+                    {{ customer.company_name }}
+                </a>
+                <span class="customer-stage">{{ customer.current_sales_stage or 'N/A' }}</span>
+            </div>
+            <div class="customer-info">
+                <div class="info-row">
+                    <span class="info-label">Contact:</span>
+                    <span class="info-value">{{ customer.contact_person or 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">{{ customer.phone_number or 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Industry:</span>
+                    <span class="info-value">{{ customer.company_industry or 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Potential Value:</span>
+                    <span class="info-value potential-value">
+                        {{ customer.potential_value|default(0) }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Contact:</span>
+                    <span class="info-value">{{ customer.last_contact_date|default('N/A') }}</span>
+                </div>
+            </div>
+            <div class="customer-actions">
+                <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-primary">
+                    <i class="fas fa-eye"></i>
+                    View Details
+                </a>
+                <a href="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i>
+                    Add Follow-up
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if page > 1 %}
+        <li class="page-item">
+            <a href="{{ url_for('customers.customer_list', page=page - 1) }}" class="page-link">&laquo;</a>
+        </li>
+        {% endif %}
+
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item">
+            <a href="{{ url_for('customers.customer_list', page=p) }}" 
+               class="page-link {% if p == page %}active{% endif %}">
+                {{ p }}
+            </a>
+        </li>
+        {% endfor %}
+
+        {% if page < total_pages %}
+        <li class="page-item">
+            <a href="{{ url_for('customers.customer_list', page=page + 1) }}" class="page-link">&raquo;</a>
+        </li>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h2>No customers found</h2>
+        <p>Add your first customer to get started</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let searchTimeout;
+
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 300);
+    }
+
+    function applyFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const stageFilter = document.getElementById('stageFilter');
+        const searchTerm = searchInput.value.trim();
+        const selectedStage = stageFilter.value;
+        
+        let url = '/customers/list?';
+        const params = [];
+        
+        if (searchTerm) params.push(`search=${encodeURIComponent(searchTerm)}`);
+        if (selectedStage) params.push(`stage=${encodeURIComponent(selectedStage)}`);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortBy = urlParams.get('sort_by');
+        const order = urlParams.get('order');
+        if (sortBy) params.push(`sort_by=${encodeURIComponent(sortBy)}`);
+        if (order) params.push(`order=${encodeURIComponent(order)}`);
+        
+        url += params.join('&');
+        window.location.href = url;
+    }
+</script>
+{% endblock %}

@@ -1,151 +1,272 @@
 import sqlite3
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+import os
+from security import bcrypt
 
-DATABASE_NAME = 'crm.db'
+# Load environment variables
+load_dotenv(override=True)
+
+DATABASE_NAME = 'crm_multi.db'  # Set the correct database name
 
 def create_tables():
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
 
-    # Create companies table
+    # Create tenants table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS companies (
-            company_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-
-    # Create customers table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS customers (
-            customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            company_id INTEGER NOT NULL,
-            company_name TEXT NOT NULL,
-            contact_person TEXT,
-            phone_number TEXT,
-            email_address TEXT,
-            company_address TEXT,
-            lead_source TEXT,
-            initial_interest TEXT,
-            date_added TEXT,
-            last_contact_date TEXT,
-            current_sales_stage TEXT,
-            assigned_salesperson_id INTEGER,
-            FOREIGN KEY (company_id) REFERENCES companies(company_id),
-            FOREIGN KEY (assigned_salesperson_id) REFERENCES sales_team(salesperson_id)
-        )
+    CREATE TABLE IF NOT EXISTS tenants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        db_key TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
     ''')
 
     # Create sales_team table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS sales_team (
-            salesperson_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            company_id INTEGER NOT NULL,
-            first_name TEXT NOT NULL,
-            last_name TEXT,
-            password TEXT NOT NULL,
-            salesperson_name TEXT,
-            work_email TEXT,
-            role TEXT DEFAULT 'salesperson',
-            FOREIGN KEY (company_id) REFERENCES companies(company_id),
-            UNIQUE(first_name, last_name, company_id)
-        )
+    CREATE TABLE IF NOT EXISTS sales_team (
+        salesperson_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT,
+        password TEXT NOT NULL,
+        salesperson_name TEXT NOT NULL,
+        work_email TEXT,
+        phone_number TEXT,
+        role TEXT DEFAULT 'salesperson',
+        tenant_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+    )
     ''')
 
-    # Create sales_followup table
+    # Create customers table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS sales_followup (
-            followup_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            company_id INTEGER NOT NULL,
-            customer_id INTEGER NOT NULL,
-            assigned_salesperson_id INTEGER NOT NULL,
-            last_contact_date TEXT,
-            last_contact_method TEXT,
-            summary_last_contact TEXT,
-            next_action TEXT,
-            next_action_due_date TEXT,
-            current_sales_stage TEXT,
-            potential_deal_value REAL,
-            notes TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (company_id) REFERENCES companies(company_id),
-            FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-            FOREIGN KEY (assigned_salesperson_id) REFERENCES sales_team(salesperson_id)
-        )
+    CREATE TABLE IF NOT EXISTS customers (
+        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_name TEXT NOT NULL,
+        company_industry TEXT,
+        contact_person TEXT NOT NULL,
+        contact_person_position TEXT,
+        phone_number TEXT NOT NULL,
+        email_address TEXT,
+        company_address TEXT,
+        lead_source TEXT,
+        initial_interest TEXT,
+        date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        assigned_salesperson_id INTEGER,
+        tenant_id INTEGER,
+        FOREIGN KEY (assigned_salesperson_id) REFERENCES sales_team (salesperson_id),
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+    )
+    ''')
+
+    # Create followups table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS followups (
+        followup_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        salesperson_id INTEGER NOT NULL,
+        followup_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        followup_type TEXT NOT NULL,
+        notes TEXT,
+        next_followup_date TIMESTAMP,
+        status TEXT DEFAULT 'Pending',
+        tenant_id INTEGER NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
+        FOREIGN KEY (salesperson_id) REFERENCES sales_team (salesperson_id),
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+    )
+    ''')
+
+    # Create activities table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS activities (
+        activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        salesperson_id INTEGER NOT NULL,
+        activity_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        activity_type TEXT NOT NULL,
+        description TEXT,
+        status TEXT DEFAULT 'Pending',
+        tenant_id INTEGER NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
+        FOREIGN KEY (salesperson_id) REFERENCES sales_team (salesperson_id),
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+    )
     ''')
 
     conn.commit()
     conn.close()
     print("Database and tables created successfully!")
 
-def migrate_to_multi_tenant():
+def add_initial_tenant():
+    """Add initial tenant if none exists."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    try:
+        # Check if any tenant exists
+        cursor.execute('SELECT COUNT(*) FROM tenants')
+        if cursor.fetchone()[0] == 0:
+            # Add default tenant
+            cursor.execute('''
+            INSERT INTO tenants (name, db_key)
+            VALUES (?, ?)
+            ''', ('Default Tenant', 'default'))
+            conn.commit()
+            print("Default tenant added successfully")
+    except sqlite3.Error as e:
+        print(f"Error adding initial tenant: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def add_initial_salesperson():
+    """Add initial salesperson if none exists."""
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    try:
+        # Get the default tenant ID
+        cursor.execute('SELECT id FROM tenants WHERE db_key = ?', ('default',))
+        tenant = cursor.fetchone()
+        
+        if not tenant:
+            print("Default tenant not found. Creating one...")
+            add_initial_tenant()
+            cursor.execute('SELECT id FROM tenants WHERE db_key = ?', ('default',))
+            tenant = cursor.fetchone()
+        
+        if not tenant:
+            print("Error: Could not create default tenant")
+            return
+            
+        tenant_id = tenant[0]
+        print(f"Using tenant ID: {tenant_id}")  # Debug log
+
+        # Check if any salesperson exists for this tenant
+        cursor.execute('SELECT COUNT(*) FROM sales_team WHERE tenant_id = ?', (tenant_id,))
+        if cursor.fetchone()[0] == 0:
+            # Add default admin salesperson
+            hashed_password = bcrypt.generate_password_hash('admin123').decode('utf-8')
+            cursor.execute('''
+            INSERT INTO sales_team (first_name, last_name, password, salesperson_name, work_email, role, tenant_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', ('Admin', 'User', hashed_password, 'admin', 'admin@example.com', 'admin', tenant_id))
+            conn.commit()
+            print("Default admin user added successfully")
+    except sqlite3.Error as e:
+        print(f"Error adding initial salesperson: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def migrate_tables():
+    """Migrate existing tables to new schema."""
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
     try:
-        # Create companies table if it doesn't exist
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS companies (
-                company_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        # Add company_id columns to existing tables
-        tables = ['customers', 'sales_team', 'sales_followup']
-        for table in tables:
-            try:
-                cursor.execute(f"ALTER TABLE {table} ADD COLUMN company_id INTEGER")
-            except sqlite3.OperationalError:
-                print(f"Column company_id already exists in {table}")
-
-        # Create a default company
-        cursor.execute("INSERT INTO companies (name) VALUES ('Default Company')")
-        default_company_id = cursor.lastrowid
-
-        # Update existing records with default company_id
-        for table in tables:
-            cursor.execute(f"UPDATE {table} SET company_id = ? WHERE company_id IS NULL", (default_company_id,))
-
-        # Add foreign key constraints
-        for table in tables:
-            cursor.execute(f'''
-                CREATE TABLE {table}_new AS 
-                SELECT * FROM {table}
-            ''')
-            cursor.execute(f"DROP TABLE {table}")
-            cursor.execute(f"ALTER TABLE {table}_new RENAME TO {table}")
-
+        # Check if username column exists in sales_team
+        cursor.execute("PRAGMA table_info(sales_team)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'username' not in columns:
+            # Add username column without UNIQUE constraint initially
+            cursor.execute('ALTER TABLE sales_team ADD COLUMN username TEXT')
+            print("Added username column to sales_team table")
+            
+            # Update existing users to use first_name as username
+            cursor.execute("""
+                UPDATE sales_team 
+                SET username = first_name 
+                WHERE username IS NULL
+            """)
+            print("Updated existing users to use first_name as username")
+            
+            # Now add UNIQUE constraint
+            cursor.execute("""
+                CREATE TABLE sales_team_new (
+                    salesperson_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT,
+                    password TEXT NOT NULL,
+                    salesperson_name TEXT NOT NULL,
+                    work_email TEXT,
+                    phone_number TEXT,
+                    role TEXT DEFAULT 'salesperson',
+                    tenant_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+                )
+            """)
+            
+            # Copy data to new table with explicit column mapping
+            cursor.execute("""
+                INSERT INTO sales_team_new (
+                    salesperson_id, username, first_name, last_name, password,
+                    salesperson_name, work_email, phone_number, role, tenant_id
+                )
+                SELECT 
+                    salesperson_id, username, first_name, last_name, password,
+                    salesperson_name, work_email, phone_number, role, tenant_id
+                FROM sales_team
+            """)
+            
+            # Drop old table and rename new one
+            cursor.execute("DROP TABLE sales_team")
+            cursor.execute("ALTER TABLE sales_team_new RENAME TO sales_team")
+            print("Added UNIQUE constraint to username column")
+        
+        # Check if last_name column exists in sales_team
+        if 'last_name' not in columns:
+            # Add last_name column
+            cursor.execute('ALTER TABLE sales_team ADD COLUMN last_name TEXT')
+            print("Added last_name column to sales_team table")
+        
+        # Check if sales_followup table exists before trying to modify it
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sales_followup'")
+        if cursor.fetchone():
+            # Check if created_at column exists in sales_followup
+            cursor.execute("PRAGMA table_info(sales_followup)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'created_at' not in columns:
+                # Add created_at column
+                cursor.execute('ALTER TABLE sales_followup ADD COLUMN created_at TEXT')
+                # Update existing rows with current timestamp in local timezone
+                local_time = datetime.now(timezone(timedelta(hours=3)))  # Riyadh timezone (UTC+3)
+                created_at = local_time.strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute("UPDATE sales_followup SET created_at = ? WHERE created_at IS NULL", (created_at,))
+                print("Added created_at column to sales_followup table")
+        
         conn.commit()
-        print("Migration to multi-tenant completed successfully!")
     except sqlite3.Error as e:
         print(f"Error during migration: {e}")
         conn.rollback()
     finally:
         conn.close()
 
-def add_initial_salesperson(first_name, password, company_id=1):
-    import hashlib
+def add_created_by_to_sales_followup():
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
-
-    # Hash the password
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-
-    try:
-        cursor.execute("INSERT INTO sales_team (first_name, password, company_id) VALUES (?, ?, ?)", 
-                      (first_name, hashed_password, company_id))
-        conn.commit()
-        print(f"Salesperson '{first_name}' added successfully.")
-    except sqlite3.IntegrityError:
-        print(f"Salesperson with first name '{first_name}' already exists.")
-    finally:
-        conn.close()
+    cursor.execute("PRAGMA table_info(sales_followup)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if 'created_by' not in columns:
+        cursor.execute("ALTER TABLE sales_followup ADD COLUMN created_by INTEGER")
+        print("Added 'created_by' column to sales_followup table.")
+    else:
+        print("'created_by' column already exists in sales_followup table.")
+    conn.commit()
+    conn.close()
 
 if __name__ == '__main__':
     create_tables()
-    migrate_to_multi_tenant()
-    add_initial_salesperson('alsaied', 'smc789') # For now, we'll add directly. In the full app, we'll have a signup.
+    migrate_tables()  # Run migration after creating tables
+    add_initial_tenant()
+    add_initial_salesperson()
+    add_created_by_to_sales_followup()
 
