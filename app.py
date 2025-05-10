@@ -1,9 +1,15 @@
+from dotenv import load_dotenv
+import os
+
+# Load and validate environment variables first
+load_dotenv()
+env = os.getenv('FLASK_ENV', 'development')
+print(f"Running in {env} environment")
+
 from flask import Flask, render_template, request, redirect, url_for, session, g, abort, jsonify
 import sqlite3
 from datetime import datetime, date, timedelta, timezone
 from tenant_utils import get_db, get_current_tenant_id, add_tenant_filter, require_tenant
-from dotenv import load_dotenv
-import os
 from config import config
 from routes.customers import customers_bp
 from routes.settings import settings_bp
@@ -14,13 +20,9 @@ from routes.dashboard import dashboard_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 
-# Load and validate environment variables
-load_dotenv()
+# Validate environment variables
 validate_env_vars()
 
-# Get environment from FLASK_ENV or default to development
-env = os.getenv('FLASK_ENV', 'development')
-print(f"Running in {env} environment")
 app = Flask(__name__, 
     static_folder='static',  # Specify the static folder
     static_url_path='/static'  # Specify the URL path for static files
