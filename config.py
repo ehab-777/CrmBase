@@ -41,12 +41,11 @@ class ProductionConfig(Config):
     TESTING = False
     SESSION_COOKIE_SECURE = True
     
-    # Production-specific settings
-    SECRET_KEY = os.getenv('SECRET_KEY')
-    CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY')
-
-    if not SECRET_KEY or not CSRF_SECRET_KEY:
-        raise ValueError("SECRET_KEY and CSRF_SECRET_KEY must be set in the production environment.")
+    def __init__(self):
+        self.SECRET_KEY = os.getenv('SECRET_KEY')
+        self.CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY')
+        if not self.SECRET_KEY or not self.CSRF_SECRET_KEY:
+            raise ValueError("SECRET_KEY and CSRF_SECRET_KEY must be set in the production environment.")
 
 class TestingConfig(Config):
     """Testing configuration."""
