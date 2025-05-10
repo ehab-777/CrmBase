@@ -64,12 +64,9 @@ class StagingConfig(Config):
     TESTING = False
     SESSION_COOKIE_SECURE = True
     
-    # Staging-specific settings
-    SECRET_KEY = os.getenv('SECRET_KEY')
-    CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY')
-
-    if not SECRET_KEY or not CSRF_SECRET_KEY:
-        raise ValueError("SECRET_KEY and CSRF_SECRET_KEY must be set in the staging environment.")
+    # Use the same environment variable handling as the base Config class
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-123')
+    CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY', 'dev-csrf-secret-key-123')
 
 # Configuration dictionary
 config = {
