@@ -1,9 +1,14 @@
 from dotenv import load_dotenv
 import os
 
-# Load and validate environment variables first
+# Load environment variables first
 load_dotenv()
+
+# Get environment and validate it
 env = os.getenv('FLASK_ENV', 'development')
+if env not in ['development', 'production', 'testing', 'staging']:
+    raise ValueError(f"Invalid FLASK_ENV value: {env}. Must be one of: development, production, testing, staging")
+
 print(f"Running in {env} environment")
 
 from flask import Flask, render_template, request, redirect, url_for, session, g, abort, jsonify
