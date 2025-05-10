@@ -17,7 +17,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = int(os.getenv('PERMANENT_SESSION_LIFETIME', '3600'))
     
     # Database
-    DATABASE_NAME = str(BASE_DIR / os.getenv('DATABASE_NAME', 'crm_multi.db'))
+    DATABASE_NAME = os.getenv('DATABASE_NAME', str(BASE_DIR / 'crm_multi.db'))
     DEFAULT_DB_KEY = os.getenv('DEFAULT_DB_KEY', 'default')
     
     # Security Headers

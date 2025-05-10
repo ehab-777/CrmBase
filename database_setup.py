@@ -7,7 +7,7 @@ from security import bcrypt
 # Load environment variables
 load_dotenv(override=True)
 
-DATABASE_NAME = 'crm_multi.db'  # Set the correct database name
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'crm_multi.db')
 
 def create_tables():
     conn = sqlite3.connect(DATABASE_NAME)
