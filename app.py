@@ -12,7 +12,6 @@ if env not in ['development', 'production', 'testing', 'staging']:
 print(f"Running in {env} environment")
 
 from flask import Flask, render_template, request, redirect, url_for, session, g, abort, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import sqlite3
 from datetime import datetime, date, timedelta, timezone
@@ -27,6 +26,7 @@ from routes.dashboard import dashboard_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
+from models import db, Tenant
 
 # Validate environment variables
 validate_env_vars()
@@ -45,11 +45,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sq
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy and Flask-Migrate
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app, db)
-
-# Import models after db initialization
-from models import Tenant
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
