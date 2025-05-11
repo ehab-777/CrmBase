@@ -43,6 +43,7 @@ app.config.from_object(app_config)
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///crm_multi.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
 
 # Initialize SQLAlchemy and Flask-Migrate
 db.init_app(app)
@@ -88,6 +89,12 @@ def login_redirect():
 
 # Add ProxyFix middleware
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+@app.cli.command("init-db")
+def init_db():
+    """Initialize the database."""
+    db.create_all()
+    print("Database initialized.")
 
 if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '127.0.0.1')  # Changed to localhost
