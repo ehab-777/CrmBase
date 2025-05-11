@@ -36,13 +36,20 @@ app = Flask(__name__,
     static_url_path='/static'  # Specify the URL path for static files
 )
 
+# Load configuration
+app_config = config.get(os.getenv('FLASK_ENV', 'default'))
+app.config.from_object(app_config)
+
+# Configure SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///crm_multi.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # Initialize SQLAlchemy and Flask-Migrate
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Load configuration
-app_config = config.get(os.getenv('FLASK_ENV', 'default'))
-app.config.from_object(app_config)
+# Import models after db initialization
+from models import Tenant
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
@@ -55,10 +62,6 @@ app.config['WTF_CSRF_TIME_LIMIT'] = None  # (optional, disables CSRF token expir
 
 # Initialize security extensions
 init_security(app)
-
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'crm_multi.db')
-DEFAULT_DB_KEY = os.getenv('DEFAULT_DB_KEY', 'default')
-PASSWORD_HASH_ALGORITHM = os.getenv('PASSWORD_HASH_ALGORITHM', 'sha256')
 
 # Register blueprints
 app.register_blueprint(auth_bp)  # Register auth blueprint first
