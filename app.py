@@ -12,6 +12,8 @@ if env not in ['development', 'production', 'testing', 'staging']:
 print(f"Running in {env} environment")
 
 from flask import Flask, render_template, request, redirect, url_for, session, g, abort, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 import sqlite3
 from datetime import datetime, date, timedelta, timezone
 from tenant_utils import get_db, get_current_tenant_id, add_tenant_filter, require_tenant
@@ -24,6 +26,7 @@ from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Validate environment variables
 validate_env_vars()
@@ -33,13 +36,22 @@ app = Flask(__name__,
     static_url_path='/static'  # Specify the URL path for static files
 )
 
+# Initialize SQLAlchemy and Flask-Migrate
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 # Load configuration
-app.config.from_object(config[env])
+app_config = config.get(os.getenv('FLASK_ENV', 'default'))
+app.config.from_object(app_config)
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
 app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
 app.config['SESSION_FILE_THRESHOLD'] = 100  # Maximum number of sessions to store
+app.config['SESSION_COOKIE_SECURE'] = True  # for HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # (optional, disables CSRF token expiration)
 
 # Initialize security extensions
 init_security(app)
@@ -73,6 +85,9 @@ def index():
 @app.route('/login')
 def login_redirect():
     return redirect(url_for('auth.login'))
+
+# Add ProxyFix middleware
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '127.0.0.1')  # Changed to localhost
