@@ -14,7 +14,7 @@ services:
       - key: FLASK_DEBUG
         value: "true"
       - key: SQLALCHEMY_DATABASE_URI
-        value: sqlite:///crm_multi.db
+        value: sqlite:////data/crm_multi.db
       - key: SECRET_KEY
         value: dev-secret-key-123
       - key: CSRF_SECRET_KEY
