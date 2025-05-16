@@ -3,6 +3,7 @@ from models import db, Tenant
 from security import bcrypt
 from dotenv import load_dotenv
 import os
+from sqlalchemy import inspect
 
 # Load environment variables
 load_dotenv(override=True)
@@ -15,18 +16,22 @@ def init_db():
     db.init_app(app)
     
     with app.app_context():
-        # Create all tables
-        db.create_all()
-        print("Database tables created successfully!")
+        # Get existing tables
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
         
-        # Add default tenant if none exists
-        if not Tenant.query.first():
+        # Create only missing tables
+        db.create_all()
+        print("Database tables checked and created if missing!")
+        
+        # Only add default tenant if no tenants exist
+        if 'tenants' in existing_tables and not Tenant.query.first():
             default_tenant = Tenant(name='Default Tenant')
             db.session.add(default_tenant)
             db.session.commit()
             print("Default tenant added successfully")
             
-            # Add default admin user
+            # Add default admin user only if no users exist
             from models import SalesPerson
             if not SalesPerson.query.first():
                 admin = SalesPerson(
