@@ -1,20 +1,30 @@
 services:
   - type: web
-    name: crm-multi
+    name: crm-multi-dev
     env: python
     buildCommand: |
       pip install -r requirements.txt
       python database_setup.py
     startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT app:app
     envVars:
+      - key: FLASK_APP
+        value: app.py
       - key: FLASK_ENV
-        value: staging
-      - key: DATABASE_NAME
-        value: /data/crm_multi.db
+        value: development
+      - key: FLASK_DEBUG
+        value: "true"
+      - key: SQLALCHEMY_DATABASE_URI
+        value: sqlite:///crm_multi.db
+      - key: SECRET_KEY
+        value: dev-secret-key-123
+      - key: CSRF_SECRET_KEY
+        value: dev-csrf-secret-key-123
+      - key: SESSION_COOKIE_SECURE
+        value: "false"
     autoDeploy: true
     healthCheckPath: /
     numInstances: 1
     disk:
-      name: crmbase-staging-disk
+      name: crmbase-dev-disk
       mountPath: /data
       sizeGB: 1 

@@ -61,7 +61,7 @@ class StagingConfig(Config):
     """Staging configuration."""
     DEBUG = False
     TESTING = False
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP in development
     
     # Use the same environment variable handling as the base Config class
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-123')

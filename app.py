@@ -53,9 +53,10 @@ migrate = Migrate(app, db)
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
 app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
 app.config['SESSION_FILE_THRESHOLD'] = 100  # Maximum number of sessions to store
-app.config['SESSION_COOKIE_SECURE'] = True  # for HTTPS
+app.config['SESSION_COOKIE_SECURE'] = False  # Allow cookies over HTTP in development
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['WTF_CSRF_ENABLED'] = True
 app.config['WTF_CSRF_TIME_LIMIT'] = None  # (optional, disables CSRF token expiration)
 
 # Initialize security extensions
