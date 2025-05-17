@@ -61,12 +61,24 @@ def init_db():
         else:
             db_file = db_path
             
-        # Check if database file exists
-        if os.path.exists(db_file):
-            app.logger.info(f"Database file found at {db_file}. Skipping initialization.")
-            return
+        # Check if database file exists and has content
+        if os.path.exists(db_file) and os.path.getsize(db_file) > 0:
+            app.logger.info(f"Database file found at {db_file} with size {os.path.getsize(db_file)} bytes. Skipping initialization.")
             
-        app.logger.info(f"Database file not found at {db_file}. Creating new database...")
+            # Verify database connection and tables
+            try:
+                # Check if tenants table exists
+                result = db.session.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="tenants"').fetchone()
+                if result:
+                    app.logger.info("Database tables verified. Skipping initialization.")
+                    return
+                else:
+                    app.logger.warning("Database file exists but tables are missing. Proceeding with initialization.")
+            except Exception as e:
+                app.logger.error(f"Error verifying database tables: {str(e)}")
+                raise
+        else:
+            app.logger.info(f"Database file not found or empty at {db_file}. Creating new database...")
         
         # Create tables
         db.create_all()
