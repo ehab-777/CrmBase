@@ -7,18 +7,20 @@ BASE_DIR = Path(__file__).resolve().parent
 class Config:
     """Base configuration."""
     # Flask
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-123')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-123')
     CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY', 'dev-csrf-secret-key-123')
     
     # Session
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    PERMANENT_SESSION_LIFETIME = int(os.getenv('PERMANENT_SESSION_LIFETIME', '3600'))
+    PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
+    FLASK_ENV = os.environ.get('FLASK_ENV', 'production')
+    DEBUG = False
     
     # Database
-    DATABASE_NAME = os.getenv('DATABASE_NAME', str(BASE_DIR / 'crm_multi.db'))
-    DEFAULT_DB_KEY = os.getenv('DEFAULT_DB_KEY', 'default')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///crm_multi.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Headers
     HSTS_ENABLED = os.getenv('HSTS_ENABLED', 'True').lower() == 'true'

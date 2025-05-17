@@ -49,31 +49,45 @@ app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Initialize database and add default data
-with app.app_context():
+def init_db():
+    """Initialize the database with tables and default data."""
     try:
-        # Check if database file exists
-        db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-        db_exists = os.path.exists(db_path)
+        # Get the database path from environment variable
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///crm_multi.db')
         
-        if not db_exists:
-            print(f"Database file not found at {db_path}. Creating new database...")
-            # Create all tables
-            db.create_all()
-            print("Database tables created successfully!")
+        # Extract the actual file path from SQLAlchemy URL
+        if db_path.startswith('sqlite:///'):
+            db_file = db_path.replace('sqlite:///', '')
+        else:
+            db_file = db_path
             
-            # Add default tenant if it doesn't exist
+        # Check if database file exists
+        if os.path.exists(db_file):
+            app.logger.info(f"Database file found at {db_file}. Skipping initialization.")
+            return
+            
+        app.logger.info(f"Database file not found at {db_file}. Creating new database...")
+        
+        # Create tables
+        with app.app_context():
+            db.create_all()
+            app.logger.info("Database tables created successfully!")
+            
+            # Add default tenant if none exists
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
-                default_tenant = Tenant(name='Default Tenant', db_key='default')
+                default_tenant = Tenant(
+                    name='Default Tenant',
+                    db_key='default'
+                )
                 db.session.add(default_tenant)
                 db.session.commit()
-                print("Default tenant added successfully")
+                app.logger.info("Default tenant added successfully")
             
-            # Add default admin user if it doesn't exist
-            admin = SalesPerson.query.filter_by(username='admin').first()
-            if not admin:
-                admin = SalesPerson(
+            # Add default admin user if none exists
+            admin_user = SalesPerson.query.filter_by(username='admin').first()
+            if not admin_user:
+                admin_user = SalesPerson(
                     username='admin',
                     first_name='Admin',
                     last_name='User',
@@ -83,22 +97,13 @@ with app.app_context():
                     role='admin',
                     tenant_id=default_tenant.id
                 )
-                db.session.add(admin)
+                db.session.add(admin_user)
                 db.session.commit()
-                print("Default admin user added successfully")
-        else:
-            print(f"Database file found at {db_path}. Skipping initialization.")
-            
-            # Verify database connection
-            try:
-                db.session.execute('SELECT 1')
-                print("Database connection verified successfully.")
-            except Exception as e:
-                print(f"Warning: Database connection test failed: {str(e)}")
+                app.logger.info("Default admin user added successfully")
                 
     except Exception as e:
-        print(f"Error during database initialization: {str(e)}")
-        raise  # Re-raise the exception to prevent the app from starting with a broken database
+        app.logger.error(f"Error initializing database: {str(e)}")
+        raise
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
