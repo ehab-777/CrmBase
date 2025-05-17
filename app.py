@@ -58,7 +58,7 @@ with app.app_context():
     # Add default tenant if it doesn't exist
     default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
     if not default_tenant:
-        default_tenant = Tenant(name='Default Tenant')
+        default_tenant = Tenant(name='Default Tenant', db_key='default')
         db.session.add(default_tenant)
         db.session.commit()
         print("Default tenant added successfully")

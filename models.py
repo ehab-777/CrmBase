@@ -8,6 +8,7 @@ class Tenant(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    db_key = db.Column(db.String(50), unique=True, nullable=False, default='default')
     created_at = db.Column(db.DateTime, default=db.func.now())
     
     def __repr__(self):
