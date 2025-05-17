@@ -8,9 +8,9 @@ services:
       - key: FLASK_APP
         value: app.py
       - key: FLASK_ENV
-        value: development
+        value: production
       - key: FLASK_DEBUG
-        value: "true"
+        value: "false"
       - key: SQLALCHEMY_DATABASE_URI
         value: sqlite:////data/crm_multi.db
       - key: SECRET_KEY
@@ -18,11 +18,12 @@ services:
       - key: CSRF_SECRET_KEY
         value: dev-csrf-secret-key-123
       - key: SESSION_COOKIE_SECURE
-        value: "false"
+        value: "true"
     autoDeploy: true
     healthCheckPath: /
     numInstances: 1
     disk:
       name: crmbase-dev-disk
       mountPath: /data
-      sizeGB: 1 
+      sizeGB: 1
+      persist: true 
