@@ -26,7 +26,7 @@ from routes.dashboard import dashboard_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
-from models import db, Tenant
+from models import db, Tenant, SalesPerson
 
 # Validate environment variables
 validate_env_vars()
@@ -48,6 +48,37 @@ app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
 # Initialize SQLAlchemy and Flask-Migrate
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# Initialize database and add default data
+with app.app_context():
+    # Create all tables
+    db.create_all()
+    print("Database tables created successfully!")
+    
+    # Add default tenant if it doesn't exist
+    default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
+    if not default_tenant:
+        default_tenant = Tenant(name='Default Tenant')
+        db.session.add(default_tenant)
+        db.session.commit()
+        print("Default tenant added successfully")
+    
+    # Add default admin user if it doesn't exist
+    admin = SalesPerson.query.filter_by(username='admin').first()
+    if not admin:
+        admin = SalesPerson(
+            username='admin',
+            first_name='Admin',
+            last_name='User',
+            password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+            salesperson_name='admin',
+            work_email='admin@example.com',
+            role='admin',
+            tenant_id=default_tenant.id
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("Default admin user added successfully")
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
@@ -90,12 +121,6 @@ def login_redirect():
 
 # Add ProxyFix middleware
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-
-@app.cli.command("init-db")
-def init_db():
-    """Initialize the database."""
-    db.create_all()
-    print("Database initialized.")
 
 if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '127.0.0.1')  # Changed to localhost
