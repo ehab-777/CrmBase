@@ -4,7 +4,15 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <h1>Admin Dashboard</h1>
+    <div class="welcome-header">
+        <h1>Admin Dashboard</h1>
+        <div class="header-nav">
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('settings.manage_tenants') }}" class="btn btn-primary">Add New Tenant</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
     <p>Welcome to the admin dashboard. Add your admin tools and analytics here.</p>
 </div>
 {% endblock %} 
