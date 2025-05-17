@@ -65,7 +65,9 @@ def login():
             session['tenant_id'] = user['tenant_id']
             
             # Redirect based on role
-            if user['role'] in ['admin', 'manager']:
+            if user['role'] == 'admin':
+                return redirect(url_for('dashboard.admin_dashboard'))
+            elif user['role'] == 'manager':
                 return redirect(url_for('dashboard.manager_dashboard'))
             return redirect(url_for('dashboard.dashboard'))
             

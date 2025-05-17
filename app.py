@@ -118,7 +118,9 @@ def teardown_db(error):
 @app.route('/')
 def index():
     if 'salesperson_id' in session:
-        if session.get('role') in ['admin', 'manager']:
+        if session.get('role') == 'admin':
+            return redirect(url_for('dashboard.admin_dashboard'))
+        elif session.get('role') == 'manager':
             return redirect(url_for('dashboard.manager_dashboard'))
         return redirect(url_for('dashboard.dashboard'))
     return redirect(url_for('auth.login'))
