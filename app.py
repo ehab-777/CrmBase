@@ -37,11 +37,11 @@ app = Flask(__name__,
 )
 
 # Load configuration
-app_config = config.get(os.getenv('FLASK_ENV', 'default'))
+app_config = config.get(env)
 app.config.from_object(app_config)
 
 # Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///crm_multi.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', app_config.SQLALCHEMY_DATABASE_URI)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
 
@@ -53,7 +53,7 @@ migrate = Migrate(app, db)
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
 app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
 app.config['SESSION_FILE_THRESHOLD'] = 100  # Maximum number of sessions to store
-app.config['SESSION_COOKIE_SECURE'] = False  # Allow cookies over HTTP in development
+app.config['SESSION_COOKIE_SECURE'] = app_config.SESSION_COOKIE_SECURE
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['WTF_CSRF_ENABLED'] = True

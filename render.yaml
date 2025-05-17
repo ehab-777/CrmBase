@@ -10,7 +10,7 @@ services:
       - key: DATABASE_URL
         value: sqlite:////data/crm_multi.db
       - key: FLASK_ENV
-        value: production
+        value: staging
       - key: FLASK_APP
         value: app.py
       - key: SECRET_KEY

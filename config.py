@@ -15,7 +15,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
-    FLASK_ENV = os.environ.get('FLASK_ENV', 'production')
+    FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     DEBUG = False
     
     # Database
@@ -30,18 +30,16 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
-    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP in development
+    SESSION_COOKIE_SECURE = False
     TESTING = False
-    
-    # Development-specific settings
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-123')
-    CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY', 'dev-csrf-secret-key-123')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///crm_multi.db'
 
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:////data/crm_multi.db'
     
     def __init__(self):
         self.SECRET_KEY = os.getenv('SECRET_KEY')
@@ -53,9 +51,7 @@ class TestingConfig(Config):
     """Testing configuration."""
     DEBUG = True
     TESTING = True
-    DATABASE_NAME = str(BASE_DIR / 'test.db')
-    
-    # Testing-specific settings
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR}/test.db'
     SECRET_KEY = 'test-secret-key'
     CSRF_SECRET_KEY = 'test-csrf-secret-key'
 
@@ -63,11 +59,8 @@ class StagingConfig(Config):
     """Staging configuration."""
     DEBUG = False
     TESTING = False
-    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP in development
-    
-    # Use the same environment variable handling as the base Config class
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-123')
-    CSRF_SECRET_KEY = os.getenv('CSRF_SECRET_KEY', 'dev-csrf-secret-key-123')
+    SESSION_COOKIE_SECURE = False
+    SQLALCHEMY_DATABASE_URI = 'sqlite:////data/crm_multi.db'
 
 # Configuration dictionary
 config = {
