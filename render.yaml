@@ -2,10 +2,13 @@ services:
   - type: web
     name: crm-multi-dev
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: |
+    buildCommand: |
+      pip install -r requirements.txt
+      echo '#!/bin/bash
       python database_setup.py
-      gunicorn -w 1 -b 0.0.0.0:$PORT app:app
+      gunicorn -w 1 -b 0.0.0.0:$PORT app:app' > start.sh
+      chmod +x start.sh
+    startCommand: ./start.sh
     envVars:
       - key: FLASK_APP
         value: app.py
