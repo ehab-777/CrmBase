@@ -69,41 +69,44 @@ def init_db():
         app.logger.info(f"Database file not found at {db_file}. Creating new database...")
         
         # Create tables
-        with app.app_context():
-            db.create_all()
-            app.logger.info("Database tables created successfully!")
+        db.create_all()
+        app.logger.info("Database tables created successfully!")
+        
+        # Add default tenant if none exists
+        default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
+        if not default_tenant:
+            default_tenant = Tenant(
+                name='Default Tenant',
+                db_key='default'
+            )
+            db.session.add(default_tenant)
+            db.session.commit()
+            app.logger.info("Default tenant added successfully")
+        
+        # Add default admin user if none exists
+        admin_user = SalesPerson.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = SalesPerson(
+                username='admin',
+                first_name='Admin',
+                last_name='User',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+                salesperson_name='admin',
+                work_email='admin@example.com',
+                role='admin',
+                tenant_id=default_tenant.id
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+            app.logger.info("Default admin user added successfully")
             
-            # Add default tenant if none exists
-            default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
-            if not default_tenant:
-                default_tenant = Tenant(
-                    name='Default Tenant',
-                    db_key='default'
-                )
-                db.session.add(default_tenant)
-                db.session.commit()
-                app.logger.info("Default tenant added successfully")
-            
-            # Add default admin user if none exists
-            admin_user = SalesPerson.query.filter_by(username='admin').first()
-            if not admin_user:
-                admin_user = SalesPerson(
-                    username='admin',
-                    first_name='Admin',
-                    last_name='User',
-                    password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                    salesperson_name='admin',
-                    work_email='admin@example.com',
-                    role='admin',
-                    tenant_id=default_tenant.id
-                )
-                db.session.add(admin_user)
-                db.session.commit()
-                app.logger.info("Default admin user added successfully")
-                
     except Exception as e:
         app.logger.error(f"Error initializing database: {str(e)}")
         raise
+
+# Initialize database
+with app.app_context():
+    init_db()
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
