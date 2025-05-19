@@ -37,15 +37,20 @@ export SQLALCHEMY_DATABASE_URI=sqlite:////data/crm_multi.db
 echo "Initializing database..."
 python3 -c "
 from app import app
-from database_setup import init_db, verify_db_setup
+from database_setup import init_db, verify_db_setup, force_init_db
 
+# First try normal initialization
 if not verify_db_setup(app):
     print('Database needs initialization')
     if init_db(app):
         print('Database initialized successfully')
     else:
-        print('Database initialization failed')
-        exit(1)
+        print('Normal initialization failed, attempting force initialization...')
+        if force_init_db(app):
+            print('Force initialization completed successfully')
+        else:
+            print('Force initialization failed')
+            exit(1)
 else:
     print('Database is already initialized')
 "

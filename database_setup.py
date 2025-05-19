@@ -10,11 +10,15 @@ def init_db(app):
     try:
         # Create all tables
         with app.app_context():
+            print("Starting database initialization...")
+            
             # Run migrations
+            print("Running database migrations...")
             from flask_migrate import upgrade
             upgrade()
             
-            # Check if default tenant exists
+            # Create default tenant
+            print("Checking for default tenant...")
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
                 print("Creating default tenant...")
@@ -29,7 +33,8 @@ def init_db(app):
             else:
                 print("Default tenant already exists")
 
-            # Check if admin user exists
+            # Create admin user
+            print("Checking for admin user...")
             admin_user = SalesPerson.query.filter_by(username='admin').first()
             if not admin_user:
                 print("Creating admin user...")
@@ -50,8 +55,13 @@ def init_db(app):
             else:
                 print("Admin user already exists")
 
-            print("Database initialization completed successfully")
-            return True
+            # Verify the setup
+            if verify_db_setup(app):
+                print("Database initialization completed successfully")
+                return True
+            else:
+                print("Database initialization failed verification")
+                return False
 
     except Exception as e:
         print(f"Error during database initialization: {str(e)}")
@@ -61,6 +71,8 @@ def verify_db_setup(app):
     """Verify that the database is properly set up."""
     try:
         with app.app_context():
+            print("Verifying database setup...")
+            
             # Check if tables exist
             tables = db.engine.table_names()
             required_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
@@ -69,18 +81,21 @@ def verify_db_setup(app):
                 if table not in tables:
                     print(f"Missing required table: {table}")
                     return False
+            print("All required tables exist")
 
             # Check if default tenant exists
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
                 print("Default tenant is missing")
                 return False
+            print("Default tenant exists")
 
             # Check if admin user exists
             admin_user = SalesPerson.query.filter_by(username='admin').first()
             if not admin_user:
                 print("Admin user is missing")
                 return False
+            print("Admin user exists")
 
             print("Database verification completed successfully")
             return True
@@ -89,10 +104,36 @@ def verify_db_setup(app):
         print(f"Error during database verification: {str(e)}")
         return False
 
+def force_init_db(app):
+    """Force reinitialize the database by dropping all tables and recreating them."""
+    try:
+        with app.app_context():
+            print("Force initializing database...")
+            
+            # Drop all tables
+            db.drop_all()
+            print("Dropped all tables")
+            
+            # Run migrations
+            from flask_migrate import upgrade
+            upgrade()
+            print("Ran migrations")
+            
+            # Initialize database
+            return init_db(app)
+            
+    except Exception as e:
+        print(f"Error during force initialization: {str(e)}")
+        return False
+
 if __name__ == '__main__':
     # This allows running the script directly for testing
     from app import app
     if init_db(app):
         print("Database setup completed successfully")
     else:
-        print("Database setup failed") 
+        print("Database setup failed, attempting force initialization...")
+        if force_init_db(app):
+            print("Force initialization completed successfully")
+        else:
+            print("Force initialization failed") 
