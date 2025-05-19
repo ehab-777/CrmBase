@@ -40,42 +40,11 @@ echo "DATABASE_URL: $DATABASE_URL"
 echo "DATABASE_NAME: $DATABASE_NAME"
 echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 
-# Initialize migrations if needed
-if [ ! -d "migrations/versions" ]; then
-    echo "Initializing migrations..."
-    flask db init
-    # Create initial migration if none exists
-    if [ ! -f "migrations/versions/initial_setup.py" ]; then
-        echo "Creating initial migration..."
-        flask db migrate -m "initial setup"
-    fi
-fi
-
-# Run migrations with detailed logging
-echo "Running database migrations..."
-flask db upgrade
-
-# Verify migrations were applied
-echo "Verifying migrations..."
-python3 -c "
-from app import app
-from flask_migrate import current
-import os
-
-with app.app_context():
-    try:
-        current_revision = current()
-        print(f'Current migration revision: {current_revision}')
-    except Exception as e:
-        print(f'Error checking migration status: {str(e)}')
-        exit(1)
-"
-
 # Initialize database with detailed logging
 echo "Initializing database..."
 python3 -c "
 from app import app
-from database_setup import init_db, verify_db_setup, force_init_db
+from database_setup import init_db, verify_db_setup, force_init_db, create_tables
 import os
 import sqlite3
 import sys
@@ -99,15 +68,32 @@ if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
         cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\"')
         tables = cursor.fetchall()
         log_message(f'Existing tables: {tables}')
+        
+        # Check if essential tables exist
+        essential_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
+        existing_tables = [table[0] for table in tables]
+        missing_tables = [table for table in essential_tables if table not in existing_tables]
+        
+        if missing_tables:
+            log_message(f'Missing essential tables: {missing_tables}')
+            if init_db(app):
+                log_message('Database initialized successfully')
+            else:
+                log_message('Normal initialization failed, attempting force initialization...')
+                if force_init_db(app):
+                    log_message('Force initialization completed successfully')
+                else:
+                    log_message('Force initialization failed')
+                    sys.exit(1)
+        else:
+            log_message('All essential tables exist, skipping initialization')
+        
         conn.close()
     except Exception as e:
         log_message(f'Error checking database structure: {str(e)}')
+        sys.exit(1)
 else:
-    log_message('Database file does not exist or is empty')
-
-# First try normal initialization
-if not verify_db_setup(app):
-    log_message('Database needs initialization')
+    log_message('Database file does not exist or is empty, initializing...')
     if init_db(app):
         log_message('Database initialized successfully')
     else:
@@ -117,8 +103,6 @@ if not verify_db_setup(app):
         else:
             log_message('Force initialization failed')
             sys.exit(1)
-else:
-    log_message('Database is already initialized')
 
 # Final verification
 if not verify_db_setup(app):
@@ -132,6 +116,8 @@ if [ -f "/data/crm_multi.db" ]; then
     ls -l /data/crm_multi.db
     # Verify database structure
     sqlite3 /data/crm_multi.db ".tables"
+    # Show table schemas
+    sqlite3 /data/crm_multi.db ".schema"
 else
     echo "Error: Database file was not created"
     exit 1
