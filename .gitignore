@@ -39,6 +39,7 @@ ENV/
 
 # Database files
 *.db
+!crm_multi.db
 *.sqlite
 *.sqlite3
 
