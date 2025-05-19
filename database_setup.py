@@ -55,16 +55,6 @@ def init_db(app):
                 else:
                     print("Database file exists but tables are missing")
             
-            # Run migrations
-            print("Running database migrations...")
-            from flask_migrate import upgrade
-            upgrade()
-            
-            # Verify tables after migration
-            if not verify_tables_exist():
-                print("Tables not created after migration")
-                return False
-            
             # Create default tenant
             print("Checking for default tenant...")
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()

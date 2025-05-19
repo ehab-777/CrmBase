@@ -46,6 +46,10 @@ if [ ! -d "migrations/versions" ]; then
     flask db init
 fi
 
+# Run migrations
+echo "Running database migrations..."
+flask db upgrade
+
 # Initialize database
 echo "Initializing database..."
 python3 -c "
