@@ -40,125 +40,57 @@ echo "DATABASE_URL: $DATABASE_URL"
 echo "DATABASE_NAME: $DATABASE_NAME"
 echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 
-# Check for database backup and restore if needed
-if [ -f "/data/crm_multi.db.backup" ] && [ ! -f "/data/crm_multi.db" ]; then
-    echo "Restoring database from backup..."
-    cp /data/crm_multi.db.backup /data/crm_multi.db
-    chmod 666 /data/crm_multi.db
+# Check if database exists and has content
+if [ -f "/data/crm_multi.db" ] && [ -s "/data/crm_multi.db" ]; then
+    echo "Database file exists and has content, skipping initialization..."
+    # Verify database structure
+    sqlite3 /data/crm_multi.db ".tables" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "Database structure is valid, proceeding..."
+    else:
+        echo "Database structure is invalid, restoring from backup..."
+        if [ -f "/data/crm_multi.db.backup" ]; then
+            cp /data/crm_multi.db.backup /data/crm_multi.db
+            chmod 666 /data/crm_multi.db
+        else
+            echo "No backup found, initializing database..."
+            python3 -c "
+from app import app
+from database_setup import init_db
+if init_db(app):
+    print('Database initialized successfully')
+else:
+    print('Database initialization failed')
+    exit(1)
+"
+        fi
+    fi
+else
+    echo "Database file does not exist or is empty, initializing..."
+    # Check for backup first
+    if [ -f "/data/crm_multi.db.backup" ]; then
+        echo "Restoring from backup..."
+        cp /data/crm_multi.db.backup /data/crm_multi.db
+        chmod 666 /data/crm_multi.db
+    else
+        echo "No backup found, creating new database..."
+        python3 -c "
+from app import app
+from database_setup import init_db
+if init_db(app):
+    print('Database initialized successfully')
+else:
+    print('Database initialization failed')
+    exit(1)
+"
+    fi
 fi
 
-# Create a backup of the existing database
+# Create a backup of the database
 if [ -f "/data/crm_multi.db" ]; then
-    echo "Creating backup of existing database..."
+    echo "Creating backup of database..."
     cp /data/crm_multi.db /data/crm_multi.db.backup
     chmod 666 /data/crm_multi.db.backup
-fi
-
-# Initialize database with detailed logging
-echo "Initializing database..."
-python3 -c "
-from app import app
-from database_setup import init_db, verify_db_setup, force_init_db, create_tables
-import os
-import sqlite3
-import sys
-import shutil
-
-def log_message(message):
-    print(message, file=sys.stderr)
-    print(message)
-
-def backup_database(db_path):
-    backup_path = db_path + '.backup'
-    if os.path.exists(db_path):
-        shutil.copy2(db_path, backup_path)
-        log_message(f'Database backed up to {backup_path}')
-
-# Print current working directory and database path
-log_message(f'Current working directory: {os.getcwd()}')
-log_message(f'Database path: {os.getenv(\"DATABASE_NAME\")}')
-
-# Check if database file exists and has content
-db_path = os.getenv('DATABASE_NAME')
-if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
-    log_message(f'Database file exists at {db_path} with size {os.path.getsize(db_path)} bytes')
-    # Backup existing database
-    backup_database(db_path)
-    
-    # Verify database structure
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\"')
-        tables = cursor.fetchall()
-        log_message(f'Existing tables: {tables}')
-        
-        # Check if essential tables exist
-        essential_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
-        existing_tables = [table[0] for table in tables]
-        missing_tables = [table for table in essential_tables if table not in existing_tables]
-        
-        if missing_tables:
-            log_message(f'Missing essential tables: {missing_tables}')
-            # Try to create only missing tables
-            try:
-                create_tables(app, missing_tables)
-                log_message('Missing tables created successfully')
-            except Exception as e:
-                log_message(f'Error creating missing tables: {str(e)}')
-                # Only attempt full initialization if we're missing the tenants table
-                if 'tenants' in missing_tables:
-                    if init_db(app):
-                        log_message('Database initialized successfully')
-                    else:
-                        log_message('Normal initialization failed, attempting force initialization...')
-                        if force_init_db(app):
-                            log_message('Force initialization completed successfully')
-                        else:
-                            log_message('Force initialization failed')
-                            sys.exit(1)
-                else:
-                    log_message('Skipping full initialization as tenants table exists')
-        else:
-            log_message('All essential tables exist, skipping initialization')
-        
-        conn.close()
-    except Exception as e:
-        log_message(f'Error checking database structure: {str(e)}')
-        # Only exit if we can't even connect to the database
-        if 'unable to open database file' in str(e).lower():
-            sys.exit(1)
-        log_message('Continuing despite database error')
-else:
-    log_message('Database file does not exist or is empty, initializing...')
-    if init_db(app):
-        log_message('Database initialized successfully')
-    else:
-        log_message('Normal initialization failed, attempting force initialization...')
-        if force_init_db(app):
-            log_message('Force initialization completed successfully')
-        else:
-            log_message('Force initialization failed')
-            sys.exit(1)
-
-# Final verification
-if not verify_db_setup(app):
-    log_message('Final verification failed')
-    # Don't exit here, as the database might still be usable
-    log_message('Continuing despite verification failure')
-"
-
-# Verify database file after initialization
-if [ -f "/data/crm_multi.db" ]; then
-    echo "Database file exists after initialization"
-    ls -l /data/crm_multi.db
-    # Verify database structure
-    sqlite3 /data/crm_multi.db ".tables"
-    # Show table schemas
-    sqlite3 /data/crm_multi.db ".schema"
-else
-    echo "Error: Database file was not created"
-    exit 1
 fi
 
 # Start the application
