@@ -5,11 +5,17 @@ from models import db, Tenant, SalesPerson
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sqlite3
+import sys
+
+def log_message(message):
+    """Log message to both stdout and stderr."""
+    print(message, file=sys.stderr)
+    print(message)
 
 def get_db_path():
     """Get the database path from environment variables."""
     db_path = os.getenv('DATABASE_NAME', '/data/crm_multi.db')
-    print(f"Database path: {db_path}")
+    log_message(f"Database path: {db_path}")
     return db_path
 
 def verify_tables_exist():
@@ -17,7 +23,7 @@ def verify_tables_exist():
     try:
         db_path = get_db_path()
         if not os.path.exists(db_path):
-            print(f"Database file does not exist at {db_path}")
+            log_message(f"Database file does not exist at {db_path}")
             return False
 
         conn = sqlite3.connect(db_path)
@@ -30,13 +36,13 @@ def verify_tables_exist():
         missing_tables = [table for table in required_tables if table not in tables]
         
         if missing_tables:
-            print(f"Missing tables: {missing_tables}")
+            log_message(f"Missing tables: {missing_tables}")
             return False
         
-        print(f"All required tables exist: {tables}")
+        log_message(f"All required tables exist: {tables}")
         return True
     except Exception as e:
-        print(f"Error verifying tables: {str(e)}")
+        log_message(f"Error verifying tables: {str(e)}")
         return False
 
 def init_db(app):
@@ -44,22 +50,26 @@ def init_db(app):
     try:
         with app.app_context():
             db_path = get_db_path()
-            print(f"Starting database initialization... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Starting database initialization... Database exists: {os.path.exists(db_path)}")
             
             # Check if database file exists and has content
             if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
-                print("Database file exists and has content")
+                log_message("Database file exists and has content")
                 if verify_tables_exist():
-                    print("All required tables exist, skipping initialization")
+                    log_message("All required tables exist, skipping initialization")
                     return True
                 else:
-                    print("Database file exists but tables are missing")
+                    log_message("Database file exists but tables are missing")
+            
+            # Create all tables
+            log_message("Creating database tables...")
+            db.create_all()
             
             # Create default tenant
-            print("Checking for default tenant...")
+            log_message("Checking for default tenant...")
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
-                print("Creating default tenant...")
+                log_message("Creating default tenant...")
                 default_tenant = Tenant(
                     name='Default Tenant',
                     db_key='default',
@@ -67,15 +77,15 @@ def init_db(app):
                 )
                 db.session.add(default_tenant)
                 db.session.commit()
-                print("Default tenant created successfully")
+                log_message("Default tenant created successfully")
             else:
-                print("Default tenant already exists")
+                log_message("Default tenant already exists")
 
             # Create admin user
-            print("Checking for admin user...")
+            log_message("Checking for admin user...")
             admin_user = SalesPerson.query.filter_by(username='admin').first()
             if not admin_user:
-                print("Creating admin user...")
+                log_message("Creating admin user...")
                 admin_user = SalesPerson(
                     username='admin',
                     first_name='Admin',
@@ -89,20 +99,20 @@ def init_db(app):
                 )
                 db.session.add(admin_user)
                 db.session.commit()
-                print("Admin user created successfully")
+                log_message("Admin user created successfully")
             else:
-                print("Admin user already exists")
+                log_message("Admin user already exists")
 
             # Verify the setup
             if verify_db_setup(app):
-                print("Database initialization completed successfully")
+                log_message("Database initialization completed successfully")
                 return True
             else:
-                print("Database initialization failed verification")
+                log_message("Database initialization failed verification")
                 return False
 
     except Exception as e:
-        print(f"Error during database initialization: {str(e)}")
+        log_message(f"Error during database initialization: {str(e)}")
         return False
 
 def verify_db_setup(app):
@@ -110,11 +120,11 @@ def verify_db_setup(app):
     try:
         with app.app_context():
             db_path = get_db_path()
-            print(f"Verifying database setup... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Verifying database setup... Database exists: {os.path.exists(db_path)}")
             
             # Check if database file exists and has content
             if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
-                print("Database file does not exist or is empty")
+                log_message("Database file does not exist or is empty")
                 return False
             
             # Verify tables exist
@@ -124,22 +134,22 @@ def verify_db_setup(app):
             # Check if default tenant exists
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
-                print("Default tenant is missing")
+                log_message("Default tenant is missing")
                 return False
-            print("Default tenant exists")
+            log_message("Default tenant exists")
 
             # Check if admin user exists
             admin_user = SalesPerson.query.filter_by(username='admin').first()
             if not admin_user:
-                print("Admin user is missing")
+                log_message("Admin user is missing")
                 return False
-            print("Admin user exists")
+            log_message("Admin user exists")
 
-            print("Database verification completed successfully")
+            log_message("Database verification completed successfully")
             return True
 
     except Exception as e:
-        print(f"Error during database verification: {str(e)}")
+        log_message(f"Error during database verification: {str(e)}")
         return False
 
 def force_init_db(app):
@@ -147,37 +157,31 @@ def force_init_db(app):
     try:
         with app.app_context():
             db_path = get_db_path()
-            print(f"Force initializing database... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Force initializing database... Database exists: {os.path.exists(db_path)}")
             
             # Drop all tables
             db.drop_all()
-            print("Dropped all tables")
+            log_message("Dropped all tables")
             
-            # Run migrations
-            from flask_migrate import upgrade
-            upgrade()
-            print("Ran migrations")
-            
-            # Verify tables after migration
-            if not verify_tables_exist():
-                print("Tables not created after force initialization")
-                return False
+            # Create all tables
+            db.create_all()
+            log_message("Created all tables")
             
             # Initialize database
             return init_db(app)
             
     except Exception as e:
-        print(f"Error during force initialization: {str(e)}")
+        log_message(f"Error during force initialization: {str(e)}")
         return False
 
 if __name__ == '__main__':
     # This allows running the script directly for testing
     from app import app
     if init_db(app):
-        print("Database setup completed successfully")
+        log_message("Database setup completed successfully")
     else:
-        print("Database setup failed, attempting force initialization...")
+        log_message("Database setup failed, attempting force initialization...")
         if force_init_db(app):
-            print("Force initialization completed successfully")
+            log_message("Force initialization completed successfully")
         else:
-            print("Force initialization failed") 
+            log_message("Force initialization failed") 

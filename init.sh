@@ -46,53 +46,63 @@ if [ ! -d "migrations/versions" ]; then
     flask db init
 fi
 
-# Run migrations
+# Run migrations with detailed logging
 echo "Running database migrations..."
 flask db upgrade
 
-# Initialize database
+# Initialize database with detailed logging
 echo "Initializing database..."
 python3 -c "
 from app import app
 from database_setup import init_db, verify_db_setup, force_init_db
 import os
 import sqlite3
+import sys
+
+def log_message(message):
+    print(message, file=sys.stderr)
+    print(message)
 
 # Print current working directory and database path
-print(f'Current working directory: {os.getcwd()}')
-print(f'Database path: {os.getenv(\"DATABASE_NAME\")}')
+log_message(f'Current working directory: {os.getcwd()}')
+log_message(f'Database path: {os.getenv(\"DATABASE_NAME\")}')
 
 # Check if database file exists and has content
 db_path = os.getenv('DATABASE_NAME')
 if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
-    print(f'Database file exists at {db_path} with size {os.path.getsize(db_path)} bytes')
+    log_message(f'Database file exists at {db_path} with size {os.path.getsize(db_path)} bytes')
     # Verify database structure
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\"')
         tables = cursor.fetchall()
-        print(f'Existing tables: {tables}')
+        log_message(f'Existing tables: {tables}')
         conn.close()
     except Exception as e:
-        print(f'Error checking database structure: {str(e)}')
+        log_message(f'Error checking database structure: {str(e)}')
 else:
-    print('Database file does not exist or is empty')
+    log_message('Database file does not exist or is empty')
 
 # First try normal initialization
 if not verify_db_setup(app):
-    print('Database needs initialization')
+    log_message('Database needs initialization')
     if init_db(app):
-        print('Database initialized successfully')
+        log_message('Database initialized successfully')
     else:
-        print('Normal initialization failed, attempting force initialization...')
+        log_message('Normal initialization failed, attempting force initialization...')
         if force_init_db(app):
-            print('Force initialization completed successfully')
+            log_message('Force initialization completed successfully')
         else:
-            print('Force initialization failed')
-            exit(1)
+            log_message('Force initialization failed')
+            sys.exit(1)
 else:
-    print('Database is already initialized')
+    log_message('Database is already initialized')
+
+# Final verification
+if not verify_db_setup(app):
+    log_message('Final verification failed')
+    sys.exit(1)
 "
 
 # Verify database file after initialization
