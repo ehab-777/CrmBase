@@ -16,6 +16,11 @@ services:
         echo "Error: Data directory setup failed"
         exit 1
       fi
+      # Backup existing database if it exists
+      if [ -f "/data/crm_multi.db" ]; then
+        cp /data/crm_multi.db /data/crm_multi.db.backup
+        echo "Database backed up successfully"
+      fi
       # Initialize Flask app
       export FLASK_APP=app.py
       export FLASK_ENV=staging
@@ -42,6 +47,9 @@ services:
       mountPath: /data
       sizeGB: 1
       persist: true
+      backupPolicy:
+        enabled: true
+        schedule: "0 0 * * *"  # Daily at midnight
     autoDeploy: true
     healthCheckPath: /
     numInstances: 1 

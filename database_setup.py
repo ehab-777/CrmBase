@@ -1,6 +1,5 @@
 import os
 from flask import Flask
-from flask_migrate import Migrate, current
 from models import db, Tenant, SalesPerson
 from werkzeug.security import generate_password_hash
 from datetime import datetime
@@ -18,6 +17,89 @@ def get_db_path():
     log_message(f"Database path: {db_path}")
     return db_path
 
+def create_tables(app, table_names):
+    """Create specific tables without reinitializing the entire database."""
+    with app.app_context():
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            
+            # Create tables based on the provided names
+            if 'tenants' in table_names:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS tenants (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        db_key TEXT NOT NULL UNIQUE
+                    )
+                ''')
+            
+            if 'sales_team' in table_names:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS sales_team (
+                        salesperson_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        first_name TEXT NOT NULL,
+                        last_name TEXT NOT NULL,
+                        password TEXT NOT NULL,
+                        salesperson_name TEXT NOT NULL,
+                        work_email TEXT,
+                        phone_number TEXT,
+                        role TEXT NOT NULL DEFAULT 'salesperson',
+                        tenant_id INTEGER NOT NULL,
+                        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+                    )
+                ''')
+            
+            if 'customers' in table_names:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS customers (
+                        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        company_name TEXT NOT NULL,
+                        contact_person TEXT,
+                        phone_number TEXT,
+                        email TEXT,
+                        assigned_salesperson_id INTEGER,
+                        tenant_id INTEGER NOT NULL,
+                        FOREIGN KEY (assigned_salesperson_id) REFERENCES sales_team (salesperson_id),
+                        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+                    )
+                ''')
+            
+            if 'sales_followup' in table_names:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS sales_followup (
+                        followup_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        customer_id INTEGER NOT NULL,
+                        salesperson_id INTEGER NOT NULL,
+                        followup_date DATE NOT NULL,
+                        followup_time TIME NOT NULL,
+                        followup_type TEXT NOT NULL,
+                        notes TEXT,
+                        status TEXT NOT NULL DEFAULT 'pending',
+                        current_sales_stage TEXT,
+                        deal_value REAL,
+                        next_action TEXT,
+                        next_action_date DATE,
+                        last_contact_date DATE,
+                        tenant_id INTEGER NOT NULL,
+                        FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
+                        FOREIGN KEY (salesperson_id) REFERENCES sales_team (salesperson_id),
+                        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+                    )
+                ''')
+            
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error creating tables: {str(e)}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if conn:
+                conn.close()
+
 def verify_tables_exist():
     """Verify that all required tables exist in the database."""
     try:
@@ -28,8 +110,17 @@ def verify_tables_exist():
 
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
+        
+        # Get all tables
         cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
         tables = [table[0] for table in cursor.fetchall()]
+        
+        # Get table schemas
+        for table in tables:
+            cursor.execute(f"PRAGMA table_info({table})")
+            columns = cursor.fetchall()
+            log_message(f"Table {table} columns: {columns}")
+        
         conn.close()
 
         required_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
@@ -52,22 +143,11 @@ def init_db(app):
             db_path = get_db_path()
             log_message(f"Starting database initialization... Database exists: {os.path.exists(db_path)}")
             
-            # Check if database file exists and has content
-            if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
-                log_message("Database file exists and has content")
-                if verify_tables_exist():
-                    log_message("All required tables exist, skipping initialization")
-                    return True
-                else:
-                    log_message("Database file exists but tables are missing")
-            
-            # Ensure migrations are up to date
-            try:
-                current_revision = current()
-                log_message(f"Current migration revision: {current_revision}")
-            except Exception as e:
-                log_message(f"Error checking migration status: {str(e)}")
-                return False
+            # Create tables if they don't exist
+            if not verify_tables_exist():
+                if not create_tables(app, ['tenants', 'sales_team', 'customers', 'sales_followup']):
+                    log_message("Failed to create tables")
+                    return False
             
             # Create default tenant
             log_message("Checking for default tenant...")
@@ -131,7 +211,7 @@ def verify_db_setup(app):
                 log_message("Database file does not exist or is empty")
                 return False
             
-            # Verify tables exist
+            # Verify tables exist and have correct structure
             if not verify_tables_exist():
                 return False
 
@@ -167,10 +247,10 @@ def force_init_db(app):
             db.drop_all()
             log_message("Dropped all tables")
             
-            # Run migrations
-            from flask_migrate import upgrade
-            upgrade()
-            log_message("Ran migrations")
+            # Create tables
+            if not create_tables(app, ['tenants', 'sales_team', 'customers', 'sales_followup']):
+                log_message("Failed to create tables during force initialization")
+                return False
             
             # Initialize database
             return init_db(app)
