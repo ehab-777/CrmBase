@@ -44,11 +44,32 @@ echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 if [ ! -d "migrations/versions" ]; then
     echo "Initializing migrations..."
     flask db init
+    # Create initial migration if none exists
+    if [ ! -f "migrations/versions/initial_setup.py" ]; then
+        echo "Creating initial migration..."
+        flask db migrate -m "initial setup"
+    fi
 fi
 
 # Run migrations with detailed logging
 echo "Running database migrations..."
 flask db upgrade
+
+# Verify migrations were applied
+echo "Verifying migrations..."
+python3 -c "
+from app import app
+from flask_migrate import current
+import os
+
+with app.app_context():
+    try:
+        current_revision = current()
+        print(f'Current migration revision: {current_revision}')
+    except Exception as e:
+        print(f'Error checking migration status: {str(e)}')
+        exit(1)
+"
 
 # Initialize database with detailed logging
 echo "Initializing database..."

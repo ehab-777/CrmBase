@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from flask_migrate import Migrate
+from flask_migrate import Migrate, current
 from models import db, Tenant, SalesPerson
 from werkzeug.security import generate_password_hash
 from datetime import datetime
@@ -61,9 +61,13 @@ def init_db(app):
                 else:
                     log_message("Database file exists but tables are missing")
             
-            # Create all tables
-            log_message("Creating database tables...")
-            db.create_all()
+            # Ensure migrations are up to date
+            try:
+                current_revision = current()
+                log_message(f"Current migration revision: {current_revision}")
+            except Exception as e:
+                log_message(f"Error checking migration status: {str(e)}")
+                return False
             
             # Create default tenant
             log_message("Checking for default tenant...")
@@ -163,9 +167,10 @@ def force_init_db(app):
             db.drop_all()
             log_message("Dropped all tables")
             
-            # Create all tables
-            db.create_all()
-            log_message("Created all tables")
+            # Run migrations
+            from flask_migrate import upgrade
+            upgrade()
+            log_message("Ran migrations")
             
             # Initialize database
             return init_db(app)
