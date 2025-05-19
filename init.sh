@@ -40,6 +40,12 @@ echo "DATABASE_URL: $DATABASE_URL"
 echo "DATABASE_NAME: $DATABASE_NAME"
 echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 
+# Initialize migrations if needed
+if [ ! -d "migrations/versions" ]; then
+    echo "Initializing migrations..."
+    flask db init
+fi
+
 # Initialize database
 echo "Initializing database..."
 python3 -c "
