@@ -40,24 +40,34 @@ echo "DATABASE_URL: $DATABASE_URL"
 echo "DATABASE_NAME: $DATABASE_NAME"
 echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 
-# Check if database file exists
-if [ -f "/data/crm_multi.db" ]; then
-    echo "Database file exists at /data/crm_multi.db"
-    ls -l /data/crm_multi.db
-else
-    echo "Database file does not exist at /data/crm_multi.db"
-fi
-
 # Initialize database
 echo "Initializing database..."
 python3 -c "
 from app import app
 from database_setup import init_db, verify_db_setup, force_init_db
 import os
+import sqlite3
 
 # Print current working directory and database path
 print(f'Current working directory: {os.getcwd()}')
 print(f'Database path: {os.getenv(\"DATABASE_NAME\")}')
+
+# Check if database file exists and has content
+db_path = os.getenv('DATABASE_NAME')
+if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
+    print(f'Database file exists at {db_path} with size {os.path.getsize(db_path)} bytes')
+    # Verify database structure
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT name FROM sqlite_master WHERE type=\"table\"')
+        tables = cursor.fetchall()
+        print(f'Existing tables: {tables}')
+        conn.close()
+    except Exception as e:
+        print(f'Error checking database structure: {str(e)}')
+else:
+    print('Database file does not exist or is empty')
 
 # First try normal initialization
 if not verify_db_setup(app):
@@ -79,6 +89,8 @@ else:
 if [ -f "/data/crm_multi.db" ]; then
     echo "Database file exists after initialization"
     ls -l /data/crm_multi.db
+    # Verify database structure
+    sqlite3 /data/crm_multi.db ".tables"
 else
     echo "Error: Database file was not created"
     exit 1

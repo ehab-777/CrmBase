@@ -4,12 +4,40 @@ from flask_migrate import Migrate
 from models import db, Tenant, SalesPerson
 from werkzeug.security import generate_password_hash
 from datetime import datetime
+import sqlite3
 
 def get_db_path():
     """Get the database path from environment variables."""
     db_path = os.getenv('DATABASE_NAME', '/data/crm_multi.db')
     print(f"Database path: {db_path}")
     return db_path
+
+def verify_tables_exist():
+    """Verify that all required tables exist in the database."""
+    try:
+        db_path = get_db_path()
+        if not os.path.exists(db_path):
+            print(f"Database file does not exist at {db_path}")
+            return False
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
+        tables = [table[0] for table in cursor.fetchall()]
+        conn.close()
+
+        required_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
+        missing_tables = [table for table in required_tables if table not in tables]
+        
+        if missing_tables:
+            print(f"Missing tables: {missing_tables}")
+            return False
+        
+        print(f"All required tables exist: {tables}")
+        return True
+    except Exception as e:
+        print(f"Error verifying tables: {str(e)}")
+        return False
 
 def init_db(app):
     """Initialize the database with required tables and default data."""
@@ -21,10 +49,8 @@ def init_db(app):
             # Check if database file exists and has content
             if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
                 print("Database file exists and has content")
-                # Verify tables exist
-                tables = db.engine.table_names()
-                if 'tenants' in tables:
-                    print("Database tables exist, skipping initialization")
+                if verify_tables_exist():
+                    print("All required tables exist, skipping initialization")
                     return True
                 else:
                     print("Database file exists but tables are missing")
@@ -33,6 +59,11 @@ def init_db(app):
             print("Running database migrations...")
             from flask_migrate import upgrade
             upgrade()
+            
+            # Verify tables after migration
+            if not verify_tables_exist():
+                print("Tables not created after migration")
+                return False
             
             # Create default tenant
             print("Checking for default tenant...")
@@ -96,15 +127,9 @@ def verify_db_setup(app):
                 print("Database file does not exist or is empty")
                 return False
             
-            # Check if tables exist
-            tables = db.engine.table_names()
-            required_tables = ['tenants', 'sales_team', 'customers', 'sales_followup']
-            
-            for table in required_tables:
-                if table not in tables:
-                    print(f"Missing required table: {table}")
-                    return False
-            print("All required tables exist")
+            # Verify tables exist
+            if not verify_tables_exist():
+                return False
 
             # Check if default tenant exists
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
@@ -142,6 +167,11 @@ def force_init_db(app):
             from flask_migrate import upgrade
             upgrade()
             print("Ran migrations")
+            
+            # Verify tables after migration
+            if not verify_tables_exist():
+                print("Tables not created after force initialization")
+                return False
             
             # Initialize database
             return init_db(app)
