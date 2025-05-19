@@ -4,6 +4,11 @@ from pathlib import Path
 # Set base directory for file paths
 BASE_DIR = Path(__file__).resolve().parent
 
+# Database paths
+DEV_DB_PATH = 'sqlite:///crm_multi.db'
+PROD_DB_PATH = 'sqlite:////data/crm_multi.db'
+TEST_DB_PATH = f'sqlite:///{BASE_DIR}/test.db'
+
 class Config:
     """Base configuration."""
     # Flask
@@ -19,7 +24,8 @@ class Config:
     DEBUG = False
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///crm_multi.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', DEV_DB_PATH)
+    DATABASE_NAME = os.environ.get('DATABASE_NAME', 'crm_multi.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Headers
@@ -32,14 +38,16 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SESSION_COOKIE_SECURE = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///crm_multi.db'
+    SQLALCHEMY_DATABASE_URI = DEV_DB_PATH
+    DATABASE_NAME = 'crm_multi.db'
 
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:////data/crm_multi.db'
+    SQLALCHEMY_DATABASE_URI = PROD_DB_PATH
+    DATABASE_NAME = '/data/crm_multi.db'
     
     def __init__(self):
         self.SECRET_KEY = os.getenv('SECRET_KEY')
@@ -51,7 +59,8 @@ class TestingConfig(Config):
     """Testing configuration."""
     DEBUG = True
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR}/test.db'
+    SQLALCHEMY_DATABASE_URI = TEST_DB_PATH
+    DATABASE_NAME = 'test.db'
     SECRET_KEY = 'test-secret-key'
     CSRF_SECRET_KEY = 'test-csrf-secret-key'
 
@@ -60,7 +69,8 @@ class StagingConfig(Config):
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:////data/crm_multi.db'
+    SQLALCHEMY_DATABASE_URI = PROD_DB_PATH  # Use production database path
+    DATABASE_NAME = '/data/crm_multi.db'
 
 # Configuration dictionary
 config = {
