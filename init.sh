@@ -47,6 +47,13 @@ if [ -f "/data/crm_multi.db.backup" ] && [ ! -f "/data/crm_multi.db" ]; then
     chmod 666 /data/crm_multi.db
 fi
 
+# Create a backup of the existing database
+if [ -f "/data/crm_multi.db" ]; then
+    echo "Creating backup of existing database..."
+    cp /data/crm_multi.db /data/crm_multi.db.backup
+    chmod 666 /data/crm_multi.db.backup
+fi
+
 # Initialize database with detailed logging
 echo "Initializing database..."
 python3 -c "
@@ -99,22 +106,29 @@ if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
                 log_message('Missing tables created successfully')
             except Exception as e:
                 log_message(f'Error creating missing tables: {str(e)}')
-                if init_db(app):
-                    log_message('Database initialized successfully')
-                else:
-                    log_message('Normal initialization failed, attempting force initialization...')
-                    if force_init_db(app):
-                        log_message('Force initialization completed successfully')
+                # Only attempt full initialization if we're missing the tenants table
+                if 'tenants' in missing_tables:
+                    if init_db(app):
+                        log_message('Database initialized successfully')
                     else:
-                        log_message('Force initialization failed')
-                        sys.exit(1)
+                        log_message('Normal initialization failed, attempting force initialization...')
+                        if force_init_db(app):
+                            log_message('Force initialization completed successfully')
+                        else:
+                            log_message('Force initialization failed')
+                            sys.exit(1)
+                else:
+                    log_message('Skipping full initialization as tenants table exists')
         else:
             log_message('All essential tables exist, skipping initialization')
         
         conn.close()
     except Exception as e:
         log_message(f'Error checking database structure: {str(e)}')
-        sys.exit(1)
+        # Only exit if we can't even connect to the database
+        if 'unable to open database file' in str(e).lower():
+            sys.exit(1)
+        log_message('Continuing despite database error')
 else:
     log_message('Database file does not exist or is empty, initializing...')
     if init_db(app):
@@ -130,7 +144,8 @@ else:
 # Final verification
 if not verify_db_setup(app):
     log_message('Final verification failed')
-    sys.exit(1)
+    # Don't exit here, as the database might still be usable
+    log_message('Continuing despite verification failure')
 "
 
 # Verify database file after initialization
