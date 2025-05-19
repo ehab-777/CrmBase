@@ -3,17 +3,24 @@ services:
     name: crmbase
     env: python
     buildCommand: |
-      chmod +x init.sh
-      # Install sqlite3 for database checks
+      # Install system dependencies
       apt-get update && apt-get install -y sqlite3
-      # Create data directory
+      # Install Python dependencies
+      pip install -r requirements.txt
+      # Make init script executable
+      chmod +x init.sh
+      # Create and verify data directory
       mkdir -p /data
       chmod 777 /data
-      # Verify data directory
       if [ ! -d "/data" ] || [ ! -w "/data" ]; then
         echo "Error: Data directory setup failed"
         exit 1
       fi
+      # Initialize Flask app
+      export FLASK_APP=app.py
+      export FLASK_ENV=staging
+      # Create migrations directory if it doesn't exist
+      mkdir -p migrations/versions
     startCommand: ./init.sh
     envVars:
       - key: PYTHON_VERSION
