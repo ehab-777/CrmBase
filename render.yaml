@@ -2,44 +2,17 @@ services:
   - type: web
     name: crmbase
     env: python
-    buildCommand: |
-      # Install system dependencies
-      apt-get update && apt-get install -y sqlite3
-      # Install Python dependencies
-      pip install -r requirements.txt
-      # Make init script executable
-      chmod +x init.sh
-      # Create and verify data directory
-      mkdir -p /data
-      chmod 777 /data
-      if [ ! -d "/data" ] || [ ! -w "/data" ]; then
-        echo "Error: Data directory setup failed"
-        exit 1
-      fi
-      # Backup existing database if it exists
-      if [ -f "/data/crm_multi.db" ]; then
-        cp /data/crm_multi.db /data/crm_multi.db.backup
-        echo "Database backed up successfully"
-      fi
-      # Initialize Flask app
-      export FLASK_APP=app.py
-      export FLASK_ENV=staging
-      # Create migrations directory if it doesn't exist
-      mkdir -p migrations/versions
+    buildCommand: pip install -r requirements.txt
     startCommand: ./init.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
+      - key: FLASK_ENV
+        value: staging
       - key: DATABASE_URL
         value: sqlite:////data/crm_multi.db
       - key: DATABASE_NAME
         value: /data/crm_multi.db
-      - key: FLASK_ENV
-        value: staging
-      - key: FLASK_APP
-        value: app.py
-      - key: SECRET_KEY
-        generateValue: true
       - key: SQLALCHEMY_DATABASE_URI
         value: sqlite:////data/crm_multi.db
     disk:
@@ -47,9 +20,14 @@ services:
       mountPath: /data
       sizeGB: 1
       persist: true
-      backupPolicy:
-        enabled: true
-        schedule: "0 0 * * *"  # Daily at midnight
+    healthCheckPath: /health
     autoDeploy: true
-    healthCheckPath: /
+    backupPolicy:
+      frequency: daily
+      retention: 7
+    envVars:
+      - key: RENDER
+        value: true
+      - key: RENDER_DISK_PATH
+        value: /data
     numInstances: 1 
