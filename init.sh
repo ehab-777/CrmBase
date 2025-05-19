@@ -33,11 +33,31 @@ export DATABASE_URL=sqlite:////data/crm_multi.db
 export DATABASE_NAME=/data/crm_multi.db
 export SQLALCHEMY_DATABASE_URI=sqlite:////data/crm_multi.db
 
+# Print environment variables for debugging
+echo "Environment variables:"
+echo "FLASK_ENV: $FLASK_ENV"
+echo "DATABASE_URL: $DATABASE_URL"
+echo "DATABASE_NAME: $DATABASE_NAME"
+echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
+
+# Check if database file exists
+if [ -f "/data/crm_multi.db" ]; then
+    echo "Database file exists at /data/crm_multi.db"
+    ls -l /data/crm_multi.db
+else
+    echo "Database file does not exist at /data/crm_multi.db"
+fi
+
 # Initialize database
 echo "Initializing database..."
 python3 -c "
 from app import app
 from database_setup import init_db, verify_db_setup, force_init_db
+import os
+
+# Print current working directory and database path
+print(f'Current working directory: {os.getcwd()}')
+print(f'Database path: {os.getenv(\"DATABASE_NAME\")}')
 
 # First try normal initialization
 if not verify_db_setup(app):
@@ -54,6 +74,15 @@ if not verify_db_setup(app):
 else:
     print('Database is already initialized')
 "
+
+# Verify database file after initialization
+if [ -f "/data/crm_multi.db" ]; then
+    echo "Database file exists after initialization"
+    ls -l /data/crm_multi.db
+else
+    echo "Error: Database file was not created"
+    exit 1
+fi
 
 # Start the application
 echo "Starting application..."

@@ -5,12 +5,29 @@ from models import db, Tenant, SalesPerson
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 
+def get_db_path():
+    """Get the database path from environment variables."""
+    db_path = os.getenv('DATABASE_NAME', '/data/crm_multi.db')
+    print(f"Database path: {db_path}")
+    return db_path
+
 def init_db(app):
     """Initialize the database with required tables and default data."""
     try:
-        # Create all tables
         with app.app_context():
-            print("Starting database initialization...")
+            db_path = get_db_path()
+            print(f"Starting database initialization... Database exists: {os.path.exists(db_path)}")
+            
+            # Check if database file exists and has content
+            if os.path.exists(db_path) and os.path.getsize(db_path) > 0:
+                print("Database file exists and has content")
+                # Verify tables exist
+                tables = db.engine.table_names()
+                if 'tenants' in tables:
+                    print("Database tables exist, skipping initialization")
+                    return True
+                else:
+                    print("Database file exists but tables are missing")
             
             # Run migrations
             print("Running database migrations...")
@@ -71,7 +88,13 @@ def verify_db_setup(app):
     """Verify that the database is properly set up."""
     try:
         with app.app_context():
-            print("Verifying database setup...")
+            db_path = get_db_path()
+            print(f"Verifying database setup... Database exists: {os.path.exists(db_path)}")
+            
+            # Check if database file exists and has content
+            if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+                print("Database file does not exist or is empty")
+                return False
             
             # Check if tables exist
             tables = db.engine.table_names()
@@ -108,7 +131,8 @@ def force_init_db(app):
     """Force reinitialize the database by dropping all tables and recreating them."""
     try:
         with app.app_context():
-            print("Force initializing database...")
+            db_path = get_db_path()
+            print(f"Force initializing database... Database exists: {os.path.exists(db_path)}")
             
             # Drop all tables
             db.drop_all()
