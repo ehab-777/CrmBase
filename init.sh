@@ -40,6 +40,14 @@ echo "DATABASE_URL: $DATABASE_URL"
 echo "DATABASE_NAME: $DATABASE_NAME"
 echo "SQLALCHEMY_DATABASE_URI: $SQLALCHEMY_DATABASE_URI"
 
+# Check if we're in development environment
+if [ "$FLASK_ENV" != "development" ]; then
+    echo "Skipping DB initialization in non-dev environment"
+    echo "Starting application..."
+    exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app
+    exit 0
+fi
+
 # Function to log database status
 log_db_status() {
     if [ -f "/data/crm_multi.db" ]; then
