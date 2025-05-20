@@ -16,10 +16,9 @@ services:
       - key: SQLALCHEMY_DATABASE_URI
         value: sqlite:////data/crm_multi.db
     disk:
-      name: data
+      name: crmbase-disk
       mountPath: /data
       sizeGB: 1
-      persist: true
     healthCheckPath: /health
     autoDeploy: true
     backupPolicy:
