@@ -10,12 +10,12 @@ echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
 
 # If we're not in development, skip DB initialization
 if [ "$FLASK_ENV" != "development" ]; then
-  echo "✅ Skipping database initialization in $FLASK_ENV environment"
+  echo "✅ Skipping DB init in $FLASK_ENV environment"
   exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app
   exit 0
 fi
 
-echo "🧪 Running in development mode - Checking DB state..."
+echo "⚠️ Running DB init in development mode..."
 
 # Default path for database
 DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
