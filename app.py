@@ -27,6 +27,8 @@ from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db, Tenant, SalesPerson
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 
 # Validate environment variables
 validate_env_vars()
@@ -41,13 +43,16 @@ app_config = config.get(env)
 app.config.from_object(app_config)
 
 # Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', app_config.SQLALCHEMY_DATABASE_URI)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////data/crm_multi.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
 
 # Initialize SQLAlchemy and Flask-Migrate
-db.init_app(app)
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
