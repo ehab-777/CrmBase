@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "✅ init.sh started"
+
 echo "🔄 Starting initialization script..."
 
 # Set default FLASK_ENV if not set
