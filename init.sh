@@ -25,10 +25,10 @@ echo "📁 Database path: $DB_PATH"
 mkdir -p "$(dirname "$DB_PATH")"
 
 # Check if DB file exists and not empty
-if [ -s "$DB_PATH" ]; then
-  echo "✅ Existing database found. Skipping initialization."
+if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+  echo "✅ Database already exists. Skipping initialization."
 else
-  echo "⚠️ Database missing or empty. Running full initialization..."
+  echo "⚠️ No database found. Initializing..."
   flask db init || true
   flask db migrate -m "Initial migration" || true
   flask db upgrade
