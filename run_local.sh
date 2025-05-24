@@ -24,9 +24,21 @@ export SECRET_KEY="dev-secret-key"
 export SQLALCHEMY_DATABASE_URI="sqlite:///crm_multi.db"
 export SQLALCHEMY_TRACK_MODIFICATIONS=False
 
+# Remove existing database if it exists
+if [ -f "crm_multi.db" ]; then
+    echo "🗑️ Removing existing database..."
+    rm crm_multi.db
+fi
+
 # Initialize database
 echo "🗃️ Initializing database..."
 python database_setup.py
+
+# Verify database was created
+if [ ! -f "crm_multi.db" ]; then
+    echo "❌ Database initialization failed"
+    exit 1
+fi
 
 # Find an available port
 PORT=5000

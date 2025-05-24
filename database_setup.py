@@ -144,15 +144,27 @@ def init_db():
         try:
             print("🔄 Starting database initialization...")
             
-            # Drop all tables first to ensure clean state
+            # Force drop all tables
+            print("🗑️ Dropping all existing tables...")
             db.drop_all()
-            print("✅ Dropped all existing tables")
+            db.session.commit()
+            print("✅ Tables dropped")
             
             # Create all tables
+            print("📦 Creating tables...")
             db.create_all()
-            print("✅ Created all tables")
+            db.session.commit()
+            print("✅ Tables created")
+            
+            # Verify tables exist
+            tables = db.engine.table_names()
+            print(f"📊 Available tables: {tables}")
+            
+            if 'tenants' not in tables:
+                raise Exception("tenants table was not created")
             
             # Create default tenant
+            print("👥 Creating default tenant...")
             default_tenant = Tenant(
                 name='Default Tenant',
                 db_key='default',
@@ -160,18 +172,20 @@ def init_db():
             )
             db.session.add(default_tenant)
             db.session.commit()
-            print("✅ Created default tenant")
+            print("✅ Default tenant created")
             
             # Create admin role
+            print("👮 Creating admin role...")
             admin_role = Role(
                 name='admin',
                 description='Administrator role with full access'
             )
             db.session.add(admin_role)
             db.session.commit()
-            print("✅ Created admin role")
+            print("✅ Admin role created")
             
             # Create admin user
+            print("👤 Creating admin user...")
             admin = SalesPerson(
                 username='admin',
                 first_name='Admin',
@@ -185,11 +199,7 @@ def init_db():
             )
             db.session.add(admin)
             db.session.commit()
-            print("✅ Created admin user")
-            
-            # Verify tables exist
-            tables = db.engine.table_names()
-            print(f"📊 Available tables: {tables}")
+            print("✅ Admin user created")
             
             # Verify data was created
             tenant_count = Tenant.query.count()
@@ -200,6 +210,9 @@ def init_db():
             print(f"- Tenants: {tenant_count}")
             print(f"- Users: {user_count}")
             print(f"- Roles: {role_count}")
+            
+            if tenant_count == 0 or user_count == 0 or role_count == 0:
+                raise Exception("Data verification failed")
             
             print("✅ Database initialization completed successfully")
             return True
