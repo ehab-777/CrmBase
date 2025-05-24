@@ -4,6 +4,8 @@
         <button class="tab" onclick="openTab('sales-team')">Sales Team</button>
         {% if session.role == 'admin' %}
         <a href="{{ url_for('settings.manage_tenants') }}" class="tab">Tenants</a>
+        {% endif %}
+        {% if session.role in ['admin', 'manager'] %}
         <a href="{{ url_for('users.salespeople_list') }}" class="tab">View All Users</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary logout-button">Logout</a>

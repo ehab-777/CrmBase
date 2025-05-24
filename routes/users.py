@@ -21,9 +21,14 @@ def add_salesperson():
             conn = get_db()
             cursor = conn.cursor()
             
-            # Fetch all tenants for admin users
-            cursor.execute("SELECT id, name FROM tenants ORDER BY name")
-            tenants = cursor.fetchall()
+            # Fetch tenants based on role
+            if session.get('role') == 'admin':
+                cursor.execute("SELECT id, name FROM tenants ORDER BY name")
+                tenants = cursor.fetchall()
+            else:
+                # For managers, only show their tenant
+                cursor.execute("SELECT id, name FROM tenants WHERE id = ?", (get_current_tenant_id(),))
+                tenants = cursor.fetchall()
             
             if request.method == 'POST':
                 # CSRF token is automatically validated by Flask-WTF
@@ -35,7 +40,12 @@ def add_salesperson():
                 work_email = request.form['work_email']
                 phone_number = request.form['phone_number']
                 role = request.form.get('role', 'salesperson') # Default to 'salesperson' if not provided
-                tenant_id = request.form.get('tenant_id', get_current_tenant_id())  # Get tenant_id from form or current tenant
+                
+                # Set tenant_id based on role
+                if session.get('role') == 'admin':
+                    tenant_id = request.form.get('tenant_id')
+                else:
+                    tenant_id = get_current_tenant_id()
 
                 # Use bcrypt for password hashing
                 hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -65,12 +75,21 @@ def salespeople_list():
         cursor = conn.cursor()
         salespeople = []
         try:
-            cursor.execute("""
+            # Base query
+            query = """
                 SELECT s.salesperson_id, s.first_name, s.last_name, s.salesperson_name, 
                        s.work_email, s.phone_number, s.role, t.name as tenant_name
                 FROM sales_team s
                 JOIN tenants t ON s.tenant_id = t.id
-            """)
+            """
+            
+            # Add tenant filter for managers
+            if session.get('role') == 'manager':
+                query += " WHERE s.tenant_id = ?"
+                cursor.execute(query, (get_current_tenant_id(),))
+            else:
+                cursor.execute(query)
+                
             salespeople = cursor.fetchall()
         except sqlite3.Error as e:
             print(f"Database error during salespeople_list: {e}")
@@ -126,6 +145,16 @@ def edit_salesperson():
             work_email = request.form['work_email']
             phone_number = request.form['phone_number']
             role = request.form['role']
+
+            # For managers, verify the user belongs to their tenant
+            if session.get('role') == 'manager':
+                cursor.execute("""
+                    SELECT tenant_id FROM sales_team 
+                    WHERE salesperson_id = ?
+                """, (salesperson_id,))
+                user = cursor.fetchone()
+                if not user or user['tenant_id'] != get_current_tenant_id():
+                    return render_template('sales_team/salespeople_list.html', error="Unauthorized to edit this user")
 
             cursor.execute("""
                 UPDATE sales_team 
