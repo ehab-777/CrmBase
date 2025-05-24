@@ -9,6 +9,7 @@ bcrypt = Bcrypt()
 csrf = CSRFProtect()
 session = Session()
 login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
 
 def init_security(app):
     """Initialize all security extensions with the Flask app"""
@@ -26,4 +27,4 @@ def init_security(app):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id)) 
+    return User.query.get(int(user_id)) 
