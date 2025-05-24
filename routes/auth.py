@@ -19,50 +19,34 @@ def login():
         password = request.form['password']
         db_key = request.form.get('db_key', 'default')
         
+        print(f"Login attempt - Username: {username}, Database Key: {db_key}")  # Debug log
+        
         conn = get_db()
         cursor = conn.cursor()
         
         try:
             # Get tenant by db_key
-            cursor.execute("SELECT id FROM tenants WHERE db_key = ?", (db_key,))
+            cursor.execute("SELECT id, name FROM tenants WHERE db_key = ?", (db_key,))
             tenant = cursor.fetchone()
             
             if not tenant:
                 print(f"Tenant not found for db_key: {db_key}")  # Debug log
                 return render_template('auth/login.html', error="Invalid database key")
             
-            print(f"Found tenant ID: {tenant[0]}")  # Debug log
+            print(f"Found tenant: {tenant['name']} (ID: {tenant['id']})")  # Debug log
             
-            # First check users table for admin users
+            # Check sales_team table for user
             cursor.execute("""
-                SELECT id, username, email, role, tenant_id, password 
-                FROM users 
+                SELECT salesperson_id, username, first_name, role, tenant_id, password 
+                FROM sales_team 
                 WHERE username = ? AND tenant_id = ?
-            """, (username, tenant[0]))
+            """, (username, tenant['id']))
             
             user = cursor.fetchone()
             
             if not user:
-                # If not found in users table, check sales_team table
-                cursor.execute("""
-                    SELECT salesperson_id, username, first_name, role, tenant_id, password 
-                    FROM sales_team 
-                    WHERE username = ? AND tenant_id = ?
-                """, (username, tenant[0]))
-                
-                user = cursor.fetchone()
-                
-                if not user:
-                    print(f"User not found: {username}")  # Debug log
-                    return render_template('auth/login.html', error="Wrong username")
-                
-                # If user is from sales_team, set salesperson_id
-                session['salesperson_id'] = user['salesperson_id']
-                session['salesperson_name'] = user['first_name']
-            else:
-                # If user is from users table, set user_id
-                session['user_id'] = user['id']
-                session['username'] = user['username']
+                print(f"User {username} not found in tenant {tenant['name']} (ID: {tenant['id']})")  # Debug log
+                return render_template('auth/login.html', error="Wrong username")
             
             print(f"Found user: {user['username']}, Role: {user['role']}")  # Debug log
             
@@ -76,9 +60,13 @@ def login():
                 print(f"Stored password hash: {user['password']}")  # Debug log
                 return render_template('auth/login.html', error="Invalid password format")
             
-            # Set common session variables
+            # Set session variables
+            session['salesperson_id'] = user['salesperson_id']
+            session['salesperson_name'] = user['first_name']
             session['role'] = user['role']
             session['tenant_id'] = user['tenant_id']
+            
+            print(f"Login successful for user {username} in tenant {tenant['name']}")  # Debug log
             
             # Redirect based on role
             if user['role'] in ['admin', 'manager']:
@@ -105,37 +93,59 @@ def logout():
 @auth_bp.route('/check_username', methods=['POST'])
 def check_username():
     try:
+        print("Received check_username request")  # Debug log
+        print("Request data:", request.get_data())  # Debug log
+        print("Request headers:", request.headers)  # Debug log
+        
+        # Skip CSRF check for this endpoint since it's a pre-login check
         data = request.get_json()
+        print("Parsed JSON data:", data)  # Debug log
+        
+        if not data:
+            print("No JSON data received")  # Debug log
+            return jsonify({'error': 'No data received'}), 400
+            
         username = data.get('username')
+        print("Username from request:", username)  # Debug log
         
         if not username:
+            print("No username provided")  # Debug log
             return jsonify({'error': 'Username is required'}), 400
             
         conn = get_db()
         cursor = conn.cursor()
         
         try:
-            # Query to get tenant information for the username from both tables
-            cursor.execute('''
-                SELECT t.id, t.name, t.db_key 
-                FROM tenants t
-                LEFT JOIN users u ON t.id = u.tenant_id
-                LEFT JOIN sales_team st ON t.id = st.tenant_id
-                WHERE u.username = ? OR st.username = ?
-            ''', (username, username))
+            print(f"Checking username: {username} across all tenants")  # Debug log
             
-            tenant = cursor.fetchone()
+            # First, get all tenants
+            cursor.execute('SELECT id, name, db_key FROM tenants')
+            tenants = cursor.fetchall()
+            print(f"Found {len(tenants)} tenants")  # Debug log
             
-            if tenant:
-                return jsonify({
-                    'tenant': {
-                        'id': tenant[0],
-                        'name': tenant[1],
-                        'db_key': tenant[2]
-                    }
-                })
-            else:
-                return jsonify({'tenant': None})
+            # Then check each tenant for the username
+            for tenant in tenants:
+                print(f"Checking tenant: {tenant['name']} (ID: {tenant['id']}, db_key: {tenant['db_key']})")  # Debug log
+                
+                cursor.execute("""
+                    SELECT salesperson_id, username, first_name, role
+                    FROM sales_team 
+                    WHERE username = ? AND tenant_id = ?
+                """, (username, tenant['id']))
+                
+                user = cursor.fetchone()
+                if user:
+                    print(f"Found user {username} in tenant: {tenant['name']} (ID: {tenant['id']}, db_key: {tenant['db_key']})")  # Debug log
+                    return jsonify({
+                        'tenant': {
+                            'id': tenant['id'],
+                            'name': tenant['name'],
+                            'db_key': tenant['db_key']
+                        }
+                    })
+            
+            print(f"User {username} not found in any tenant")  # Debug log
+            return jsonify({'tenant': None})
                 
         except sqlite3.Error as e:
             print(f"Database error in check_username: {str(e)}")
@@ -147,4 +157,93 @@ def check_username():
     except Exception as e:
         print(f"Error checking username: {str(e)}")
         print(f"Error details: {traceback.format_exc()}")
-        return jsonify({'error': 'An error occurred while checking the username'}), 500 
+        return jsonify({'error': 'An error occurred while checking the username'}), 500
+
+@auth_bp.route('/check_user/<username>', methods=['GET'])
+def check_user(username):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        # Check sales_team table
+        cursor.execute("""
+            SELECT s.salesperson_id, s.username, s.first_name, s.role, s.tenant_id, t.db_key
+            FROM sales_team s
+            JOIN tenants t ON s.tenant_id = t.id
+            WHERE s.username = ?
+        """, (username,))
+        
+        user = cursor.fetchone()
+        
+        if user:
+            return jsonify({
+                'exists': True,
+                'user': {
+                    'salesperson_id': user['salesperson_id'],
+                    'username': user['username'],
+                    'first_name': user['first_name'],
+                    'role': user['role'],
+                    'tenant_id': user['tenant_id'],
+                    'db_key': user['db_key']
+                }
+            })
+        else:
+            return jsonify({
+                'exists': False,
+                'message': f'User {username} not found in sales_team table'
+            })
+            
+    except sqlite3.Error as e:
+        print(f"Database error in check_user: {e}")
+        return jsonify({
+            'error': 'Database error occurred',
+            'details': str(e)
+        }), 500
+    finally:
+        if conn:
+            conn.close() 
+
+@auth_bp.route('/check_tenant_users/<int:tenant_id>', methods=['GET'])
+def check_tenant_users(tenant_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        # Get tenant information
+        cursor.execute("""
+            SELECT id, name, db_key
+            FROM tenants
+            WHERE id = ?
+        """, (tenant_id,))
+        tenant = cursor.fetchone()
+        
+        if not tenant:
+            return jsonify({
+                'error': f'Tenant ID {tenant_id} not found'
+            }), 404
+            
+        # Get all users in this tenant
+        cursor.execute("""
+            SELECT salesperson_id, username, first_name, role
+            FROM sales_team
+            WHERE tenant_id = ?
+        """, (tenant_id,))
+        
+        users = cursor.fetchall()
+        
+        return jsonify({
+            'tenant': {
+                'id': tenant['id'],
+                'name': tenant['name'],
+                'db_key': tenant['db_key']
+            },
+            'users': [dict(user) for user in users]
+        })
+            
+    except sqlite3.Error as e:
+        print(f"Database error in check_tenant_users: {e}")
+        return jsonify({
+            'error': 'Database error occurred',
+            'details': str(e)
+        }), 500
+    finally:
+        if conn:
+            conn.close() 

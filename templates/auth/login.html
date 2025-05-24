@@ -191,24 +191,43 @@
                 return;
             }
 
+            console.log('Checking username:', username);  // Debug log
+
+            const requestData = {
+                username: username
+            };
+            console.log('Sending request data:', requestData);  // Debug log
+
+            // Get CSRF token from the hidden input
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+            console.log('CSRF Token:', csrfToken);  // Debug log
+
             fetch('/auth/check_username', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ username: username })
+                body: JSON.stringify(requestData)
             })
             .then(response => {
+                console.log('Response status:', response.status);  // Debug log
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Network response was not ok');
+                    });
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('Received data:', data);  // Debug log
                 const dbKeyInput = document.getElementById('db_key');
-                if (data.tenant) {
+                if (data.tenant && data.tenant.db_key) {
+                    console.log('Setting database key to:', data.tenant.db_key);
                     dbKeyInput.value = data.tenant.db_key;
                 } else {
+                    console.log('No tenant found, using default database key');
                     dbKeyInput.value = 'default';
                 }
             })
@@ -222,6 +241,9 @@
         function validateForm() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            const dbKey = document.getElementById('db_key').value;
+            
+            console.log('Form submission - Username:', username, 'Database Key:', dbKey);  // Debug log
             
             if (!username) {
                 alert('Please enter your username');
