@@ -8,31 +8,19 @@ echo "🔄 Starting initialization script..."
 FLASK_ENV=${FLASK_ENV:-development}
 echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
 
-# If we're not in development, skip DB initialization
-if [ "$FLASK_ENV" != "development" ]; then
-  echo "✅ Skipping DB init in $FLASK_ENV environment"
-  exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app
-  exit 0
-fi
-
-echo "⚠️ Running DB init in development mode..."
-
-# Default path for database
+# Default path for database in persistent disk
 DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
 echo "📁 Database path: $DB_PATH"
 
-# Create data directory if not exists
-mkdir -p "$(dirname "$DB_PATH")"
-
-# Check if DB file exists and not empty
+# Check if database exists and is not empty in the persistent disk
 if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
-  echo "✅ Database already exists. Skipping initialization."
+    echo "✅ Database already exists in persistent disk. Skipping initialization."
 else
-  echo "⚠️ No database found. Initializing..."
-  flask db init || true
-  flask db migrate -m "Initial migration" || true
-  flask db upgrade
-  python database_setup.py
+    echo "⚠️ No database found in persistent disk. Initializing..."
+    flask db init || true
+    flask db migrate -m "Initial migration" || true
+    flask db upgrade
+    python database_setup.py
 fi
 
 echo "🚀 Launching the application..."
