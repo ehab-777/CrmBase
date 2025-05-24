@@ -28,13 +28,27 @@ if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
     echo "✅ Database already exists in persistent disk. Skipping initialization."
 else
     echo "⚠️ No database found in persistent disk. Initializing..."
+    
+    # Remove any existing database file
+    rm -f "$DB_PATH"
+    
     # Initialize migrations
+    echo "🔄 Initializing migrations..."
     flask db init || true
     flask db migrate -m "Initial migration" || true
     flask db upgrade || true
     
     # Initialize database with default data
+    echo "🔄 Initializing database..."
     python database_setup.py
+    
+    # Verify database was created
+    if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+        echo "✅ Database initialized successfully"
+    else
+        echo "❌ Database initialization failed"
+        exit 1
+    fi
 fi
 
 echo "🚀 Launching the application..."

@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from models import db, Tenant, SalesPerson, Role, Permission, AuditLog
+from models import db, Tenant, SalesPerson, Role, Permission, AuditLog, User, Customer, SalesFollowup
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sqlite3
@@ -142,59 +142,71 @@ def verify_tables_exist():
 def init_db():
     with app.app_context():
         try:
+            print("🔄 Starting database initialization...")
+            
+            # Drop all tables first to ensure clean state
+            db.drop_all()
+            print("✅ Dropped all existing tables")
+            
             # Create all tables
             db.create_all()
+            print("✅ Created all tables")
             
-            # Check if we already have a default tenant
-            default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
-            if not default_tenant:
-                # Create default tenant
-                default_tenant = Tenant(
-                    name='Default Tenant',
-                    db_key='default',
-                    created_at=datetime.utcnow()
-                )
-                db.session.add(default_tenant)
-                db.session.commit()
-                print("✅ Default tenant created")
+            # Create default tenant
+            default_tenant = Tenant(
+                name='Default Tenant',
+                db_key='default',
+                created_at=datetime.utcnow()
+            )
+            db.session.add(default_tenant)
+            db.session.commit()
+            print("✅ Created default tenant")
             
-            # Check if we already have an admin role
-            admin_role = Role.query.filter_by(name='admin').first()
-            if not admin_role:
-                admin_role = Role(
-                    name='admin',
-                    description='Administrator role with full access'
-                )
-                db.session.add(admin_role)
-                db.session.commit()
-                print("✅ Admin role created")
+            # Create admin role
+            admin_role = Role(
+                name='admin',
+                description='Administrator role with full access'
+            )
+            db.session.add(admin_role)
+            db.session.commit()
+            print("✅ Created admin role")
             
-            # Check if we already have an admin user
-            admin = SalesPerson.query.filter_by(username='admin').first()
-            if not admin:
-                # Create admin user
-                admin = SalesPerson(
-                    username='admin',
-                    first_name='Admin',
-                    last_name='User',
-                    password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                    salesperson_name='Admin User',
-                    work_email='admin@example.com',
-                    role='admin',
-                    tenant_id=default_tenant.id,
-                    created_at=datetime.utcnow()
-                )
-                db.session.add(admin)
-                db.session.commit()
-                print("✅ Default admin user created")
-                print("Username: admin")
-                print("Password: admin123")
+            # Create admin user
+            admin = SalesPerson(
+                username='admin',
+                first_name='Admin',
+                last_name='User',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+                salesperson_name='Admin User',
+                work_email='admin@example.com',
+                role='admin',
+                tenant_id=default_tenant.id,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Created admin user")
+            
+            # Verify tables exist
+            tables = db.engine.table_names()
+            print(f"📊 Available tables: {tables}")
+            
+            # Verify data was created
+            tenant_count = Tenant.query.count()
+            user_count = SalesPerson.query.count()
+            role_count = Role.query.count()
+            
+            print(f"📊 Verification:")
+            print(f"- Tenants: {tenant_count}")
+            print(f"- Users: {user_count}")
+            print(f"- Roles: {role_count}")
             
             print("✅ Database initialization completed successfully")
             return True
             
         except Exception as e:
             print(f"❌ Error during database initialization: {str(e)}")
+            db.session.rollback()
             return False
 
 def verify_db_setup(app):
