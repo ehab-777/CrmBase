@@ -21,15 +21,19 @@ mkdir -p migrations
 # Set environment variables
 export FLASK_APP=app.py
 export SQLALCHEMY_DATABASE_URI="sqlite:///$DB_PATH"
+export FLASK_ENV=$FLASK_ENV
 
 # Check if database exists and is not empty in the persistent disk
 if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
     echo "✅ Database already exists in persistent disk. Skipping initialization."
 else
     echo "⚠️ No database found in persistent disk. Initializing..."
+    # Initialize migrations
     flask db init || true
     flask db migrate -m "Initial migration" || true
     flask db upgrade || true
+    
+    # Initialize database with default data
     python database_setup.py
 fi
 

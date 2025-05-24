@@ -6,6 +6,7 @@ from datetime import datetime
 import sqlite3
 import sys
 from security import bcrypt
+from app import app
 
 DB_PATH = os.getenv("DATABASE_NAME", "/data/crm_multi.db")
 
@@ -138,23 +139,16 @@ def verify_tables_exist():
         log_message(f"Error verifying tables: {str(e)}")
         return False
 
-def init_db(app):
-    """Initialize the database with required tables and default data."""
-    try:
-        with app.app_context():
-            log_message(f"Starting database initialization... Database exists: {os.path.exists(DB_PATH)}")
+def init_db():
+    with app.app_context():
+        try:
+            # Create all tables
+            db.create_all()
             
-            # Create tables if they don't exist
-            if not verify_tables_exist():
-                if not create_tables(app, ['tenants', 'sales_team', 'customers', 'sales_followup']):
-                    log_message("Failed to create tables")
-                    return False
-            
-            # Create default tenant
-            log_message("Checking for default tenant...")
+            # Check if we already have a default tenant
             default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
             if not default_tenant:
-                log_message("Creating default tenant...")
+                # Create default tenant
                 default_tenant = Tenant(
                     name='Default Tenant',
                     db_key='default',
@@ -162,43 +156,46 @@ def init_db(app):
                 )
                 db.session.add(default_tenant)
                 db.session.commit()
-                log_message("Default tenant created successfully")
-            else:
-                log_message("Default tenant already exists")
-
-            # Create admin user
-            log_message("Checking for admin user...")
-            admin_user = SalesPerson.query.filter_by(username='admin').first()
-            if not admin_user:
-                log_message("Creating admin user...")
-                admin_user = SalesPerson(
+                print("✅ Default tenant created")
+            
+            # Check if we already have an admin role
+            admin_role = Role.query.filter_by(name='admin').first()
+            if not admin_role:
+                admin_role = Role(
+                    name='admin',
+                    description='Administrator role with full access'
+                )
+                db.session.add(admin_role)
+                db.session.commit()
+                print("✅ Admin role created")
+            
+            # Check if we already have an admin user
+            admin = SalesPerson.query.filter_by(username='admin').first()
+            if not admin:
+                # Create admin user
+                admin = SalesPerson(
                     username='admin',
                     first_name='Admin',
                     last_name='User',
-                    password=generate_password_hash('admin123'),
-                    salesperson_name='admin',
+                    password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+                    salesperson_name='Admin User',
                     work_email='admin@example.com',
                     role='admin',
                     tenant_id=default_tenant.id,
                     created_at=datetime.utcnow()
                 )
-                db.session.add(admin_user)
+                db.session.add(admin)
                 db.session.commit()
-                log_message("Admin user created successfully")
-            else:
-                log_message("Admin user already exists")
-
-            # Verify the setup
-            if verify_db_setup(app):
-                log_message("Database initialization completed successfully")
-                return True
-            else:
-                log_message("Database initialization failed verification")
-                return False
-
-    except Exception as e:
-        log_message(f"Error during database initialization: {str(e)}")
-        return False
+                print("✅ Default admin user created")
+                print("Username: admin")
+                print("Password: admin123")
+            
+            print("✅ Database initialization completed successfully")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error during database initialization: {str(e)}")
+            return False
 
 def verify_db_setup(app):
     """Verify that the database is properly set up."""
@@ -252,59 +249,11 @@ def force_init_db(app):
                 return False
             
             # Initialize database
-            return init_db(app)
+            return init_db()
             
     except Exception as e:
         log_message(f"Error during force initialization: {str(e)}")
         return False
-
-def init_db():
-    with app.app_context():
-        # Create all tables
-        db.create_all()
-        
-        # Check if we already have a default tenant
-        default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
-        if not default_tenant:
-            # Create default tenant
-            default_tenant = Tenant(
-                name='Default Tenant',
-                created_at=datetime.utcnow()
-            )
-            db.session.add(default_tenant)
-            db.session.commit()
-        
-        # Check if we already have an admin user
-        admin = SalesPerson.query.filter_by(email='admin@example.com').first()
-        if not admin:
-            # Create admin role if it doesn't exist
-            admin_role = Role.query.filter_by(name='admin').first()
-            if not admin_role:
-                admin_role = Role(
-                    name='admin',
-                    description='Administrator role with full access'
-                )
-                db.session.add(admin_role)
-                db.session.commit()
-            
-            # Create admin user
-            admin = SalesPerson(
-                email='admin@example.com',
-                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                first_name='Admin',
-                last_name='User',
-                role_id=admin_role.id,
-                tenant_id=default_tenant.id,
-                created_at=datetime.utcnow()
-            )
-            db.session.add(admin)
-            db.session.commit()
-            
-            print("✅ Default admin user created")
-            print("Email: admin@example.com")
-            print("Password: admin123")
-        
-        print("✅ Database initialization completed successfully")
 
 if __name__ == '__main__':
     # This allows running the script directly for testing
