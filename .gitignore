@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# Session and environment files
+flask_session/
+env.txt/
+
 # Python
 __pycache__/
 *.py[cod]
