@@ -477,7 +477,7 @@
                         {% if session['role'] == 'admin' %}
                         <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
-                        {% elif session['role'] in ['admin', 'manager'] %}
+                        {% elif session['role'] == 'manager' %}
                         <option value="salesperson">Salesperson</option>
                         {% endif %}
                     </select>
@@ -511,8 +511,8 @@
     </div>
 
     <script>
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        // Get CSRF token from the form
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
         function openEditModal(salespersonId) {
             // Fetch salesperson data and populate form
