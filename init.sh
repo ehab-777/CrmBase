@@ -12,14 +12,18 @@ echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
 DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
 echo "📁 Database path: $DB_PATH"
 
+# Create migrations directory if it doesn't exist
+mkdir -p migrations
+
 # Check if database exists and is not empty in the persistent disk
 if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
     echo "✅ Database already exists in persistent disk. Skipping initialization."
 else
     echo "⚠️ No database found in persistent disk. Initializing..."
+    export FLASK_APP=app.py
     flask db init || true
     flask db migrate -m "Initial migration" || true
-    flask db upgrade
+    flask db upgrade || true
     python database_setup.py
 fi
 
