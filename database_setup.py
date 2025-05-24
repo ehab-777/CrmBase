@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from models import db, Tenant, SalesPerson, Role, Permission, AuditLog, User, Customer, SalesFollowup
+from models import db, Tenant, SalesPerson, Role, Permission, User, Customer, SalesFollowup
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sqlite3
