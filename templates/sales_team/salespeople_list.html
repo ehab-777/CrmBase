@@ -9,12 +9,12 @@
             --primary-color: #2563eb;
             --secondary-color: #64748b;
             --success-color: #22c55e;
+            --error-color: #ef4444;
             --background-color: #f8fafc;
             --card-background: #ffffff;
             --border-color: #e2e8f0;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
-            --error-color: #ef4444;
         }
 
         * {
@@ -312,6 +312,25 @@
             display: inline-block;
         }
 
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -336,6 +355,15 @@
 </head>
 <body>
     <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <div class="header">
             <h1 class="page-title">Sales Team</h1>
             <div class="action-buttons">
@@ -467,6 +495,7 @@
             <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
             <h3 class="modal-title">Change Password</h3>
             <form id="passwordForm" method="POST" action="{{ url_for('users.change_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="salesperson_id" id="passwordSalespersonId">
                 <div class="form-group">
                     <label class="form-label" for="newPassword">New Password</label>
