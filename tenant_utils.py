@@ -7,11 +7,14 @@ import os
 # Load environment variables
 load_dotenv()
 
-DATABASE_NAME = 'crm_multi.db'
+# Get database URI from environment
+DB_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///crm_multi.db")
 
 def get_db():
     """Get a database connection."""
-    conn = sqlite3.connect(DATABASE_NAME)
+    # Extract file path from SQLite URI
+    db_path = DB_URI.replace('sqlite:///', '')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 

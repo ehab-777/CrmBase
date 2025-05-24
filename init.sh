@@ -1,55 +1,36 @@
 #!/bin/bash
 
 echo "✅ init.sh started"
-
 echo "🔄 Starting initialization script..."
 
-# Set default FLASK_ENV if not set
+# Ensure FLASK_ENV is set
 FLASK_ENV=${FLASK_ENV:-development}
 echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
 
-# Set default database path
-DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
-echo "📁 Database path: $DB_PATH"
+# If not development, skip all DB init and run app
+if [ "$FLASK_ENV" != "development" ]; then
+    echo "✅ Skipping DB init in $FLASK_ENV environment"
+    exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app
+    exit 0
+fi
 
-# Create data directory if it doesn't exist
-mkdir -p /data
+# In development, continue with DB checks
+echo "🧪 Running DB checks in development..."
 
-# Create migrations directory if it doesn't exist
-mkdir -p migrations
+DB_PATH=${DATABASE_NAME:-crm_multi.db}
+mkdir -p "$(dirname "$DB_PATH")"
+echo "📁 Checking DB at: $DB_PATH"
 
-# Set environment variables
-export FLASK_APP=app.py
-export SQLALCHEMY_DATABASE_URI="sqlite:///$DB_PATH"
-export FLASK_ENV=$FLASK_ENV
-
-# Check if database exists and is not empty in the persistent disk
-if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
-    echo "✅ Database already exists in persistent disk. Skipping initialization."
+# If DB exists and is not empty
+if [ -s "$DB_PATH" ]; then
+    echo "✅ Database exists. Skipping re-initialization."
 else
-    echo "⚠️ No database found in persistent disk. Initializing..."
-    
-    # Remove any existing database file
-    rm -f "$DB_PATH"
-    
-    # Initialize migrations
-    echo "🔄 Initializing migrations..."
+    echo "⚠️ DB missing or empty. Running initial setup..."
     flask db init || true
     flask db migrate -m "Initial migration" || true
     flask db upgrade || true
-    
-    # Initialize database with default data
-    echo "🔄 Initializing database..."
     python database_setup.py
-    
-    # Verify database was created
-    if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
-        echo "✅ Database initialized successfully"
-    else
-        echo "❌ Database initialization failed"
-        exit 1
-    fi
 fi
 
-echo "🚀 Launching the application..."
+echo "🚀 Launching app..."
 exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app 

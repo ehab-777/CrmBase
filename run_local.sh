@@ -24,10 +24,13 @@ export SECRET_KEY="dev-secret-key"
 export SQLALCHEMY_DATABASE_URI="sqlite:///crm_multi.db"
 export SQLALCHEMY_TRACK_MODIFICATIONS=False
 
+# Extract database path from URI for file operations
+DB_PATH=$(echo $SQLALCHEMY_DATABASE_URI | sed 's/sqlite:\/\///')
+
 # Remove existing database if it exists
-if [ -f "crm_multi.db" ]; then
+if [ -f "$DB_PATH" ]; then
     echo "🗑️ Removing existing database..."
-    rm crm_multi.db
+    rm "$DB_PATH"
 fi
 
 # Initialize database
@@ -35,7 +38,7 @@ echo "🗃️ Initializing database..."
 python database_setup.py
 
 # Verify database was created
-if [ ! -f "crm_multi.db" ]; then
+if [ ! -f "$DB_PATH" ]; then
     echo "❌ Database initialization failed"
     exit 1
 fi

@@ -8,7 +8,8 @@ import sys
 from security import bcrypt
 from app import app
 
-DB_PATH = os.getenv("DATABASE_NAME", "/data/crm_multi.db")
+# Get database URI from environment
+DB_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///crm_multi.db")
 
 def log_message(message):
     """Log message to both stdout and stderr."""
@@ -17,8 +18,8 @@ def log_message(message):
 
 def get_db_path():
     """Get the database path from environment variables."""
-    log_message(f"Database path: {DB_PATH}")
-    return DB_PATH
+    log_message(f"Database URI: {DB_URI}")
+    return DB_URI
 
 def create_tables(app, table_names):
     """Create specific tables without reinitializing the entire database."""
@@ -106,12 +107,14 @@ def create_tables(app, table_names):
 def verify_tables_exist():
     """Verify that all required tables exist in the database."""
     try:
-        log_message(f"Database exists: {os.path.exists(DB_PATH)}")
-        if not os.path.exists(DB_PATH):
-            log_message(f"Database file does not exist at {DB_PATH}")
+        # Extract file path from SQLite URI
+        db_path = DB_URI.replace('sqlite:///', '')
+        log_message(f"Database exists: {os.path.exists(db_path)}")
+        if not os.path.exists(db_path):
+            log_message(f"Database file does not exist at {db_path}")
             return False
 
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
         # Get all tables
@@ -139,32 +142,37 @@ def verify_tables_exist():
         log_message(f"Error verifying tables: {str(e)}")
         return False
 
-def init_db():
+def force_init_db(app):
+    """Force initialize the database. Only allowed in development environment."""
+    if os.getenv("FLASK_ENV") != "development":
+        log_message("❌ Force initialization is only allowed in development environment")
+        return False
+        
     with app.app_context():
         try:
-            print("🔄 Starting database initialization...")
+            log_message("🔄 Starting force database initialization...")
             
             # Force drop all tables
-            print("🗑️ Dropping all existing tables...")
+            log_message("🗑️ Dropping all existing tables...")
             db.drop_all()
             db.session.commit()
-            print("✅ Tables dropped")
+            log_message("✅ Tables dropped")
             
             # Create all tables
-            print("📦 Creating tables...")
+            log_message("📦 Creating tables...")
             db.create_all()
             db.session.commit()
-            print("✅ Tables created")
+            log_message("✅ Tables created")
             
             # Verify tables exist
             tables = db.engine.table_names()
-            print(f"📊 Available tables: {tables}")
+            log_message(f"📊 Available tables: {tables}")
             
             if 'tenants' not in tables:
                 raise Exception("tenants table was not created")
             
             # Create default tenant
-            print("👥 Creating default tenant...")
+            log_message("👥 Creating default tenant...")
             default_tenant = Tenant(
                 name='Default Tenant',
                 db_key='default',
@@ -172,20 +180,20 @@ def init_db():
             )
             db.session.add(default_tenant)
             db.session.commit()
-            print("✅ Default tenant created")
+            log_message("✅ Default tenant created")
             
             # Create admin role
-            print("👮 Creating admin role...")
+            log_message("👮 Creating admin role...")
             admin_role = Role(
                 name='admin',
                 description='Administrator role with full access'
             )
             db.session.add(admin_role)
             db.session.commit()
-            print("✅ Admin role created")
+            log_message("✅ Admin role created")
             
             # Create admin user
-            print("👤 Creating admin user...")
+            log_message("👤 Creating admin user...")
             admin = SalesPerson(
                 username='admin',
                 first_name='Admin',
@@ -199,89 +207,123 @@ def init_db():
             )
             db.session.add(admin)
             db.session.commit()
-            print("✅ Admin user created")
+            log_message("✅ Admin user created")
             
             # Verify data was created
             tenant_count = Tenant.query.count()
             user_count = SalesPerson.query.count()
             role_count = Role.query.count()
             
-            print(f"📊 Verification:")
-            print(f"- Tenants: {tenant_count}")
-            print(f"- Users: {user_count}")
-            print(f"- Roles: {role_count}")
+            log_message(f"📊 Verification:")
+            log_message(f"- Tenants: {tenant_count}")
+            log_message(f"- Users: {user_count}")
+            log_message(f"- Roles: {role_count}")
             
             if tenant_count == 0 or user_count == 0 or role_count == 0:
                 raise Exception("Data verification failed")
             
-            print("✅ Database initialization completed successfully")
+            log_message("✅ Force database initialization completed successfully")
             return True
             
         except Exception as e:
-            print(f"❌ Error during database initialization: {str(e)}")
+            log_message(f"❌ Error during force database initialization: {str(e)}")
             db.session.rollback()
             return False
 
-def verify_db_setup(app):
-    """Verify that the database is properly set up."""
-    try:
-        with app.app_context():
-            log_message(f"Verifying database setup... Database exists: {os.path.exists(DB_PATH)}")
-            
-            # Check if database file exists and has content
-            if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
-                log_message("Database file does not exist or is empty")
-                return False
-            
-            # Verify tables exist and have correct structure
-            if not verify_tables_exist():
-                return False
-
-            # Check if default tenant exists
-            default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
-            if not default_tenant:
-                log_message("Default tenant is missing")
-                return False
-            log_message("Default tenant exists")
-
-            # Check if admin user exists
-            admin_user = SalesPerson.query.filter_by(username='admin').first()
-            if not admin_user:
-                log_message("Admin user is missing")
-                return False
-            log_message("Admin user exists")
-
-            log_message("Database verification completed successfully")
-            return True
-
-    except Exception as e:
-        log_message(f"Error during database verification: {str(e)}")
+def init_db():
+    """Initialize the database. Only allowed in development environment."""
+    if os.getenv("FLASK_ENV") != "development":
+        log_message("❌ Database initialization is only allowed in development environment")
         return False
-
-def force_init_db(app):
-    """Force reinitialize the database by dropping all tables and recreating them."""
-    try:
-        with app.app_context():
-            log_message(f"Force initializing database... Database exists: {os.path.exists(DB_PATH)}")
+        
+    with app.app_context():
+        try:
+            log_message("🔄 Starting database initialization...")
             
-            # Drop all tables
+            # Force drop all tables
+            log_message("🗑️ Dropping all existing tables...")
             db.drop_all()
-            log_message("Dropped all tables")
+            db.session.commit()
+            log_message("✅ Tables dropped")
             
-            # Create tables
-            if not create_tables(app, ['tenants', 'sales_team', 'customers', 'sales_followup']):
-                log_message("Failed to create tables during force initialization")
-                return False
+            # Create all tables
+            log_message("📦 Creating tables...")
+            db.create_all()
+            db.session.commit()
+            log_message("✅ Tables created")
             
-            # Initialize database
-            return init_db()
+            # Verify tables exist
+            tables = db.engine.table_names()
+            log_message(f"📊 Available tables: {tables}")
             
-    except Exception as e:
-        log_message(f"Error during force initialization: {str(e)}")
-        return False
+            if 'tenants' not in tables:
+                raise Exception("tenants table was not created")
+            
+            # Create default tenant
+            log_message("👥 Creating default tenant...")
+            default_tenant = Tenant(
+                name='Default Tenant',
+                db_key='default',
+                created_at=datetime.utcnow()
+            )
+            db.session.add(default_tenant)
+            db.session.commit()
+            log_message("✅ Default tenant created")
+            
+            # Create admin role
+            log_message("👮 Creating admin role...")
+            admin_role = Role(
+                name='admin',
+                description='Administrator role with full access'
+            )
+            db.session.add(admin_role)
+            db.session.commit()
+            log_message("✅ Admin role created")
+            
+            # Create admin user
+            log_message("👤 Creating admin user...")
+            admin = SalesPerson(
+                username='admin',
+                first_name='Admin',
+                last_name='User',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+                salesperson_name='Admin User',
+                work_email='admin@example.com',
+                role='admin',
+                tenant_id=default_tenant.id,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(admin)
+            db.session.commit()
+            log_message("✅ Admin user created")
+            
+            # Verify data was created
+            tenant_count = Tenant.query.count()
+            user_count = SalesPerson.query.count()
+            role_count = Role.query.count()
+            
+            log_message(f"📊 Verification:")
+            log_message(f"- Tenants: {tenant_count}")
+            log_message(f"- Users: {user_count}")
+            log_message(f"- Roles: {role_count}")
+            
+            if tenant_count == 0 or user_count == 0 or role_count == 0:
+                raise Exception("Data verification failed")
+            
+            log_message("✅ Database initialization completed successfully")
+            return True
+            
+        except Exception as e:
+            log_message(f"❌ Error during database initialization: {str(e)}")
+            db.session.rollback()
+            return False
 
 if __name__ == '__main__':
     # This allows running the script directly for testing
+    if os.getenv("FLASK_ENV") != "development":
+        log_message("❌ This script can only be run in development environment")
+        sys.exit(1)
+        
     if init_db():
         log_message("Database setup completed successfully")
     else:

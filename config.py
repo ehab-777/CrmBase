@@ -24,8 +24,7 @@ class Config:
     DEBUG = False
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', DEV_DB_PATH)
-    DATABASE_NAME = os.environ.get('DATABASE_NAME', 'crm_multi.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI', DEV_DB_PATH)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Headers
@@ -39,7 +38,6 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI = DEV_DB_PATH
-    DATABASE_NAME = 'crm_multi.db'
 
 class ProductionConfig(Config):
     """Production configuration."""
@@ -47,7 +45,6 @@ class ProductionConfig(Config):
     TESTING = False
     SESSION_COOKIE_SECURE = True
     SQLALCHEMY_DATABASE_URI = PROD_DB_PATH
-    DATABASE_NAME = '/data/crm_multi.db'
     
     def __init__(self):
         self.SECRET_KEY = os.getenv('SECRET_KEY')
@@ -55,28 +52,17 @@ class ProductionConfig(Config):
         if not self.SECRET_KEY or not self.CSRF_SECRET_KEY:
             raise ValueError("SECRET_KEY and CSRF_SECRET_KEY must be set in the production environment.")
 
-class TestingConfig(Config):
-    """Testing configuration."""
-    DEBUG = True
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = TEST_DB_PATH
-    DATABASE_NAME = 'test.db'
-    SECRET_KEY = 'test-secret-key'
-    CSRF_SECRET_KEY = 'test-csrf-secret-key'
-
 class StagingConfig(Config):
     """Staging configuration."""
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = False
     SQLALCHEMY_DATABASE_URI = PROD_DB_PATH  # Use production database path
-    DATABASE_NAME = '/data/crm_multi.db'
 
 # Configuration dictionary
 config = {
     'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
     'staging': StagingConfig,
+    'production': ProductionConfig,
     'default': DevelopmentConfig
 } 
