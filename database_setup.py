@@ -1,10 +1,13 @@
 import os
 from flask import Flask
-from models import db, Tenant, SalesPerson
+from models import db, Tenant, SalesPerson, Role, Permission, AuditLog
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 import sqlite3
 import sys
+from security import bcrypt
+
+DB_PATH = os.getenv("DATABASE_NAME", "/data/crm_multi.db")
 
 def log_message(message):
     """Log message to both stdout and stderr."""
@@ -13,9 +16,8 @@ def log_message(message):
 
 def get_db_path():
     """Get the database path from environment variables."""
-    db_path = os.getenv('DATABASE_NAME', '/data/crm_multi.db')
-    log_message(f"Database path: {db_path}")
-    return db_path
+    log_message(f"Database path: {DB_PATH}")
+    return DB_PATH
 
 def create_tables(app, table_names):
     """Create specific tables without reinitializing the entire database."""
@@ -103,12 +105,12 @@ def create_tables(app, table_names):
 def verify_tables_exist():
     """Verify that all required tables exist in the database."""
     try:
-        db_path = get_db_path()
-        if not os.path.exists(db_path):
-            log_message(f"Database file does not exist at {db_path}")
+        log_message(f"Database exists: {os.path.exists(DB_PATH)}")
+        if not os.path.exists(DB_PATH):
+            log_message(f"Database file does not exist at {DB_PATH}")
             return False
 
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
         # Get all tables
@@ -140,8 +142,7 @@ def init_db(app):
     """Initialize the database with required tables and default data."""
     try:
         with app.app_context():
-            db_path = get_db_path()
-            log_message(f"Starting database initialization... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Starting database initialization... Database exists: {os.path.exists(DB_PATH)}")
             
             # Create tables if they don't exist
             if not verify_tables_exist():
@@ -203,11 +204,10 @@ def verify_db_setup(app):
     """Verify that the database is properly set up."""
     try:
         with app.app_context():
-            db_path = get_db_path()
-            log_message(f"Verifying database setup... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Verifying database setup... Database exists: {os.path.exists(DB_PATH)}")
             
             # Check if database file exists and has content
-            if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+            if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
                 log_message("Database file does not exist or is empty")
                 return False
             
@@ -240,8 +240,7 @@ def force_init_db(app):
     """Force reinitialize the database by dropping all tables and recreating them."""
     try:
         with app.app_context():
-            db_path = get_db_path()
-            log_message(f"Force initializing database... Database exists: {os.path.exists(db_path)}")
+            log_message(f"Force initializing database... Database exists: {os.path.exists(DB_PATH)}")
             
             # Drop all tables
             db.drop_all()
@@ -259,10 +258,57 @@ def force_init_db(app):
         log_message(f"Error during force initialization: {str(e)}")
         return False
 
+def init_db():
+    with app.app_context():
+        # Create all tables
+        db.create_all()
+        
+        # Check if we already have a default tenant
+        default_tenant = Tenant.query.filter_by(name='Default Tenant').first()
+        if not default_tenant:
+            # Create default tenant
+            default_tenant = Tenant(
+                name='Default Tenant',
+                created_at=datetime.utcnow()
+            )
+            db.session.add(default_tenant)
+            db.session.commit()
+        
+        # Check if we already have an admin user
+        admin = SalesPerson.query.filter_by(email='admin@example.com').first()
+        if not admin:
+            # Create admin role if it doesn't exist
+            admin_role = Role.query.filter_by(name='admin').first()
+            if not admin_role:
+                admin_role = Role(
+                    name='admin',
+                    description='Administrator role with full access'
+                )
+                db.session.add(admin_role)
+                db.session.commit()
+            
+            # Create admin user
+            admin = SalesPerson(
+                email='admin@example.com',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
+                first_name='Admin',
+                last_name='User',
+                role_id=admin_role.id,
+                tenant_id=default_tenant.id,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(admin)
+            db.session.commit()
+            
+            print("✅ Default admin user created")
+            print("Email: admin@example.com")
+            print("Password: admin123")
+        
+        print("✅ Database initialization completed successfully")
+
 if __name__ == '__main__':
     # This allows running the script directly for testing
-    from app import app
-    if init_db(app):
+    if init_db():
         log_message("Database setup completed successfully")
     else:
         log_message("Database setup failed, attempting force initialization...")
