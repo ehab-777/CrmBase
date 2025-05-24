@@ -862,7 +862,7 @@
     <div id="sales-team" class="tab-content">
         <div class="action-buttons">
             <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">Add New Salesperson</a>
-            {% if session.get('role') in ['admin', 'manager'] %}
+            {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('users.salespeople_list') }}" class="btn btn-secondary">View All Users</a>
             {% endif %}
         </div>

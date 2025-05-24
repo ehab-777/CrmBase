@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session
 import sqlite3
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
 from security import bcrypt, csrf
@@ -9,7 +9,7 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    return render_template('sales_team/salespeople_list.html', error="CSRF token validation failed. Please try again."), 400
+    return render_template('sales_team/add_salesperson.html', error="CSRF token validation failed. Please try again."), 400
 
 @users_bp.route('/salespeople/add', methods=['GET', 'POST'])
 @require_tenant
@@ -190,12 +190,10 @@ def change_password():
                 WHERE salesperson_id = ?
             """, (hashed_password, salesperson_id))
             conn.commit()
-            flash('Password reset successfully', 'success')
             return redirect(url_for('users.salespeople_list'))
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             conn.rollback()
-            flash('Failed to update password', 'error')
             return render_template('sales_team/salespeople_list.html', error="Failed to update password")
         finally:
             conn.close()

@@ -33,18 +33,36 @@ def login():
             
             print(f"Found tenant ID: {tenant[0]}")  # Debug log
             
-            # Check if user exists in any tenant with the given username
+            # First check users table for admin users
             cursor.execute("""
-                SELECT salesperson_id, username, first_name, role, tenant_id, password 
-                FROM sales_team 
-                WHERE username = ?
-            """, (username,))
+                SELECT id, username, email, role, tenant_id, password 
+                FROM users 
+                WHERE username = ? AND tenant_id = ?
+            """, (username, tenant[0]))
             
             user = cursor.fetchone()
             
             if not user:
-                print(f"User not found: {username}")  # Debug log
-                return render_template('auth/login.html', error="Wrong username")
+                # If not found in users table, check sales_team table
+                cursor.execute("""
+                    SELECT salesperson_id, username, first_name, role, tenant_id, password 
+                    FROM sales_team 
+                    WHERE username = ? AND tenant_id = ?
+                """, (username, tenant[0]))
+                
+                user = cursor.fetchone()
+                
+                if not user:
+                    print(f"User not found: {username}")  # Debug log
+                    return render_template('auth/login.html', error="Wrong username")
+                
+                # If user is from sales_team, set salesperson_id
+                session['salesperson_id'] = user['salesperson_id']
+                session['salesperson_name'] = user['first_name']
+            else:
+                # If user is from users table, set user_id
+                session['user_id'] = user['id']
+                session['username'] = user['username']
             
             print(f"Found user: {user['username']}, Role: {user['role']}")  # Debug log
             
@@ -58,9 +76,7 @@ def login():
                 print(f"Stored password hash: {user['password']}")  # Debug log
                 return render_template('auth/login.html', error="Invalid password format")
             
-            # If we get here, credentials are correct
-            session['salesperson_id'] = user['salesperson_id']
-            session['salesperson_name'] = user['first_name']  # Still use first_name for display
+            # Set common session variables
             session['role'] = user['role']
             session['tenant_id'] = user['tenant_id']
             
@@ -99,13 +115,14 @@ def check_username():
         cursor = conn.cursor()
         
         try:
-            # Query to get tenant information for the username
+            # Query to get tenant information for the username from both tables
             cursor.execute('''
                 SELECT t.id, t.name, t.db_key 
                 FROM tenants t
-                JOIN sales_team st ON t.id = st.tenant_id
-                WHERE st.username = ?
-            ''', (username,))
+                LEFT JOIN users u ON t.id = u.tenant_id
+                LEFT JOIN sales_team st ON t.id = st.tenant_id
+                WHERE u.username = ? OR st.username = ?
+            ''', (username, username))
             
             tenant = cursor.fetchone()
             

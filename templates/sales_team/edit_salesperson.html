@@ -1,0 +1,9 @@
+                    <select id="editRole" name="role" class="form-input">
+                        <option value="salesperson">Salesperson</option>
+                        {% if session['role'] == 'admin' %}
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                        {% elif session['role'] in ['admin', 'manager'] %}
+                        <option value="salesperson">Salesperson</option>
+                        {% endif %}
+                    </select> 

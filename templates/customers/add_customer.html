@@ -172,7 +172,7 @@
             <a href="{{ url_for('customers.customer_list') }}" class="button button-secondary">
                 Back to List
             </a>
-            {% if session['role'] == 'manager' %}
+            {% if session['role'] in ['admin', 'manager'] %}
             <a href="{{ url_for('dashboard.manager_dashboard') }}" class="button button-secondary">
                 Back to Dashboard
             </a>

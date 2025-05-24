@@ -372,7 +372,7 @@
                         Add New Salesperson
                     </a>
                 </div>
-                {% if session['role'] == 'manager' %}
+                {% if session['role'] in ['admin', 'manager'] %}
                 <a href="{{ url_for('dashboard.manager_dashboard') }}" class="btn btn-secondary">
                     Back to Dashboard
                 </a>
@@ -448,6 +448,7 @@
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
             <h3 class="modal-title">Edit Salesperson Profile</h3>
             <form id="editForm" method="POST" action="{{ url_for('users.edit_salesperson') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="salesperson_id" id="editSalespersonId">
                 <div class="form-group">
                     <label class="form-label" for="editFirstName">First Name</label>
@@ -476,7 +477,7 @@
                         {% if session['role'] == 'admin' %}
                         <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
-                        {% elif session['role'] == 'manager' %}
+                        {% elif session['role'] in ['admin', 'manager'] %}
                         <option value="salesperson">Salesperson</option>
                         {% endif %}
                     </select>
@@ -510,9 +511,16 @@
     </div>
 
     <script>
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
         function openEditModal(salespersonId) {
             // Fetch salesperson data and populate form
-            fetch(`/salespeople/${salespersonId}/data`)
+            fetch(`/salespeople/${salespersonId}/data`, {
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch salesperson data');
@@ -560,7 +568,10 @@
             
             fetch(this.action, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
             })
             .then(response => {
                 if (!response.ok) {
