@@ -275,8 +275,12 @@
                         <label for="role" class="form-label">Role</label>
                         <select id="role" name="role" class="form-input form-select">
                             <option value="salesperson" selected>Salesperson</option>
+                            {% if session['role'] == 'admin' %}
                             <option value="manager">Manager</option>
                             <option value="admin">Admin</option>
+                            {% elif session['role'] == 'manager' %}
+                            <option value="salesperson">Salesperson</option>
+                            {% endif %}
                         </select>
                     </div>
 

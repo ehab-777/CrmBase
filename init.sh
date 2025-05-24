@@ -10,6 +10,7 @@ echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
 # If not development, skip all DB init and run app
 if [ "$FLASK_ENV" != "development" ]; then
     echo "✅ Skipping DB init in $FLASK_ENV environment"
+    echo "🚀 Starting application in $FLASK_ENV mode..."
     exec gunicorn -w 1 -b 0.0.0.0:$PORT app:app
     exit 0
 fi

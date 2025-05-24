@@ -62,4 +62,20 @@ instance/
 .coverage
 htmlcov/
 .pytest_cache/
-.tox/ 
+.tox/
+
+# Additional system and temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+*.pid
+*.seed
+*.pid.lock
+.history/
+.temp/
+.tmp/
+temp/
+tmp/ 

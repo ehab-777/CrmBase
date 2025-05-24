@@ -446,8 +446,12 @@
                     <label class="form-label" for="editRole">Role</label>
                     <select id="editRole" name="role" class="form-input">
                         <option value="salesperson">Salesperson</option>
+                        {% if session['role'] == 'admin' %}
                         <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
+                        {% elif session['role'] == 'manager' %}
+                        <option value="salesperson">Salesperson</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div class="modal-actions">

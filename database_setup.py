@@ -21,6 +21,14 @@ def get_db_path():
     log_message(f"Database URI: {DB_URI}")
     return DB_URI
 
+def check_environment():
+    """Check if we're in development environment."""
+    env = os.getenv("FLASK_ENV", "development")
+    if env != "development":
+        log_message(f"❌ Database operations blocked in {env} environment")
+        return False
+    return True
+
 def create_tables(app, table_names):
     """Create specific tables without reinitializing the entire database."""
     with app.app_context():
@@ -144,8 +152,7 @@ def verify_tables_exist():
 
 def force_init_db(app):
     """Force initialize the database. Only allowed in development environment."""
-    if os.getenv("FLASK_ENV") != "development":
-        log_message("❌ Force initialization is only allowed in development environment")
+    if not check_environment():
         return False
         
     with app.app_context():
@@ -194,46 +201,27 @@ def force_init_db(app):
             
             # Create admin user
             log_message("👤 Creating admin user...")
-            admin = SalesPerson(
+            admin_user = User(
                 username='admin',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
                 first_name='Admin',
                 last_name='User',
-                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                salesperson_name='Admin User',
-                work_email='admin@example.com',
                 role='admin',
-                tenant_id=default_tenant.id,
-                created_at=datetime.utcnow()
+                tenant_id=default_tenant.id
             )
-            db.session.add(admin)
+            db.session.add(admin_user)
             db.session.commit()
             log_message("✅ Admin user created")
             
-            # Verify data was created
-            tenant_count = Tenant.query.count()
-            user_count = SalesPerson.query.count()
-            role_count = Role.query.count()
-            
-            log_message(f"📊 Verification:")
-            log_message(f"- Tenants: {tenant_count}")
-            log_message(f"- Users: {user_count}")
-            log_message(f"- Roles: {role_count}")
-            
-            if tenant_count == 0 or user_count == 0 or role_count == 0:
-                raise Exception("Data verification failed")
-            
-            log_message("✅ Force database initialization completed successfully")
             return True
             
         except Exception as e:
-            log_message(f"❌ Error during force database initialization: {str(e)}")
-            db.session.rollback()
+            log_message(f"❌ Error during force initialization: {str(e)}")
             return False
 
 def init_db():
     """Initialize the database. Only allowed in development environment."""
-    if os.getenv("FLASK_ENV") != "development":
-        log_message("❌ Database initialization is only allowed in development environment")
+    if not check_environment():
         return False
         
     with app.app_context():
@@ -282,46 +270,26 @@ def init_db():
             
             # Create admin user
             log_message("👤 Creating admin user...")
-            admin = SalesPerson(
+            admin_user = User(
                 username='admin',
+                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
                 first_name='Admin',
                 last_name='User',
-                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                salesperson_name='Admin User',
-                work_email='admin@example.com',
                 role='admin',
-                tenant_id=default_tenant.id,
-                created_at=datetime.utcnow()
+                tenant_id=default_tenant.id
             )
-            db.session.add(admin)
+            db.session.add(admin_user)
             db.session.commit()
             log_message("✅ Admin user created")
             
-            # Verify data was created
-            tenant_count = Tenant.query.count()
-            user_count = SalesPerson.query.count()
-            role_count = Role.query.count()
-            
-            log_message(f"📊 Verification:")
-            log_message(f"- Tenants: {tenant_count}")
-            log_message(f"- Users: {user_count}")
-            log_message(f"- Roles: {role_count}")
-            
-            if tenant_count == 0 or user_count == 0 or role_count == 0:
-                raise Exception("Data verification failed")
-            
-            log_message("✅ Database initialization completed successfully")
             return True
             
         except Exception as e:
-            log_message(f"❌ Error during database initialization: {str(e)}")
-            db.session.rollback()
+            log_message(f"❌ Error during initialization: {str(e)}")
             return False
 
 if __name__ == '__main__':
-    # This allows running the script directly for testing
-    if os.getenv("FLASK_ENV") != "development":
-        log_message("❌ This script can only be run in development environment")
+    if not check_environment():
         sys.exit(1)
         
     if init_db():

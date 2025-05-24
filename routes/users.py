@@ -14,7 +14,7 @@ def handle_csrf_error(e):
 @users_bp.route('/salespeople/add', methods=['GET', 'POST'])
 @require_tenant
 def add_salesperson():
-    if 'salesperson_id' in session and session.get('role') == 'admin': # Ensure only admins can access
+    if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
         conn = None
         error = None
         try:
@@ -49,20 +49,18 @@ def add_salesperson():
                 return redirect(url_for('users.salespeople_list')) # Redirect to the list of salespeople
             return render_template('sales_team/add_salesperson.html', error=error, tenants=tenants)
         except sqlite3.Error as e:
-            if conn:
-                conn.rollback()
-            error = f"Database error during add_salesperson: {e}"
-            print(error)
+            print(f"Database error during add_salesperson: {e}")
+            error = "Database error occurred"
             return render_template('sales_team/add_salesperson.html', error=error, tenants=tenants)
         finally:
             if conn:
                 conn.close()
-    return redirect(url_for('auth.login')) # Redirect to login if not logged in or not admin
+    return redirect(url_for('auth.login'))
 
 @users_bp.route('/salespeople')
 @require_tenant
 def salespeople_list():
-    if 'salesperson_id' in session and session.get('role') == 'admin': # Ensure only admins can access
+    if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
         conn = get_db()
         cursor = conn.cursor()
         salespeople = []
@@ -85,7 +83,7 @@ def salespeople_list():
 @users_bp.route('/salespeople/<int:salesperson_id>/data')
 @require_tenant
 def get_salesperson_data(salesperson_id):
-    if 'salesperson_id' in session and session.get('role') == 'admin':
+    if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
         conn = get_db()
         cursor = conn.cursor()
         try:
@@ -117,7 +115,7 @@ def get_salesperson_data(salesperson_id):
 @users_bp.route('/salespeople/edit', methods=['POST'])
 @require_tenant
 def edit_salesperson():
-    if 'salesperson_id' in session and session.get('role') == 'admin':
+    if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
         conn = get_db()
         cursor = conn.cursor()
         try:
@@ -149,7 +147,7 @@ def edit_salesperson():
 @users_bp.route('/salespeople/change-password', methods=['POST'])
 @require_tenant
 def change_password():
-    if 'salesperson_id' in session and session.get('role') == 'admin':
+    if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
         conn = get_db()
         cursor = conn.cursor()
         try:
