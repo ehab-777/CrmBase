@@ -29,6 +29,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db, Tenant, SalesPerson
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_babel import Babel
 
 # Validate environment variables
 validate_env_vars()
@@ -41,6 +42,16 @@ app = Flask(__name__,
 # Load configuration
 app_config = config.get(env)
 app.config.from_object(app_config)
+
+# Configure Babel
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'ar']
+babel = Babel(app)
+
+def get_locale():
+    return session.get('lang', 'en')
+
+babel.init_app(app, locale_selector=get_locale)
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////data/crm_multi.db')
@@ -92,6 +103,12 @@ def index():
 @app.route('/login')
 def login_redirect():
     return redirect(url_for('auth.login'))
+
+@app.route('/change_lang/<lang>')
+def change_lang(lang):
+    if lang in ['en', 'ar']:
+        session['lang'] = lang
+    return redirect(request.referrer or '/')
 
 # Add ProxyFix middleware
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)

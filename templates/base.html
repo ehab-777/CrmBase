@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ session.get('lang', 'en') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CRM System{% endblock %} - CRM Base</title>
+    <title>{% block title %}{{ _('CRM System') }}{% endblock %} - {{ _('CRM Base') }}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/my_logo.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #2563eb;
@@ -27,7 +28,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background-color: var(--background-color);
             color: var(--text-primary);
             line-height: 1.5;
@@ -93,12 +94,71 @@
             border: 1px solid #fecaca;
         }
 
+        .language-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-background);
+            padding: 8px 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .language-toggle a {
+            color: var(--text-primary);
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .language-toggle a:hover {
+            color: var(--primary-color);
+        }
+
+        [dir="rtl"] {
+            text-align: right;
+            direction: rtl;
+        }
+
+        [dir="ltr"] {
+            text-align: left;
+            direction: ltr;
+        }
+
+        /* RTL specific styles */
+        [dir="rtl"] .btn {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .language-toggle {
+            left: 20px;
+            right: auto;
+        }
+
+        [dir="rtl"] .alert {
+            text-align: right;
+        }
+
+        [dir="rtl"] .form-group {
+            text-align: right;
+        }
+
+        [dir="rtl"] input,
+        [dir="rtl"] textarea,
+        [dir="rtl"] select {
+            text-align: right;
+        }
+
         {% block extra_styles %}{% endblock %}
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <div class="container">
+    <div class="language-toggle">
+        <a href="{{ url_for('change_lang', lang='en') }}">English</a> | 
+        <a href="{{ url_for('change_lang', lang='ar') }}">العربية</a>
+    </div>
+    <div class="container" dir="{{ 'rtl' if session.get('lang') == 'ar' else 'ltr' }}">
         {% block content %}{% endblock %}
     </div>
     <script>
