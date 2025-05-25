@@ -48,10 +48,9 @@ app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'ar']
 babel = Babel(app)
 
+@babel.localeselector
 def get_locale():
     return session.get('lang', 'en')
-
-babel.init_app(app, locale_selector=get_locale)
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////data/crm_multi.db')
