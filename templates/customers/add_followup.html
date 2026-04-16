@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Add Follow-up{% endblock %}
+{% block title %}{{ _('Add Follow-up') }}{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -188,20 +188,20 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1 class="page-title">Add Follow-up</h1>
+            <h1 class="page-title">{{ _('Add Follow-up') }}</h1>
             <p class="customer-name">{{ customer.company_name }}</p>
         </div>
         <div class="action-buttons">
             <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="back-button">
-                Back to Customer
+                ← {{ _('Back to Customer') }}
             </a>
             {% if session['role'] in ['admin', 'manager'] %}
             <a href="{{ url_for('dashboard.manager_dashboard') }}" class="back-button">
-                Back to Dashboard
+                ← {{ _('Back to Dashboard') }}
             </a>
             {% else %}
             <a href="{{ url_for('dashboard.dashboard') }}" class="back-button">
-                Back to Dashboard
+                ← {{ _('Back to Dashboard') }}
             </a>
             {% endif %}
         </div>
@@ -212,13 +212,13 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label for="last_contact_date" class="form-label">
-                        Last Contact Date<span class="required-indicator">*</span>
+                        {{ _('Last Contact Date') }}<span class="required-indicator">*</span>
                     </label>
                     <input type="date" id="last_contact_date" name="last_contact_date" class="form-input" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="last_contact_method" class="form-label">Contact Method</label>
+                    <label for="last_contact_method" class="form-label">{{ _('Contact Method') }}</label>
                     <select id="last_contact_method" name="last_contact_method" class="form-input form-select">
                         <option value="">-- اختر وسيلة الاتصال --</option>
                         <option value="مكالمة هاتفية">مكالمة هاتفية</option>
@@ -230,9 +230,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="current_sales_stage" class="form-label">Current Sales Stage</label>
+                    <label for="current_sales_stage" class="form-label">{{ _('Current Sales Stage') }}</label>
                     <select id="current_sales_stage" name="current_sales_stage" class="form-input form-select">
-                        <option value="">-- اختر المرحلة --</option>
+                        <option value="">-- {{ _('Select stage') }} --</option>
                         <option value="عميل محتمل">عميل محتمل</option>
                         <option value="جاري التواصل">جاري التواصل</option>
                         <option value="تقديم عرض السعر">تقديم عرض السعر</option>
@@ -243,9 +243,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="next_action" class="form-label">Next Action</label>
+                    <label for="next_action" class="form-label">{{ _('Next Action') }}</label>
                     <select id="next_action" name="next_action" class="form-input form-select">
-                        <option value="">-- اختر الإجراء التالي --</option>
+                        <option value="">-- {{ _('Select next action') }} --</option>
                         <option value="متابعة اتصال" {% if followup and followup.next_action == 'متابعة اتصال' %}selected{% endif %}>متابعة اتصال</option>
                         <option value="انتظار رد العميل" {% if followup and followup.next_action == 'انتظار رد العميل' %}selected{% endif %}>انتظار رد العميل</option>
                         <option value="دعوة لزيارة المعرض" {% if followup and followup.next_action == 'دعوة لزيارة المعرض' %}selected{% endif %}>دعوة لزيارة المعرض</option>
@@ -256,22 +256,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="next_action_date" class="form-label">Next Action Date</label>
+                    <label for="next_action_date" class="form-label">{{ _('Next Action Date') }}</label>
                     <input type="date" id="next_action_date" name="next_action_date" class="form-input">
                 </div>
 
                 <div class="form-group">
-                    <label for="deal_value" class="form-label">Deal Value (SAR)</label>
+                    <label for="deal_value" class="form-label">{{ _('Deal Value (SAR)') }}</label>
                     <input type="number" id="deal_value" name="deal_value" class="form-input" min="0" step="0.01">
                 </div>
 
                 <div class="form-group">
-                    <label for="summary" class="form-label">Summary</label>
+                    <label for="summary" class="form-label">{{ _('Summary') }}</label>
                     <textarea id="summary" name="summary" class="form-input form-textarea"></textarea>
                 </div>
             </div>
 
-            <button type="submit" class="submit-button">Add Follow-up</button>
+            <button type="submit" class="submit-button">{{ _('Add Follow-up') }}</button>
         </form>
     </div>
 </div>

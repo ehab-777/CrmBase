@@ -1,517 +1,346 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            grid-gap: 20px;
-            padding: 20px;
-        }
-        .card {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        h2, h3 {
-            color: #007bff;
-            margin-bottom: 15px;
-        }
-        .pipeline-stage {
-            margin-bottom: 15px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .pipeline-stage strong {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-        }
-        .company-list {
-            list-style: disc;
-            padding-left: 20px;
-            margin-top: 5px;
-        }
-        .followup-category {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .followup-category h4 {
-            color: #007bff;
-            margin-top: 0;
-            margin-bottom: 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .followup-item {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-bottom: 1px dashed #eee;
-            font-size: 0.9em;
-            color: #555;
-        }
-        .followup-item strong {
-            font-weight: bold;
-            color: #333;
-        }
-        .company-link {
-            color: #007bff;
-            text-decoration: none !important;
-            font-weight: bold;
-        }
-        .company-link:hover {
-            text-decoration: none !important;
-        }
-        nav a {
-            color: #007bff;
-            text-decoration: none;
-            margin-right: 15px;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        .logout-link {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .logout-link a {
-            color: #dc3545;
-        }
-        .collapsed-category {
-            display: none;
-        }
-        .collapse-icon {
-            font-size: 0.8em;
-            cursor: pointer;
-            color: #777;
-        }
+{% extends "base.html" %}
 
-        /* Updated Styles for Top Navigation */
-        .top-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-        }
+{% block title %}{{ _('Dashboard') }}{% endblock %}
 
-        .top-nav .left-nav {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
+{% block extra_styles %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
 
-        .top-nav .left-nav h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #333;
-        }
+    .welcome-text {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
 
-        .top-nav .left-nav nav {
-            display: flex;
-            align-items: center;
-        }
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
 
-        .top-nav .left-nav nav a {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            transition: all 0.2s ease;
-        }
+    .metric-card {
+        background: var(--card-background);
+        border-radius: 0.75rem;
+        padding: 1.25rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        transition: transform 0.15s, box-shadow 0.15s;
+        border: 1px solid var(--border-color);
+    }
 
-        .top-nav .left-nav nav a:hover {
-            background-color: #f8f9fa;
-            text-decoration: none;
-        }
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
 
-        .top-nav .right-nav {
-            display: flex;
-        }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        line-height: 1.1;
+        margin: 0.25rem 0;
+    }
 
-        .top-nav .right-nav a.logout-button {
-            background: none;
-            border: none;
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: inherit;
-            padding: 0;
-            font-family: inherit;
-        }
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
 
-        .top-nav .right-nav a.logout-button:hover {
-            text-decoration: underline;
-        }
+    .metric-sub {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
 
-        .metrics-section {
-            margin-bottom: 20px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+    .metric-card.won .metric-value  { color: #22c55e; }
+    .metric-card.lost .metric-value { color: #ef4444; }
+    .metric-card.value .metric-value { color: #f59e0b; font-size: 1.4rem; }
 
-        .metrics-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    .section-card {
+        background: var(--card-background);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
 
-        .metrics-title {
-            font-size: 1.5em;
-            color: #007bff;
-            margin: 0;
-        }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 
-        .date-range {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
 
-        .date-range input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
+    .pipeline-stage {
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        background: var(--background-color);
+    }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
+    .pipeline-stage-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .metric-card {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            text-decoration: none !important;
-        }
+    .stage-badge {
+        background: var(--primary-color);
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 1rem;
+        font-weight: 500;
+    }
 
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            background-color: #fff;
-        }
+    .company-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
 
-        .metric-card a {
-            text-decoration: none !important;
-            color: inherit;
-            display: block;
-        }
+    .company-list li a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 0.875rem;
+        background: rgba(37,99,235,0.08);
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.375rem;
+        display: inline-block;
+        transition: background 0.15s;
+    }
 
-        .metric-card a:hover {
-            text-decoration: none !important;
-        }
+    .company-list li a:hover {
+        background: rgba(37,99,235,0.18);
+    }
 
-        .metric-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #28a745;
-            margin: 10px 0;
-        }
+    .followup-group {
+        margin-bottom: 1rem;
+    }
 
-        .metric-label {
-            color: #6c757d;
-            font-size: 0.9em;
-        }
+    .followup-group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: var(--background-color);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+        border: 1px solid var(--border-color);
+        user-select: none;
+    }
 
-        .total-value {
-            font-size: 1.2em;
-            color: #007bff;
-            margin-top: 10px;
-            font-weight: bold;
-        }
+    .followup-group-header h4 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
 
-        .metric-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+    .followup-group-header .toggle-icon {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        transition: transform 0.2s;
+    }
 
-        .metric-title {
-            font-size: 1em;
-            color: #007bff;
-            margin: 0;
-            text-align: center;
-        }
+    .followup-group-header.collapsed .toggle-icon {
+        transform: rotate(-90deg);
+    }
 
-        .metric-subvalue {
-            color: #6c757d;
-            font-size: 0.9em;
-        }
+    .followup-item {
+        padding: 0.75rem;
+        border-bottom: 1px dashed var(--border-color);
+        font-size: 0.875rem;
+    }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
+    .followup-item:last-child { border-bottom: none; }
 
-        .page-title {
-            font-size: 1.75rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
+    .followup-item .company-link {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
 
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
+    .followup-item .company-link:hover { text-decoration: underline; }
 
-        .tab-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-        }
+    .followup-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.25rem 1rem;
+        margin-top: 0.4rem;
+        color: var(--text-secondary);
+    }
 
-        .tab-link {
-            background: none;
-            border: none;
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: inherit;
-            padding: 0;
-            font-family: inherit;
-        }
+    .followup-meta span { font-size: 0.8rem; }
+    .followup-meta strong { color: var(--text-primary); }
 
-        .tab-link:hover {
-            text-decoration: underline;
-        }
+    .deal-value {
+        color: #dc2626;
+        font-weight: 600;
+    }
 
-        .tab-link.active {
-            color: #007bff;
-        }
+    .empty-msg {
+        color: var(--text-secondary);
+        text-align: center;
+        padding: 2rem;
+        font-size: 0.95rem;
+    }
 
-        .followup-label {
-            min-width: 120px;
-            color: #555;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
+    @media (max-width: 640px) {
+        .welcome-text { font-size: 1.2rem; }
+        .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        .metric-value { font-size: 1.6rem; }
+        .metric-card.value .metric-value { font-size: 1.1rem; }
+        .followup-meta { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
-        .potential-value-red {
-            color: #dc3545;
-            font-weight: bold;
-        }
+{% block content %}
+<div class="dashboard-header">
+    <h1 class="welcome-text">{{ _('Welcome') }}, {{ salesperson_name }}!</h1>
+    <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">+ {{ _('Add Customer') }}</a>
+</div>
 
-        .btn-light {
-            background-color: #f3f4f6;
-            color: #333;
-            border: none;
-            border-radius: 0.375rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-            padding: 0.5rem 1.25rem;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: background 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-light:hover {
-            background-color: #007bff;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-        }
-    </style>
-</head>
-<body>
-    <div class="top-nav">
-        <div class="left-nav">
-            <h2>Welcome, {{ salesperson_name }}!</h2>
+{# ── Metrics ── #}
+<div class="metrics-grid">
+    <a href="{{ url_for('customers.customer_list') }}" class="metric-card">
+        <div class="metric-label">{{ _('Total Customers') }}</div>
+        <div class="metric-value">{{ total_customers }}</div>
+    </a>
+    <div class="metric-card">
+        <div class="metric-label">{{ _('Active') }}</div>
+        <div class="metric-value">{{ status_counts['Active']['count'] }}</div>
+        <div class="metric-sub">{{ "{:,.0f}".format(status_counts['Active']['value']) }}</div>
+    </div>
+    <div class="metric-card won">
+        <div class="metric-label">{{ _('Close Won') }}</div>
+        <div class="metric-value">{{ status_counts['Close Won']['count'] }}</div>
+        <div class="metric-sub">{{ "{:,.0f}".format(status_counts['Close Won']['value']) }}</div>
+    </div>
+    <div class="metric-card lost">
+        <div class="metric-label">{{ _('Close Lost') }}</div>
+        <div class="metric-value">{{ status_counts['Close Lost']['count'] }}</div>
+        <div class="metric-sub">{{ "{:,.0f}".format(status_counts['Close Lost']['value']) }}</div>
+    </div>
+    <div class="metric-card value">
+        <div class="metric-label">{{ _('Total Potential Value') }}</div>
+        <div class="metric-value">{{ "{:,.0f}".format(total_potential_value) }}</div>
+    </div>
+</div>
+
+{# ── Sales Pipeline ── #}
+<div class="section-card">
+    <div class="section-header">
+        <h2 class="section-title">{{ _('Sales Pipeline') }}</h2>
+    </div>
+    {% if sales_pipeline %}
+        {% for stage, leads in sales_pipeline.items() %}
+        <div class="pipeline-stage">
+            <div class="pipeline-stage-name">
+                <span>{{ stage }}</span>
+                <span class="stage-badge">{{ leads|length }}</span>
+            </div>
+            <ul class="company-list">
+                {% for lead in leads %}
+                <li><a href="{{ url_for('customers.customer_detail', customer_id=lead.customer_id) }}">{{ lead.company }}</a></li>
+                {% endfor %}
+            </ul>
         </div>
-        <div class="right-nav">
-            <a href="{{ url_for('auth.logout') }}" class="logout-button">Logout</a>
-        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">{{ _('No leads in the pipeline.') }}</p>
+    {% endif %}
+</div>
+
+{# ── Upcoming Follow-ups ── #}
+<div class="section-card">
+    <div class="section-header">
+        <h2 class="section-title">{{ _('Upcoming Follow-ups') }}</h2>
     </div>
 
-    <div class="container">
-        <section class="metrics-section">
-            <div class="metrics-header">
-                <h2 class="metrics-title">Key Metrics</h2>
-            </div>
-            <div class="metrics-grid">
-                <a href="{{ url_for('customers.customer_list') }}" class="metric-card">
-                    <div class="metric-header">
-                        <h3 class="metric-title">Total Customers</h3>
-                    </div>
-                    <div class="metric-value">{{ total_customers }}</div>
-                </a>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <h3 class="metric-title">Active Customers</h3>
-                    </div>
-                    <div class="metric-value">{{ status_counts['Active']['count'] }}</div>
-                    <div class="metric-subvalue">Total Value: {{ "{:,.0f}".format(status_counts['Active']['value']) }}</div>
+    {% macro followup_group(group_id, label, items) %}
+    {% if items %}
+    <div class="followup-group">
+        <div class="followup-group-header" onclick="toggleGroup('{{ group_id }}', this)">
+            <h4>{{ label }} <small style="font-weight:normal;color:var(--text-secondary);">({{ items|length }})</small></h4>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div id="group-{{ group_id }}">
+            {% for f in items %}
+            <div class="followup-item">
+                <a href="{{ url_for('customers.customer_detail', customer_id=f.customer_id) }}" class="company-link">{{ f.company_name }}</a>
+                <div class="followup-meta">
+                    <span><strong>{{ _('Next') }}:</strong> {{ f.next_action or '—' }}</span>
+                    <span><strong>{{ _('Due') }}:</strong> {{ f.next_action_due_date or '—' }}</span>
+                    <span><strong>{{ _('Summary') }}:</strong> {{ (f.summary_last_contact or '')|truncate(60) }}</span>
+                    <span><strong>{{ _('Value') }}:</strong> <span class="deal-value">{{ f.potential_deal_value or '—' }}</span></span>
                 </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <h3 class="metric-title">Close Won</h3>
-                    </div>
-                    <div class="metric-value">{{ status_counts['Close Won']['count'] }}</div>
-                    <div class="metric-subvalue">Total Value: {{ "{:,.0f}".format(status_counts['Close Won']['value']) }}</div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <h3 class="metric-title">Close Lost</h3>
-                    </div>
-                    <div class="metric-value">{{ status_counts['Close Lost']['count'] }}</div>
-                    <div class="metric-subvalue">Total Value: {{ "{:,.0f}".format(status_counts['Close Lost']['value']) }}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">{{ "{:,.0f}".format(total_potential_value) }}</div>
-                    <div class="metric-label">Total Potential Value</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="card">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                <h3 style="margin: 0;">Sales Pipeline</h3>
-                <a href="{{ url_for('customers.add_customer') }}" class="btn-light">Add Customer</a>
-            </div>
-            {% if sales_pipeline %}
-            {% for stage, leads in sales_pipeline.items() %}
-            <div class="pipeline-stage">
-                <strong>{{ stage }} ({{ leads|length }} leads)</strong>
-                <ul class="company-list">
-                    {% for lead in leads %}
-                        <li><a href="{{ url_for('customers.customer_detail', customer_id=lead.customer_id) }}" class="company-link">{{ lead.company }}</a></li>
-                    {% endfor %}
-                </ul>
             </div>
             {% endfor %}
-            {% else %}
-            <p>No leads in the pipeline.</p>
-            {% endif %}
-        </section>
-
-        <section class="card">
-            <h3>Upcoming Follow-ups</h3>
-            {% if followups_today %}
-            <div class="followup-category">
-                <h4 onclick="toggleCategory('today')">Today <span id="collapse-today" class="collapse-icon">[Collapse]</span></h4>
-                <div id="followups-today">
-                    {% for followup in followups_today %}
-                    <div class="followup-item">
-                        <strong><a href="{{ url_for('customers.customer_detail', customer_id=followup.customer_id) }}" class="company-link">{{ followup.company_name }}</a></strong><br>
-                        <strong>Next:</strong> {{ followup.next_action }}<br>
-                        <strong>Due:</strong> {{ followup.next_action_due_date }}<br>
-                        <strong>Summary:</strong> {{ followup.summary_last_contact|truncate(50) }}<br>
-                        <strong>Potential Value:</strong> <span class="potential-value-red">{{ followup.potential_deal_value or 'N/A' }}</span><br>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if followups_this_week %}
-            <div class="followup-category">
-                <h4 onclick="toggleCategory('this-week')">This Week <span id="collapse-this-week" class="collapse-icon">[Collapse]</span></h4>
-                <div id="followups-this-week">
-                    {% for followup in followups_this_week %}
-                    <div class="followup-item">
-                        <strong><a href="{{ url_for('customers.customer_detail', customer_id=followup.customer_id) }}" class="company-link">{{ followup.company_name }}</a></strong><br>
-                        <strong>Next:</strong> {{ followup.next_action }}<br>
-                        <strong>Due:</strong> {{ followup.next_action_due_date }}<br>
-                        <strong>Summary:</strong> {{ followup.summary_last_contact|truncate(50) }}<br>
-                        <strong>Potential Value:</strong> <span class="potential-value-red">{{ followup.potential_deal_value or 'N/A' }}</span><br>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if followups_next_week %}
-            <div class="followup-category">
-                <h4 onclick="toggleCategory('next-week')">Next Week <span id="collapse-next-week" class="collapse-icon">[Collapse]</span></h4>
-                <div id="followups-next-week">
-                    {% for followup in followups_next_week %}
-                    <div class="followup-item">
-                        <strong><a href="{{ url_for('customers.customer_detail', customer_id=followup.customer_id) }}" class="company-link">{{ followup.company_name }}</a></strong><br>
-                        <strong>Next:</strong> {{ followup.next_action }}<br>
-                        <strong>Due:</strong> {{ followup.next_action_due_date }}<br>
-                        <strong>Summary:</strong> {{ followup.summary_last_contact|truncate(50) }}<br>
-                        <strong>Potential Value:</strong> <span class="potential-value-red">{{ followup.potential_deal_value or 'N/A' }}</span><br>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if followups_later %}
-            <div class="followup-category">
-                <h4 onclick="toggleCategory('later')">Later <span id="collapse-later" class="collapse-icon">[Collapse]</span></h4>
-                <div id="followups-later">
-                    {% for followup in followups_later %}
-                    <div class="followup-item">
-                        <strong><a href="{{ url_for('customers.customer_detail', customer_id=followup.customer_id) }}" class="company-link">{{ followup.company_name }}</a></strong><br>
-                        <strong>Next:</strong> {{ followup.next_action }}<br>
-                        <strong>Due:</strong> {{ followup.next_action_due_date }}<br>
-                        <strong>Summary:</strong> {{ followup.summary_last_contact|truncate(50) }}<br>
-                        <strong>Potential Value:</strong> <span class="potential-value-red">{{ followup.potential_deal_value or 'N/A' }}</span><br>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if not followups_today and not followups_this_week and not followups_next_week and not followups_later %}
-            <p>No upcoming follow-ups.</p>
-            {% endif %}
-        </section>
+        </div>
     </div>
+    {% endif %}
+    {% endmacro %}
 
-    <script>
-    function toggleCategory(category) {
-        const content = document.getElementById('followups-' + category);
-        const icon = document.getElementById('collapse-' + category);
-        
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.textContent = '[Collapse]';
-        } else {
-            content.style.display = 'none';
-            icon.textContent = '[Expand]';
-        }
+    {{ followup_group('today', _('Today'), followups_today) }}
+    {{ followup_group('this-week', _('This Week'), followups_this_week) }}
+    {{ followup_group('next-week', _('Next Week'), followups_next_week) }}
+    {{ followup_group('later', _('Later'), followups_later) }}
+
+    {% if not followups_today and not followups_this_week and not followups_next_week and not followups_later %}
+    <p class="empty-msg">{{ _('No upcoming follow-ups.') }}</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleGroup(id, header) {
+    const content = document.getElementById('group-' + id);
+    const icon = header.querySelector('.toggle-icon');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        header.classList.remove('collapsed');
+    } else {
+        content.style.display = 'none';
+        header.classList.add('collapsed');
     }
-    </script>
-</body>
-</html>
+}
+</script>
+{% endblock %}

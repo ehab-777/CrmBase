@@ -15,8 +15,12 @@ def add_followup(customer_id):
             conn = get_db()
             cursor = conn.cursor()
             
-            # First verify the customer exists
-            cursor.execute("SELECT * FROM customers WHERE customer_id = ?", (customer_id,))
+            # First verify the customer exists AND belongs to this tenant
+            tenant_id = get_current_tenant_id()
+            cursor.execute(
+                "SELECT * FROM customers WHERE customer_id = ? AND tenant_id = ?",
+                (customer_id, tenant_id)
+            )
             customer = cursor.fetchone()
             if not customer:
                 return redirect(url_for('customers.customer_list'))
@@ -29,9 +33,8 @@ def add_followup(customer_id):
                 next_action_due_date = request.form.get('next_action_date')
                 current_sales_stage = request.form.get('current_sales_stage')
                 potential_deal_value = request.form.get('deal_value')
-                notes = request.form.get('summary', '')  # Use summary as notes if no separate notes field
+                notes = request.form.get('notes', '')
                 assigned_salesperson_id = session['salesperson_id']
-                tenant_id = get_current_tenant_id()
 
                 cursor.execute('''
                     INSERT INTO sales_followup (

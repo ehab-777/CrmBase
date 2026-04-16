@@ -222,8 +222,11 @@ def customer_list():
         cursor.execute(query, params)
         customers = cursor.fetchall()
 
-        # Get all available sales stages
-        cursor.execute("SELECT DISTINCT current_sales_stage FROM sales_followup WHERE current_sales_stage IS NOT NULL")
+        # Get all available sales stages for this tenant only
+        cursor.execute(
+            "SELECT DISTINCT current_sales_stage FROM sales_followup WHERE current_sales_stage IS NOT NULL AND tenant_id = ?",
+            (get_current_tenant_id(),)
+        )
         sales_stages = [row['current_sales_stage'] for row in cursor.fetchall()]
         # Add 'N/A' to the list of sales stages if it's not already there
         if 'N/A' not in sales_stages:

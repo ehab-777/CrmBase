@@ -23,6 +23,7 @@ from routes.follow_up import follow_up_bp
 from routes.users import users_bp
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
+from routes.telegram import telegram_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -84,6 +85,25 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(follow_up_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(dashboard_bp)  # Register dashboard blueprint
+app.register_blueprint(telegram_bp)
+
+def _ensure_telegram_columns():
+    """Safe migration: add Telegram columns to sales_team if missing."""
+    try:
+        from tenant_utils import get_db
+        conn = get_db()
+        for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT']:
+            try:
+                conn.execute(f'ALTER TABLE sales_team ADD COLUMN {col}')
+            except Exception:
+                pass
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+with app.app_context():
+    _ensure_telegram_columns()
 
 @app.teardown_appcontext
 def teardown_db(error):

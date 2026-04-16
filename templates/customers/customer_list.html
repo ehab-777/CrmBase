@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Customer List{% endblock %}
+{% block title %}{{ _('Customers') }}{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -356,24 +356,22 @@
 {% block content %}
 <div class="container">
     <div class="header">
-        <h1 class="page-title">Customers</h1>
+        <h1 class="page-title">{{ _('Customers') }}</h1>
         <div class="action-buttons">
             <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Add Customer
+                + {{ _('Add Customer') }}
             </a>
             <a href="{{ url_for('dashboard.manager_dashboard' if session.get('role') in ['admin', 'manager'] else 'dashboard.dashboard') }}" class="dashboard-link">
-                <i class="fas fa-arrow-left"></i>
-                Back to Dashboard
+                ← {{ _('Back to Dashboard') }}
             </a>
         </div>
     </div>
 
     <div class="search-filter-container">
-        <input type="text" class="search-box" placeholder="Search by company, contact, phone, or stage..." 
+        <input type="text" class="search-box" placeholder="{{ _('Search by company, contact, phone, or stage...') }}"
                id="searchInput" value="{{ search_term or '' }}" onkeyup="debounceSearch()">
         <select class="filter-select" id="stageFilter" onchange="applyFilters()">
-            <option value="">All Stages</option>
+            <option value="">{{ _('All Stages') }}</option>
             <option value="N/A" {% if current_stage == 'N/A' %}selected{% endif %}>N/A</option>
             {% for stage in sales_stages %}
             <option value="{{ stage }}" {% if current_stage == stage %}selected{% endif %}>{{ stage }}</option>
@@ -393,36 +391,34 @@
             </div>
             <div class="customer-info">
                 <div class="info-row">
-                    <span class="info-label">Contact:</span>
+                    <span class="info-label">{{ _('Contact') }}:</span>
                     <span class="info-value">{{ customer.contact_person or 'N/A' }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Phone:</span>
+                    <span class="info-label">{{ _('Phone') }}:</span>
                     <span class="info-value">{{ customer.phone_number or 'N/A' }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Industry:</span>
+                    <span class="info-label">{{ _('Industry') }}:</span>
                     <span class="info-value">{{ customer.company_industry or 'N/A' }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Potential Value:</span>
+                    <span class="info-label">{{ _('Potential Value') }}:</span>
                     <span class="info-value potential-value">
                         {{ customer.potential_value|default(0) }}
                     </span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Last Contact:</span>
+                    <span class="info-label">{{ _('Last Contact') }}:</span>
                     <span class="info-value">{{ customer.last_contact_date|default('N/A') }}</span>
                 </div>
             </div>
             <div class="customer-actions">
                 <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-primary">
-                    <i class="fas fa-eye"></i>
-                    View Details
+                    {{ _('View Details') }}
                 </a>
                 <a href="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}" class="btn btn-success">
-                    <i class="fas fa-plus"></i>
-                    Add Follow-up
+                    + {{ _('Add Follow-up') }}
                 </a>
             </div>
         </div>
@@ -454,8 +450,8 @@
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">📋</div>
-        <h2>No customers found</h2>
-        <p>Add your first customer to get started</p>
+        <h2>{{ _('No customers found') }}</h2>
+        <p>{{ _('Add your first customer to get started') }}</p>
     </div>
     {% endif %}
 </div>
