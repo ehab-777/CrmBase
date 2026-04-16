@@ -65,10 +65,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
-# Configure Flask-Session
-app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in filesystem
-app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
-app.config['SESSION_FILE_THRESHOLD'] = 100  # Maximum number of sessions to store
+# Configure Flask-Session (use /data volume so sessions persist on Railway)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = os.getenv('SESSION_FILE_DIR', '/data/flask_session')
+app.config['SESSION_FILE_THRESHOLD'] = 100
 app.config['SESSION_COOKIE_SECURE'] = app_config.SESSION_COOKIE_SECURE
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True

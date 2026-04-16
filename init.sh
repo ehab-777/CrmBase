@@ -8,8 +8,9 @@ echo "🌍 FLASK_ENV: $FLASK_ENV"
 DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
 echo "📁 DB path: $DB_PATH"
 
-# Always ensure the data directory exists
+# Always ensure the data directory and session directory exist
 mkdir -p "$(dirname "$DB_PATH")"
+mkdir -p "${SESSION_FILE_DIR:-/data/flask_session}"
 
 # Initialize DB if it doesn't exist (any environment)
 if [ ! -s "$DB_PATH" ]; then
