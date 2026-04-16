@@ -1,18 +1,19 @@
 """
-Telegram Bot – Phase 1
-=======================
+Telegram Bot – Phase 1 + 2
+============================
 Features:
   • Webhook endpoint receives Telegram updates
   • /start  → returns a 6-digit link code to connect the web account
-  • /link <code> → same as /start when user sends a code
-  • Free text / voice → (voice: Phase 2 with faster-whisper)
-  • After linking, text messages parsed into CRM follow-up records
+  • /link <code> → links Telegram account to CRM account
+  • Voice notes → transcribed via faster-whisper (Arabic + English)
+  • Text messages → parsed into CRM follow-up records
 
 Setup (one-time, run from CLI):
   python -c "from routes.telegram import set_webhook; set_webhook()"
 """
 
 import os
+import tempfile
 import secrets
 import string
 import json
@@ -21,6 +22,48 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
 from tenant_utils import get_db, require_tenant
 from security import csrf
+
+# ─── Whisper model (lazy-loaded on first voice message) ───────────────────────
+
+_whisper_model = None
+
+def get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        from faster_whisper import WhisperModel
+        model_size = os.getenv('WHISPER_MODEL', 'base')
+        cache_dir = os.getenv('WHISPER_CACHE', '/data/whisper_models')
+        os.makedirs(cache_dir, exist_ok=True)
+        _whisper_model = WhisperModel(
+            model_size,
+            device='cpu',
+            compute_type='int8',
+            download_root=cache_dir,
+        )
+    return _whisper_model
+
+
+def transcribe_voice(file_bytes: bytes) -> str | None:
+    """Save voice bytes to a temp OGG file and transcribe with faster-whisper."""
+    try:
+        model = get_whisper_model()
+        with tempfile.NamedTemporaryFile(suffix='.ogg', delete=False) as tmp:
+            tmp.write(file_bytes)
+            tmp_path = tmp.name
+        try:
+            segments, info = model.transcribe(
+                tmp_path,
+                language=None,          # auto-detect AR / EN
+                beam_size=5,
+                vad_filter=True,
+            )
+            text = ' '.join(seg.text.strip() for seg in segments).strip()
+            return text or None
+        finally:
+            os.unlink(tmp_path)
+    except Exception as e:
+        print(f'[whisper] transcription error: {e}')
+        return None
 
 telegram_bp = Blueprint('telegram', __name__, url_prefix='/telegram')
 
@@ -238,15 +281,34 @@ def webhook():
     salesperson_id = sp['salesperson_id']
     tenant_id = sp['tenant_id']
 
-    # ── Voice note (Phase 2 hook) ──
+    # ── Voice note → transcribe then treat as text ──
     if voice:
-        conn.close()
-        send_message(chat_id,
-            '🎤 استلمت الرسالة الصوتية.\n'
-            '⏳ جاري التفريغ... (قريباً)\n\n'
-            'في الوقت الحالي أرسل ملاحظتك كنص.'
-        )
-        return jsonify({'ok': True})
+        send_message(chat_id, '🎤 جاري تفريغ الرسالة الصوتية...')
+        try:
+            # 1. Get the file path from Telegram
+            file_id = voice['file_id']
+            r = requests.get(f'{TELEGRAM_API}/getFile', params={'file_id': file_id}, timeout=15)
+            file_path = r.json()['result']['file_path']
+
+            # 2. Download the OGG audio
+            audio_url = f'https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}'
+            audio_resp = requests.get(audio_url, timeout=30)
+            audio_bytes = audio_resp.content
+
+            # 3. Transcribe
+            transcribed = transcribe_voice(audio_bytes)
+        except Exception as e:
+            conn.close()
+            send_message(chat_id, f'❌ فشل تحميل الرسالة الصوتية. حاول مرة أخرى.')
+            return jsonify({'ok': True})
+
+        if not transcribed:
+            conn.close()
+            send_message(chat_id, '❌ لم أتمكن من تفريغ الرسالة. تأكد من وضوح الصوت أو أرسل ملاحظتك كنص.')
+            return jsonify({'ok': True})
+
+        send_message(chat_id, f'📝 فهمت: "{transcribed}"')
+        text = transcribed   # fall through to NLP parser below
 
     # ── Text message → parse and log follow-up ──
     if text:
