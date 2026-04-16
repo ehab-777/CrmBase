@@ -190,6 +190,101 @@ def parse_message_text(text, salesperson_id, tenant_id):
     }
 
 
+# ─── New customer parser ──────────────────────────────────────────────────────
+
+# Keywords that signal "create new customer"
+NEW_CUSTOMER_TRIGGERS = [
+    'عميل جديد', 'زبون جديد', 'اضف عميل', 'أضف عميل',
+    'سجل عميل', 'عميل جديده', 'new customer', 'add customer',
+]
+
+import re
+
+def detect_new_customer_intent(text):
+    """Return True if the message is about creating a new customer."""
+    t = text.lower()
+    return any(trigger in t for trigger in NEW_CUSTOMER_TRIGGERS)
+
+
+def parse_new_customer(text):
+    """
+    Extract company_name, contact_person, phone_number from a free-form message.
+    Expected (flexible) format:
+      عميل جديد: [شركة] <name>، [المسؤول] <person>، <phone>
+    Returns dict or None if can't extract minimum fields.
+    """
+    # Remove trigger words so they don't confuse extraction
+    clean = text
+    for trigger in NEW_CUSTOMER_TRIGGERS:
+        clean = re.sub(trigger, '', clean, flags=re.IGNORECASE)
+    clean = clean.strip(' :،,\n')
+
+    # Extract phone number (Saudi/Gulf formats)
+    phone_match = re.search(r'(\+?[\d\s\-]{9,15})', clean)
+    phone = re.sub(r'[\s\-]', '', phone_match.group(1)) if phone_match else None
+    if phone_match:
+        clean = clean[:phone_match.start()] + clean[phone_match.end():]
+
+    # Split remaining text by common separators
+    parts = re.split(r'[،,،\n]+', clean)
+    parts = [p.strip() for p in parts if p.strip()]
+
+    company_name = None
+    contact_person = None
+
+    for part in parts:
+        # Strip label words
+        val = re.sub(r'^(شركة|مؤسسة|مجموعة|اسم الشركة|company)\s*:?\s*', '', part, flags=re.IGNORECASE).strip()
+        if not val:
+            continue
+        p_lower = part.lower()
+        if any(kw in p_lower for kw in ['مسؤول', 'المسؤول', 'الشخص', 'contact', 'اسم المسؤول']):
+            contact_person = re.sub(r'^(المسؤول|مسؤول|الشخص|contact)\s*:?\s*', '', part, flags=re.IGNORECASE).strip()
+        elif company_name is None:
+            company_name = val
+        elif contact_person is None:
+            contact_person = val
+
+    if not company_name:
+        return None
+
+    return {
+        'company_name': company_name,
+        'contact_person': contact_person or 'غير محدد',
+        'phone_number': phone or 'غير محدد',
+    }
+
+
+def create_customer_from_telegram(text, salesperson_id, tenant_id):
+    """
+    Parse text, create customer record, return (customer_id, company_name) or (None, error_msg).
+    """
+    data = parse_new_customer(text)
+    if not data:
+        return None, 'لم أتمكن من استخراج بيانات العميل'
+
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return None, 'خطأ في قاعدة البيانات'
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO customers
+                (company_name, contact_person, phone_number,
+                 assigned_salesperson_id, tenant_id, date_added)
+            VALUES (?, ?, ?, ?, ?, datetime('now','localtime'))
+        ''', (data['company_name'], data['contact_person'], data['phone_number'],
+              salesperson_id, tenant_id))
+        conn.commit()
+        customer_id = cursor.lastrowid
+        conn.close()
+        return customer_id, data['company_name']
+    except Exception as e:
+        conn.close()
+        return None, f'خطأ: {e}'
+
+
 def get_db_for_tenant(tenant_id):
     """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
     try:
@@ -250,7 +345,15 @@ def webhook():
                 )
                 conn.commit()
                 conn.close()
-                send_message(chat_id, f'✅ تم ربط حسابك بنجاح! مرحباً {sp["first_name"]}.\n\nيمكنك الآن إرسال ملاحظات عن عملائك مباشرة من هنا.')
+                send_message(chat_id,
+                    f'✅ تم ربط حسابك بنجاح! مرحباً {sp["first_name"]}.\n\n'
+                    f'يمكنك الآن:\n'
+                    f'🏢 <b>إنشاء عميل جديد:</b>\n'
+                    f'<code>عميل جديد: شركة النور، المسؤول خالد، 0556789012</code>\n\n'
+                    f'📝 <b>تسجيل متابعة:</b>\n'
+                    f'أرسل ملاحظة نصية أو صوتية باسم العميل\n\n'
+                    f'🎤 الرسائل الصوتية مدعومة بالعربي والإنجليزي'
+                )
             else:
                 conn.close()
                 send_message(chat_id, '❌ الرمز غير صحيح أو منتهي الصلاحية.\nافتح التطبيق واحصل على رمز جديد.')
@@ -310,8 +413,25 @@ def webhook():
         send_message(chat_id, f'📝 فهمت: "{transcribed}"')
         text = transcribed   # fall through to NLP parser below
 
-    # ── Text message → parse and log follow-up ──
+    # ── Text message → new customer OR follow-up ──
     if text:
+        # Check for new customer intent first
+        if detect_new_customer_intent(text):
+            customer_id, result = create_customer_from_telegram(text, salesperson_id, tenant_id)
+            if customer_id:
+                send_message(chat_id,
+                    f'✅ تم إنشاء العميل بنجاح!\n\n'
+                    f'🏢 <b>{result}</b>\n\n'
+                    f'يمكنك الآن إرسال متابعات باسم هذا العميل.'
+                )
+            else:
+                send_message(chat_id,
+                    f'❌ فشل إنشاء العميل: {result}\n\n'
+                    f'تأكد من إرسال البيانات بهذا الشكل:\n'
+                    f'<code>عميل جديد: شركة النور، المسؤول خالد، 0556789012</code>'
+                )
+            return jsonify({'ok': True})
+
         parsed = parse_message_text(text, salesperson_id, tenant_id)
 
         if parsed and parsed['customer']:
