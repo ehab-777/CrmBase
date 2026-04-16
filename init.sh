@@ -1,37 +1,24 @@
 #!/bin/bash
 
 echo "✅ init.sh started"
-echo "🔄 Starting initialization script..."
 
-# Ensure FLASK_ENV is set
 FLASK_ENV=${FLASK_ENV:-development}
-echo "🌍 FLASK_ENV is set to: $FLASK_ENV"
+echo "🌍 FLASK_ENV: $FLASK_ENV"
 
-# If not development, skip all DB init and run app
-if [ "$FLASK_ENV" != "development" ]; then
-    echo "✅ Skipping DB init in $FLASK_ENV environment"
-    echo "🚀 Starting application in $FLASK_ENV mode..."
-    exec gunicorn -w 1 -b 0.0.0.0:${PORT:-8000} app:app
-    exit 0
-fi
+DB_PATH=${DATABASE_NAME:-/data/crm_multi.db}
+echo "📁 DB path: $DB_PATH"
 
-# In development, continue with DB checks
-echo "🧪 Running DB checks in development..."
-
-DB_PATH=${DATABASE_NAME:-crm_multi.db}
+# Always ensure the data directory exists
 mkdir -p "$(dirname "$DB_PATH")"
-echo "📁 Checking DB at: $DB_PATH"
 
-# If DB exists and is not empty
-if [ -s "$DB_PATH" ]; then
-    echo "✅ Database exists. Skipping re-initialization."
+# Initialize DB if it doesn't exist (any environment)
+if [ ! -s "$DB_PATH" ]; then
+    echo "⚠️  DB missing — running first-time setup..."
+    python setup_production_db.py
+    echo "✅ DB setup complete"
 else
-    echo "⚠️ DB missing or empty. Running initial setup..."
-    flask db init || true
-    flask db migrate -m "Initial migration" || true
-    flask db upgrade || true
-    python database_setup.py
+    echo "✅ DB exists, skipping init"
 fi
 
-echo "🚀 Launching app..."
+echo "🚀 Starting gunicorn on port ${PORT:-8000}..."
 exec gunicorn -w 1 -b 0.0.0.0:${PORT:-8000} app:app
