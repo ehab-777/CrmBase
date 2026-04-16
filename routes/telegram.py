@@ -390,6 +390,37 @@ def set_webhook(base_url=None):
     print(resp.json())
 
 
+@telegram_bp.route('/status')
+@require_tenant
+def bot_status():
+    """Admin-only: show live bot + webhook status for debugging."""
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'admin only'}), 403
+
+    token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    result = {
+        'token_set': bool(token),
+        'token_prefix': token[:10] + '...' if token else None,
+        'database_name_env': os.getenv('DATABASE_NAME', '(not set)'),
+        'app_base_url_env': os.getenv('APP_BASE_URL', '(not set)'),
+    }
+
+    if token:
+        api = f'https://api.telegram.org/bot{token}'
+        try:
+            me = requests.get(f'{api}/getMe', timeout=8).json()
+            result['bot_info'] = me
+        except Exception as e:
+            result['bot_info_error'] = str(e)
+        try:
+            wh = requests.get(f'{api}/getWebhookInfo', timeout=8).json()
+            result['webhook_info'] = wh
+        except Exception as e:
+            result['webhook_info_error'] = str(e)
+
+    return jsonify(result)
+
+
 @telegram_bp.route('/register-webhook', methods=['POST'])
 @require_tenant
 def register_webhook():
