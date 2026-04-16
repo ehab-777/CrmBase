@@ -29,6 +29,8 @@ class SalesPerson(db.Model):
     role = db.Column(db.String(20), default='salesperson')
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
+    telegram_chat_id = db.Column(db.String(50), nullable=True, unique=True)
+    telegram_link_token = db.Column(db.String(10), nullable=True)
     
     def __repr__(self):
         return f'<SalesPerson {self.username}>'

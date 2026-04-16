@@ -1,32 +1,3 @@
-services:
-  - type: web
-    name: crmbase
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: ./init.sh
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.0
-      - key: FLASK_ENV
-        value: staging
-      - key: DATABASE_URL
-        value: sqlite:////data/crm_multi.db
-      - key: DATABASE_NAME
-        value: /data/crm_multi.db
-      - key: SQLALCHEMY_DATABASE_URI
-        value: sqlite:////data/crm_multi.db
-    disk:
-      name: crmbase-disk
-      mountPath: /data
-      sizeGB: 1
-    healthCheckPath: /health
-    autoDeploy: true
-    backupPolicy:
-      frequency: daily
-      retention: 7
-    envVars:
-      - key: RENDER
-        value: true
-      - key: RENDER_DISK_PATH
-        value: /data
-    numInstances: 1 
+# This project is deployed on Railway.
+# See railway.toml for deployment configuration.
+# This file is kept for reference only and is not used.

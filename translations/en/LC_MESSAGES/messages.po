@@ -26,6 +26,174 @@ msgstr "CRM System"
 msgid "CRM Base"
 msgstr "CRM Base"
 
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "Username"
+msgstr "Username"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Customers"
+msgstr "Customers"
+
+msgid "Add Customer"
+msgstr "Add Customer"
+
+msgid "Back to Dashboard"
+msgstr "Back to Dashboard"
+
+msgid "Back to Customer"
+msgstr "Back to Customer"
+
+msgid "Search by company, contact, phone, or stage..."
+msgstr "Search by company, contact, phone, or stage..."
+
+msgid "All Stages"
+msgstr "All Stages"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Phone"
+msgstr "Phone"
+
+msgid "Industry"
+msgstr "Industry"
+
+msgid "Potential Value"
+msgstr "Potential Value"
+
+msgid "Last Contact"
+msgstr "Last Contact"
+
+msgid "View Details"
+msgstr "View Details"
+
+msgid "Add Follow-up"
+msgstr "Add Follow-up"
+
+msgid "No customers found"
+msgstr "No customers found"
+
+msgid "Add your first customer to get started"
+msgstr "Add your first customer to get started"
+
+msgid "Total Customers"
+msgstr "Total Customers"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Close Won"
+msgstr "Close Won"
+
+msgid "Close Lost"
+msgstr "Close Lost"
+
+msgid "Total Potential Value"
+msgstr "Total Potential Value"
+
+msgid "Sales Pipeline"
+msgstr "Sales Pipeline"
+
+msgid "No leads in the pipeline."
+msgstr "No leads in the pipeline."
+
+msgid "Upcoming Follow-ups"
+msgstr "Upcoming Follow-ups"
+
+msgid "Today"
+msgstr "Today"
+
+msgid "This Week"
+msgstr "This Week"
+
+msgid "Next Week"
+msgstr "Next Week"
+
+msgid "Later"
+msgstr "Later"
+
+msgid "Next"
+msgstr "Next"
+
+msgid "Due"
+msgstr "Due"
+
+msgid "Summary"
+msgstr "Summary"
+
+msgid "Value"
+msgstr "Value"
+
+msgid "No upcoming follow-ups."
+msgstr "No upcoming follow-ups."
+
+msgid "Last Contact Date"
+msgstr "Last Contact Date"
+
+msgid "Contact Method"
+msgstr "Contact Method"
+
+msgid "Select stage"
+msgstr "Select stage"
+
+msgid "Current Sales Stage"
+msgstr "Current Sales Stage"
+
+msgid "Select next action"
+msgstr "Select next action"
+
+msgid "Next Action"
+msgstr "Next Action"
+
+msgid "Next Action Date"
+msgstr "Next Action Date"
+
+msgid "Deal Value (SAR)"
+msgstr "Deal Value (SAR)"
+
+msgid "Toggle menu"
+msgstr "Toggle menu"
+
+msgid "Sales Team"
+msgstr "Sales Team"
+
+msgid "Tenants"
+msgstr "Tenants"
+
+msgid "Telegram"
+msgstr "Telegram"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Connect Telegram"
+msgstr "Connect Telegram"
+
+msgid "Your link code"
+msgstr "Your link code"
+
+msgid "Send this code to the bot"
+msgstr "Send this code to the bot"
+
+msgid "Telegram account connected"
+msgstr "Telegram account connected"
+
+msgid "Disconnect Telegram"
+msgstr "Disconnect Telegram"
+
+msgid "Generate new code"
+msgstr "Generate new code"
+
 #: venv/lib/python3.11/site-packages/click/_termui_impl.py:495
 #, python-brace-format
 msgid "{editor}: Editing failed"

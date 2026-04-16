@@ -584,11 +584,167 @@ msgid "Welcome"
 msgstr "مرحبًا"
 
 msgid "Username"
-msgstr "أسم المستخدم"
+msgstr "اسم المستخدم"
 
 msgid "Password"
 msgstr "كلمة المرور"
 
 msgid "Login"
 msgstr "تسجيل الدخول"
+
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+msgid "Customers"
+msgstr "العملاء"
+
+msgid "Add Customer"
+msgstr "إضافة عميل"
+
+msgid "Back to Dashboard"
+msgstr "العودة للوحة التحكم"
+
+msgid "Back to Customer"
+msgstr "العودة للعميل"
+
+msgid "Search by company, contact, phone, or stage..."
+msgstr "البحث بالشركة أو المسؤول أو الهاتف أو المرحلة..."
+
+msgid "All Stages"
+msgstr "كل المراحل"
+
+msgid "Contact"
+msgstr "المسؤول"
+
+msgid "Phone"
+msgstr "الهاتف"
+
+msgid "Industry"
+msgstr "القطاع"
+
+msgid "Potential Value"
+msgstr "القيمة المتوقعة"
+
+msgid "Last Contact"
+msgstr "آخر تواصل"
+
+msgid "View Details"
+msgstr "عرض التفاصيل"
+
+msgid "Add Follow-up"
+msgstr "إضافة متابعة"
+
+msgid "No customers found"
+msgstr "لا يوجد عملاء"
+
+msgid "Add your first customer to get started"
+msgstr "أضف عميلك الأول للبدء"
+
+msgid "Total Customers"
+msgstr "إجمالي العملاء"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Close Won"
+msgstr "صفقات مكتملة"
+
+msgid "Close Lost"
+msgstr "صفقات خاسرة"
+
+msgid "Total Potential Value"
+msgstr "إجمالي القيمة المتوقعة"
+
+msgid "Sales Pipeline"
+msgstr "خط المبيعات"
+
+msgid "No leads in the pipeline."
+msgstr "لا يوجد عملاء في خط المبيعات."
+
+msgid "Upcoming Follow-ups"
+msgstr "المتابعات القادمة"
+
+msgid "Today"
+msgstr "اليوم"
+
+msgid "This Week"
+msgstr "هذا الأسبوع"
+
+msgid "Next Week"
+msgstr "الأسبوع القادم"
+
+msgid "Later"
+msgstr "لاحقاً"
+
+msgid "Next"
+msgstr "التالي"
+
+msgid "Due"
+msgstr "الموعد"
+
+msgid "Summary"
+msgstr "الملخص"
+
+msgid "Value"
+msgstr "القيمة"
+
+msgid "No upcoming follow-ups."
+msgstr "لا توجد متابعات قادمة."
+
+msgid "Last Contact Date"
+msgstr "تاريخ آخر تواصل"
+
+msgid "Contact Method"
+msgstr "طريقة التواصل"
+
+msgid "Select stage"
+msgstr "اختر المرحلة"
+
+msgid "Current Sales Stage"
+msgstr "مرحلة البيع الحالية"
+
+msgid "Select next action"
+msgstr "اختر الإجراء التالي"
+
+msgid "Next Action"
+msgstr "الإجراء التالي"
+
+msgid "Next Action Date"
+msgstr "تاريخ الإجراء التالي"
+
+msgid "Deal Value (SAR)"
+msgstr "قيمة الصفقة (ريال)"
+
+msgid "Toggle menu"
+msgstr "فتح القائمة"
+
+msgid "Sales Team"
+msgstr "فريق المبيعات"
+
+msgid "Tenants"
+msgstr "الشركات"
+
+msgid "Telegram"
+msgstr "تيليجرام"
+
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+msgid "Connect Telegram"
+msgstr "ربط تيليجرام"
+
+msgid "Your link code"
+msgstr "رمز الربط"
+
+msgid "Send this code to the bot"
+msgstr "أرسل هذا الرمز للبوت"
+
+msgid "Telegram account connected"
+msgstr "تم ربط حساب تيليجرام"
+
+msgid "Disconnect Telegram"
+msgstr "فك ربط تيليجرام"
+
+msgid "Generate new code"
+msgstr "توليد رمز جديد"
 

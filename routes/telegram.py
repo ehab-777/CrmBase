@@ -1,0 +1,389 @@
+"""
+Telegram Bot – Phase 1
+=======================
+Features:
+  • Webhook endpoint receives Telegram updates
+  • /start  → returns a 6-digit link code to connect the web account
+  • /link <code> → same as /start when user sends a code
+  • Free text / voice → (voice: Phase 2 with faster-whisper)
+  • After linking, text messages parsed into CRM follow-up records
+
+Setup (one-time, run from CLI):
+  python -c "from routes.telegram import set_webhook; set_webhook()"
+"""
+
+import os
+import secrets
+import string
+import json
+import requests
+from datetime import datetime
+from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
+from tenant_utils import get_db, require_tenant
+
+telegram_bp = Blueprint('telegram', __name__, url_prefix='/telegram')
+
+BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_API = f'https://api.telegram.org/bot{BOT_TOKEN}'
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def send_message(chat_id, text, parse_mode='HTML'):
+    if not BOT_TOKEN:
+        return
+    requests.post(f'{TELEGRAM_API}/sendMessage', json={
+        'chat_id': chat_id,
+        'text': text,
+        'parse_mode': parse_mode,
+    }, timeout=10)
+
+
+def generate_link_token():
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(6))
+
+
+def get_salesperson_by_chat_id(conn, chat_id):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM sales_team WHERE telegram_chat_id = ?",
+        (str(chat_id),)
+    )
+    return cursor.fetchone()
+
+
+def get_salesperson_by_token(conn, token):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM sales_team WHERE telegram_link_token = ?",
+        (token.upper().strip(),)
+    )
+    return cursor.fetchone()
+
+
+def ensure_telegram_columns(conn):
+    """Add telegram columns to sales_team if they don't exist (safe migration)."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute("ALTER TABLE sales_team ADD COLUMN telegram_chat_id TEXT")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE sales_team ADD COLUMN telegram_link_token TEXT")
+    except Exception:
+        pass
+    conn.commit()
+
+# ─── Simple NLP parser ────────────────────────────────────────────────────────
+
+STAGE_KEYWORDS = {
+    'عميل محتمل':       ['عميل محتمل', 'جديد', 'اتصل', 'اتصلت'],
+    'جاري التواصل':     ['جاري التواصل', 'تواصلنا', 'تواصلت', 'تحدثت', 'كلمته'],
+    'تقديم عرض السعر': ['عرض سعر', 'عرض', 'قدمت عرض', 'ارسلت عرض'],
+    'جاري التفاوض':     ['تفاوض', 'تفاوضنا', 'يفاوض', 'موافق'],
+    'تم التسليم':       ['تسليم', 'تم التسليم', 'سلمنا', 'انتهى', 'اكتمل'],
+    'لم يتم البيع':     ['رفض', 'لم يوافق', 'فشل', 'خسرنا'],
+}
+
+ACTION_KEYWORDS = {
+    'متابعة اتصال':          ['اتصل', 'اتصال', 'تابع'],
+    'انتظار رد العميل':      ['انتظار', 'ينتظر', 'رد'],
+    'إرسال عرض سعر':         ['ارسل عرض', 'عرض سعر'],
+    'دعوة لزيارة المعرض':    ['زيارة', 'يزور', 'معرض'],
+    'متابعة التمويل / الدفع': ['دفع', 'تمويل', 'فاتورة'],
+    'إغلاق البيع':            ['اغلق', 'اغلاق', 'انهى'],
+}
+
+
+def parse_message_text(text, salesperson_id, tenant_id):
+    """
+    Very lightweight Arabic NLP:
+    Returns a dict with fields to insert into sales_followup,
+    or None if we can't extract enough meaningful data.
+    """
+    text_lower = text.lower()
+
+    # Detect sales stage
+    stage = None
+    for s, keywords in STAGE_KEYWORDS.items():
+        if any(kw in text_lower for kw in keywords):
+            stage = s
+            break
+
+    # Detect next action
+    action = None
+    for a, keywords in ACTION_KEYWORDS.items():
+        if any(kw in text_lower for kw in keywords):
+            action = a
+            break
+
+    # Try to find a customer name – look for longest company_name match
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return None
+
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT customer_id, company_name FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ?",
+        (tenant_id, salesperson_id)
+    )
+    customers = cursor.fetchall()
+    conn.close()
+
+    matched_customer = None
+    best_len = 0
+    for c in customers:
+        name = c['company_name']
+        if name.lower() in text_lower and len(name) > best_len:
+            matched_customer = c
+            best_len = len(name)
+
+    return {
+        'customer': matched_customer,
+        'stage': stage,
+        'action': action,
+        'summary': text,
+    }
+
+
+def get_db_for_tenant(tenant_id):
+    """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
+    try:
+        import sqlite3
+        db_path = os.getenv('DB_PATH', '/data/crm_multi.db')
+        if not os.path.exists(db_path):
+            # fallback for development
+            db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crm_multi.db')
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception:
+        return None
+
+
+# ─── Webhook handler ──────────────────────────────────────────────────────────
+
+@telegram_bp.route('/webhook', methods=['POST'])
+def webhook():
+    """Telegram sends all updates here."""
+    if not BOT_TOKEN:
+        return jsonify({'ok': False, 'error': 'Bot not configured'}), 503
+
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({'ok': True})
+
+    message = data.get('message') or data.get('edited_message')
+    if not message:
+        return jsonify({'ok': True})
+
+    chat_id = message['chat']['id']
+    text = message.get('text', '').strip()
+    voice = message.get('voice')
+
+    conn = get_db_for_tenant(None)
+    if not conn:
+        send_message(chat_id, '⚠️ Database connection error.')
+        return jsonify({'ok': True})
+
+    ensure_telegram_columns(conn)
+
+    # ── /start or /link <code> ──
+    if text.startswith('/start') or text.startswith('/link'):
+        parts = text.split(maxsplit=1)
+        code = parts[1].strip() if len(parts) > 1 else None
+
+        if code:
+            sp = get_salesperson_by_token(conn, code)
+            if sp:
+                # Link this Telegram chat to the salesperson account
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE sales_team SET telegram_chat_id = ?, telegram_link_token = NULL WHERE salesperson_id = ?",
+                    (str(chat_id), sp['salesperson_id'])
+                )
+                conn.commit()
+                conn.close()
+                send_message(chat_id, f'✅ تم ربط حسابك بنجاح! مرحباً {sp["first_name"]}.\n\nيمكنك الآن إرسال ملاحظات عن عملائك مباشرة من هنا.')
+            else:
+                conn.close()
+                send_message(chat_id, '❌ الرمز غير صحيح أو منتهي الصلاحية.\nافتح التطبيق واحصل على رمز جديد.')
+        else:
+            # Check if already linked
+            sp = get_salesperson_by_chat_id(conn, chat_id)
+            conn.close()
+            if sp:
+                send_message(chat_id, f'👋 مرحباً {sp["first_name"]}!\n\nحسابك مرتبط بالفعل. أرسل ملاحظة عن أي عميل وسأضيفها تلقائياً.')
+            else:
+                send_message(chat_id,
+                    '👋 مرحباً!\n\n'
+                    'لربط حسابك:\n'
+                    '1️⃣ افتح تطبيق CRM\n'
+                    '2️⃣ اضغط على <b>Telegram</b> في القائمة\n'
+                    '3️⃣ انسخ الرمز وأرسله هنا\n\n'
+                    'مثال: /link ABC123'
+                )
+        return jsonify({'ok': True})
+
+    # ── Check if user is linked ──
+    sp = get_salesperson_by_chat_id(conn, chat_id)
+    if not sp:
+        conn.close()
+        send_message(chat_id, '⚠️ حسابك غير مرتبط بعد.\nأرسل /start للبدء.')
+        return jsonify({'ok': True})
+
+    salesperson_id = sp['salesperson_id']
+    tenant_id = sp['tenant_id']
+
+    # ── Voice note (Phase 2 hook) ──
+    if voice:
+        conn.close()
+        send_message(chat_id,
+            '🎤 استلمت الرسالة الصوتية.\n'
+            '⏳ جاري التفريغ... (قريباً)\n\n'
+            'في الوقت الحالي أرسل ملاحظتك كنص.'
+        )
+        return jsonify({'ok': True})
+
+    # ── Text message → parse and log follow-up ──
+    if text:
+        parsed = parse_message_text(text, salesperson_id, tenant_id)
+
+        if parsed and parsed['customer']:
+            customer = parsed['customer']
+            today = datetime.now().strftime('%Y-%m-%d')
+
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO sales_followup (
+                        customer_id, assigned_salesperson_id, last_contact_date,
+                        last_contact_method, summary_last_contact, next_action,
+                        current_sales_stage, tenant_id, created_at, created_by
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), ?)
+                ''', (
+                    customer['customer_id'], salesperson_id, today,
+                    'رسالة تيليجرام', text,
+                    parsed['action'] or 'متابعة اتصال',
+                    parsed['stage'], tenant_id, salesperson_id
+                ))
+                conn.commit()
+                conn.close()
+
+                stage_str = f"\n📊 المرحلة: {parsed['stage']}" if parsed['stage'] else ''
+                action_str = f"\n⏭️ التالي: {parsed['action']}" if parsed['action'] else ''
+                send_message(chat_id,
+                    f'✅ تمت إضافة متابعة لـ <b>{customer["company_name"]}</b>{stage_str}{action_str}\n\n'
+                    f'📝 الملخص: {text[:100]}{"..." if len(text)>100 else ""}'
+                )
+            except Exception as e:
+                conn.close()
+                send_message(chat_id, f'❌ حدث خطأ أثناء الحفظ. حاول مرة أخرى.')
+        else:
+            # Couldn't match a customer — ask for clarification
+            conn2 = get_db_for_tenant(tenant_id)
+            if conn2:
+                cursor2 = conn2.cursor()
+                cursor2.execute(
+                    "SELECT company_name FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ? LIMIT 10",
+                    (tenant_id, salesperson_id)
+                )
+                names = [r['company_name'] for r in cursor2.fetchall()]
+                conn2.close()
+                names_str = '\n'.join(f'• {n}' for n in names) if names else '(لا يوجد عملاء)'
+            else:
+                names_str = ''
+
+            conn.close()
+            send_message(chat_id,
+                '🤔 لم أتمكن من تحديد العميل من رسالتك.\n\n'
+                'تأكد من ذكر اسم العميل بوضوح. عملاؤك:\n' + names_str
+            )
+    else:
+        conn.close()
+
+    return jsonify({'ok': True})
+
+
+# ─── Web UI: Account Linking ──────────────────────────────────────────────────
+
+@telegram_bp.route('/link')
+@require_tenant
+def link_account():
+    """Page where the salesperson gets their link code."""
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    salesperson_id = session['salesperson_id']
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_telegram_columns(conn)
+
+    cursor.execute(
+        "SELECT first_name, telegram_chat_id, telegram_link_token FROM sales_team WHERE salesperson_id = ?",
+        (salesperson_id,)
+    )
+    sp = cursor.fetchone()
+    conn.close()
+
+    is_linked = bool(sp and sp['telegram_chat_id'])
+    link_token = sp['telegram_link_token'] if sp else None
+    bot_username = os.getenv('TELEGRAM_BOT_USERNAME', 'YourCRMBot')
+
+    return render_template('telegram/link.html',
+        is_linked=is_linked,
+        link_token=link_token,
+        bot_username=bot_username,
+    )
+
+
+@telegram_bp.route('/link/generate', methods=['POST'])
+@require_tenant
+def generate_code():
+    """Generate a fresh link code for the current salesperson."""
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    salesperson_id = session['salesperson_id']
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_telegram_columns(conn)
+
+    token = generate_link_token()
+    cursor.execute(
+        "UPDATE sales_team SET telegram_link_token = ? WHERE salesperson_id = ?",
+        (token, salesperson_id)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(url_for('telegram.link_account'))
+
+
+@telegram_bp.route('/link/disconnect', methods=['POST'])
+@require_tenant
+def disconnect():
+    """Unlink Telegram from this account."""
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    salesperson_id = session['salesperson_id']
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_telegram_columns(conn)
+    cursor.execute(
+        "UPDATE sales_team SET telegram_chat_id = NULL, telegram_link_token = NULL WHERE salesperson_id = ?",
+        (salesperson_id,)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(url_for('telegram.link_account'))
+
+
+# ─── Webhook registration helper ─────────────────────────────────────────────
+
+def set_webhook(base_url=None):
+    """Call this once to register the webhook with Telegram."""
+    base_url = base_url or os.getenv('APP_BASE_URL', '')
+    webhook_url = f'{base_url}/telegram/webhook'
+    resp = requests.post(f'{TELEGRAM_API}/setWebhook', json={'url': webhook_url})
+    print(resp.json())
