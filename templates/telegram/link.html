@@ -179,6 +179,18 @@
 {% block content %}
 {% include 'components/navbar.html' %}
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  {% for category, message in messages %}
+  <div style="max-width:480px;margin:1rem auto;padding:0.75rem 1rem;border-radius:0.5rem;
+    background:{{ '#dcfce7' if category=='success' else '#fee2e2' }};
+    color:{{ '#166534' if category=='success' else '#991b1b' }};font-size:0.9rem;">
+    {{ message }}
+  </div>
+  {% endfor %}
+{% endif %}
+{% endwith %}
+
 <div class="tg-card">
     <div class="tg-icon">💬</div>
     <h1 class="tg-title">{{ _('Connect Telegram') }}</h1>
@@ -193,6 +205,7 @@
     </p>
 
     <form method="POST" action="{{ url_for('telegram.disconnect') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn-danger">🔗 {{ _('Disconnect Telegram') }}</button>
     </form>
 
@@ -222,6 +235,7 @@
     </a>
 
     <form method="POST" action="{{ url_for('telegram.generate_code') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn-secondary-outline">🔄 {{ _('Generate new code') }}</button>
     </form>
 
@@ -236,11 +250,22 @@
     </div>
 
     <form method="POST" action="{{ url_for('telegram.generate_code') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn-tg">🔑 {{ _('Generate link code') }}</button>
     </form>
     {% endif %}
 
     {% endif %}
+
+    {% if session.get('role') == 'admin' %}
+    <hr style="margin:1.5rem 0;border:none;border-top:1px solid var(--border-color);">
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.5rem;">Admin: re-register webhook if bot stops responding</p>
+    <form method="POST" action="{{ url_for('telegram.register_webhook') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-secondary-outline">🔗 Register Webhook</button>
+    </form>
+    {% endif %}
+
 </div>
 {% endblock %}
 

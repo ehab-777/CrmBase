@@ -150,7 +150,8 @@ def get_db_for_tenant(tenant_id):
     """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
     try:
         import sqlite3
-        db_path = os.getenv('DB_PATH', '/data/crm_multi.db')
+        # Respect the same env var the rest of the app uses
+        db_path = os.getenv('DATABASE_NAME', os.getenv('DB_PATH', '/data/crm_multi.db'))
         if not os.path.exists(db_path):
             # fallback for development
             db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crm_multi.db')
@@ -387,3 +388,32 @@ def set_webhook(base_url=None):
     webhook_url = f'{base_url}/telegram/webhook'
     resp = requests.post(f'{TELEGRAM_API}/setWebhook', json={'url': webhook_url})
     print(resp.json())
+
+
+@telegram_bp.route('/register-webhook', methods=['POST'])
+@require_tenant
+def register_webhook():
+    """Admin-only: re-register the Telegram webhook URL."""
+    if session.get('role') != 'admin':
+        flash('Admin only.', 'error')
+        return redirect(url_for('telegram.link_account'))
+
+    token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    if not token:
+        flash('TELEGRAM_BOT_TOKEN is not set in environment variables.', 'error')
+        return redirect(url_for('telegram.link_account'))
+
+    base_url = os.getenv('APP_BASE_URL', request.host_url.rstrip('/'))
+    webhook_url = f'{base_url}/telegram/webhook'
+    api = f'https://api.telegram.org/bot{token}'
+    try:
+        resp = requests.post(f'{api}/setWebhook', json={'url': webhook_url}, timeout=10)
+        data = resp.json()
+        if data.get('ok'):
+            flash(f'✅ Webhook registered: {webhook_url}', 'success')
+        else:
+            flash(f'❌ Telegram error: {data.get("description", "unknown")}', 'error')
+    except Exception as e:
+        flash(f'❌ Request failed: {e}', 'error')
+
+    return redirect(url_for('telegram.link_account'))
