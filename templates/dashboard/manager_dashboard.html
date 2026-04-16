@@ -673,6 +673,7 @@
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('dashboard.admin_dashboard') }}">Admin Tool</a>
             {% endif %}
+            <a href="{{ url_for('telegram.link_account') }}" style="color:#0088cc;">💬 Telegram</a>
             <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
         </div>
     </div>
