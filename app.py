@@ -111,6 +111,10 @@ def teardown_db(error):
     if db is not None:
         db.close()
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/')
 def index():
     if 'salesperson_id' in session:
