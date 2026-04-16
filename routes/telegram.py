@@ -20,6 +20,7 @@ import requests
 from datetime import datetime
 from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
 from tenant_utils import get_db, require_tenant
+from security import csrf
 
 telegram_bp = Blueprint('telegram', __name__, url_prefix='/telegram')
 
@@ -165,6 +166,7 @@ def get_db_for_tenant(tenant_id):
 # ─── Webhook handler ──────────────────────────────────────────────────────────
 
 @telegram_bp.route('/webhook', methods=['POST'])
+@csrf.exempt
 def webhook():
     """Telegram sends all updates here."""
     if not BOT_TOKEN:
@@ -384,7 +386,7 @@ def disconnect():
 
 def set_webhook(base_url=None):
     """Call this once to register the webhook with Telegram."""
-    base_url = base_url or os.getenv('APP_BASE_URL', '')
+    base_url = (base_url or os.getenv('APP_BASE_URL', '')).rstrip('/')
     webhook_url = f'{base_url}/telegram/webhook'
     resp = requests.post(f'{TELEGRAM_API}/setWebhook', json={'url': webhook_url})
     print(resp.json())
@@ -434,7 +436,7 @@ def register_webhook():
         flash('TELEGRAM_BOT_TOKEN is not set in environment variables.', 'error')
         return redirect(url_for('telegram.link_account'))
 
-    base_url = os.getenv('APP_BASE_URL', request.host_url.rstrip('/'))
+    base_url = os.getenv('APP_BASE_URL', request.host_url).rstrip('/')
     webhook_url = f'{base_url}/telegram/webhook'
     api = f'https://api.telegram.org/bot{token}'
     try:
