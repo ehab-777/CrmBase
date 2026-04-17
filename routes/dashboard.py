@@ -537,16 +537,13 @@ def manager_dashboard():
             try:
                 cursor.execute(pipeline_query, pipeline_params)
             except Exception as e:
-                print(f"Error executing pipeline query: {str(e)}")
-                print(f"Query: {pipeline_query}")
-                print(f"Params: {pipeline_params}")
                 raise
             
             pipeline_by_stage = {}
             for row in cursor.fetchall():
-                stage = row['current_sales_stage']
-                if stage not in pipeline_by_stage:
-                    pipeline_by_stage[stage] = {
+                row_stage = row['current_sales_stage']
+                if row_stage not in pipeline_by_stage:
+                    pipeline_by_stage[row_stage] = {
                         'companies': [],
                         'total_value': 0.0  # Initialize as float
                     }
@@ -554,7 +551,7 @@ def manager_dashboard():
                 # Handle NULL or empty deal_value
                 deal_value = float(row['deal_value']) if row['deal_value'] is not None and row['deal_value'] != '' else 0.0
                 
-                pipeline_by_stage[stage]['companies'].append({
+                pipeline_by_stage[row_stage]['companies'].append({
                     'customer_id': row['customer_id'],
                     'company': row['company'],
                     'contact_person': row['contact_person'],
@@ -569,10 +566,10 @@ def manager_dashboard():
                 })
                 
                 # Update total value for the stage
-                pipeline_by_stage[stage]['total_value'] += deal_value
+                pipeline_by_stage[row_stage]['total_value'] += deal_value
             
             # Calculate total potential deal value
-            total_value = sum(stage['total_value'] for stage in pipeline_by_stage.values())
+            total_value = sum(s['total_value'] for s in pipeline_by_stage.values())
             
             conn.close()
             return render_template('dashboard/manager_dashboard.html',

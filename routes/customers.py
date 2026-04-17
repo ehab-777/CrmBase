@@ -369,7 +369,7 @@ def customer_detail(customer_id):
                          FROM sales_followup sf 
                          WHERE sf.customer_id = c.customer_id 
                          AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at ASC, sf.followup_id ASC 
+                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
                          LIMIT 1),
                         NULL
                     ) as next_action,
@@ -378,7 +378,7 @@ def customer_detail(customer_id):
                          FROM sales_followup sf 
                          WHERE sf.customer_id = c.customer_id 
                          AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at ASC, sf.followup_id ASC 
+                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
                          LIMIT 1),
                         NULL
                     ) as next_action_due_date
@@ -491,9 +491,12 @@ def assign_customer(customer_id):
                 conn.commit()
                 return redirect(url_for('customers.customer_detail', customer_id=customer_id))
 
-            # Fetch the list of salespeople based on user role
+            # Fetch the list of salespeople for this tenant only
             if session['role'] == 'admin' or session['role'] == 'manager':
-                cursor.execute("SELECT salesperson_id, salesperson_name FROM sales_team")
+                cursor.execute(
+                    "SELECT salesperson_id, salesperson_name FROM sales_team WHERE tenant_id = ?",
+                    (get_current_tenant_id(),)
+                )
                 salespeople = cursor.fetchall()
             else:
                 abort(403) # Should not happen if the initial role check passed
