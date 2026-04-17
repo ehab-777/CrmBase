@@ -1,13 +1,27 @@
 <!DOCTYPE html>
-<html lang="{{ session.get('lang', 'en') }}">
+<html lang="{{ session.get('lang', 'en') }}"
+      dir="{{ 'rtl' if session.get('lang') == 'ar' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}{{ _('CRM System') }}{% endblock %} - {{ _('CRM Base') }}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/my_logo.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {# Fonts #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    {# Core styles #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+
     <style>
         :root {
             --primary-color: #2563eb;
@@ -21,160 +35,155 @@
             --text-secondary: #64748b;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background-color: var(--background-color);
             color: var(--text-primary);
             line-height: 1.5;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        /* Content padding inside main-area */
+        .page-content {
+            padding: 1.5rem;
+            max-width: 1400px;
         }
 
+        @media (max-width: 768px) {
+            .page-content { padding: 1rem; }
+        }
+
+        /* Shared component styles */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            border: 1px solid transparent;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; border-radius: 0.5rem;
+            font-weight: 500; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s;
+            text-decoration: none; border: 1px solid transparent;
+            font-family: inherit;
+        }
+        .btn-primary  { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+        .btn-primary:hover  { background: #1d4ed8; }
+        .btn-secondary { background: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .btn-danger   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .btn-danger:hover   { background: #fecaca; }
+
+        .alert { padding: 0.875rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        .form-group   { margin-bottom: 1rem; }
+        .form-label   { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.35rem; }
+        .form-control {
+            width: 100%; padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border-color); border-radius: 0.5rem;
+            font-size: 0.875rem; color: var(--text-primary);
+            background: var(--background-color); font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-control:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            background: #fff;
         }
 
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            border-color: #e5e7eb;
-        }
-
-        .btn-secondary:hover {
-            background-color: #e5e7eb;
-            color: #1f2937;
-            border-color: #d1d5db;
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 0.25rem;
-            margin-bottom: 1rem;
-        }
-
-        .alert-success {
-            background-color: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
+        /* Language toggle (keep in corner) */
         .language-toggle {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 14px;
+            inset-inline-end: 16px;
             background: var(--card-background);
-            padding: 8px 16px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             z-index: 1000;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-color);
         }
+        .language-toggle a { color: var(--text-secondary); text-decoration: none; margin: 0 4px; }
+        .language-toggle a:hover { color: var(--primary-color); }
 
-        .language-toggle a {
-            color: var(--text-primary);
-            text-decoration: none;
-            margin: 0 5px;
-        }
-
-        .language-toggle a:hover {
-            color: var(--primary-color);
-        }
-
-        [dir="rtl"] {
-            text-align: right;
-            direction: rtl;
-        }
-
-        [dir="ltr"] {
-            text-align: left;
-            direction: ltr;
-        }
-
-        /* RTL specific styles */
-        [dir="rtl"] .btn {
-            flex-direction: row-reverse;
-        }
-
-        [dir="rtl"] .language-toggle {
-            left: 20px;
-            right: auto;
-        }
-
-        [dir="rtl"] .alert {
-            text-align: right;
-        }
-
-        [dir="rtl"] .form-group {
-            text-align: right;
-        }
-
-        [dir="rtl"] input,
-        [dir="rtl"] textarea,
-        [dir="rtl"] select {
-            text-align: right;
-        }
+        /* RTL */
+        [dir="rtl"] .btn { flex-direction: row-reverse; }
+        [dir="rtl"] .alert { text-align: right; }
+        [dir="rtl"] .form-group { text-align: right; }
+        [dir="rtl"] input, [dir="rtl"] textarea, [dir="rtl"] select { text-align: right; }
 
         {% block extra_styles %}{% endblock %}
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    {# Language toggle — always visible #}
     <div class="language-toggle">
-        <a href="{{ url_for('change_lang', lang='en') }}">English</a> | 
-        <a href="{{ url_for('change_lang', lang='ar') }}">العربية</a>
+        <a href="{{ url_for('change_lang', lang='en') }}">EN</a> |
+        <a href="{{ url_for('change_lang', lang='ar') }}">ع</a>
     </div>
-    <div class="container" dir="{{ 'rtl' if session.get('lang') == 'ar' else 'ltr' }}">
-        {% block content %}{% endblock %}
+
+    {% if session.get('salesperson_id') %}
+    {# ── Authenticated layout: sidebar + main ── #}
+    <div class="app-layout" id="appLayout">
+
+        {# Desktop sidebar #}
+        {% include 'components/sidebar.html' %}
+
+        {# Main content area #}
+        <div class="main-area">
+            {% block content %}{% endblock %}
+        </div>
+
     </div>
+
+    {# Mobile bottom nav #}
+    {% include 'components/bottom_nav.html' %}
+
+    {# Mobile FAB #}
+    {% include 'components/fab.html' %}
+
+    {% else %}
+    {# ── Guest layout: full page (login, etc.) ── #}
+    {% block content %}{% endblock %}
+    {% endif %}
+
+    {# CSRF auto-inject into all forms #}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrf_token';
-                    csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
-                    form.appendChild(csrfInput);
-                }
-            });
+    document.addEventListener('DOMContentLoaded', function () {
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        if (!csrf) return;
+        document.querySelectorAll('form').forEach(function (form) {
+            if (!form.querySelector('input[name="csrf_token"]')) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'csrf_token';
+                inp.value = csrf.content;
+                form.appendChild(inp);
+            }
         });
+    });
     </script>
+
+    {# Sidebar + FAB JS #}
+    {% if session.get('salesperson_id') %}
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+    {% endif %}
+
+    {# PWA service worker #}
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
-</html> 
+</html>

@@ -1,0 +1,261 @@
+/* ================================================================
+   MOBILE — Bottom Nav + FAB
+   Only visible on mobile (≤768px)
+   ================================================================ */
+
+/* ── Bottom Navigation ───────────────────────────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  height: var(--bottom-nav-h, 64px);
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  z-index: 300;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bn-items {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.bn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  text-decoration: none;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 4px 0;
+  transition: color 0.15s;
+  min-width: 0;
+}
+
+.bn-item svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.bn-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+  text-align: center;
+}
+
+.bn-item.active {
+  color: #2563eb;
+}
+
+.bn-item.active svg {
+  stroke: #2563eb;
+}
+
+/* Space for FAB in center */
+.bn-fab-space {
+  flex: 1;
+  min-width: 56px;
+}
+
+/* ── FAB ─────────────────────────────────────────────────────── */
+.fab-container {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--bottom-nav-h, 64px) + 12px);
+  inset-inline-end: 20px;
+  z-index: 400;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.fab-main:active { transform: scale(0.94); }
+.fab-main svg { width: 26px; height: 26px; transition: transform 0.2s; }
+.fab-container.open .fab-main svg { transform: rotate(45deg); }
+
+/* Speed-dial items */
+.fab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s;
+  pointer-events: none;
+}
+
+.fab-container.open .fab-actions {
+  max-height: 300px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fab-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.fab-action-label {
+  background: #1e293b;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.fab-action-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.fab-action-btn svg { width: 18px; height: 18px; }
+
+.fab-action-btn.color-blue    { background: #2563eb; }
+.fab-action-btn.color-green   { background: #16a34a; }
+.fab-action-btn.color-purple  { background: #7c3aed; }
+.fab-action-btn.color-orange  { background: #ea580c; }
+
+/* RTL: flip FAB to left side */
+[dir="rtl"] .fab-container { inset-inline-end: 20px; }
+[dir="rtl"] .fab-action { flex-direction: row-reverse; }
+
+/* ── Show only on mobile ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .bottom-nav { display: block; }
+  .fab-container { display: flex; }
+}
+
+/* ── Quick-add modal ─────────────────────────────────────────── */
+.quick-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 500;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.quick-modal-overlay.open {
+  display: flex;
+}
+
+.quick-modal {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.quick-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quick-modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.qm-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1e293b;
+  background: #f8fafc;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.qm-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+
+.qm-submit {
+  width: 100%;
+  padding: 14px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+.qm-submit:active { background: #1d4ed8; }
+.qm-submit:disabled { background: #93c5fd; cursor: not-allowed; }

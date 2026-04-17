@@ -1,0 +1,366 @@
+/* ================================================================
+   SIDEBAR — CRM Base
+   Desktop collapsible sidebar with pin/unpin + RTL support
+   ================================================================ */
+
+:root {
+  --sb-width-collapsed: 64px;
+  --sb-width-expanded:  248px;
+  --sb-bg:              #0f172a;
+  --sb-border:          rgba(255,255,255,0.07);
+  --sb-text:            #94a3b8;
+  --sb-text-hover:      #cbd5e1;
+  --sb-text-active:     #ffffff;
+  --sb-active-bg:       rgba(37,99,235,0.18);
+  --sb-active-border:   #3b82f6;
+  --sb-hover-bg:        rgba(255,255,255,0.05);
+  --sb-transition:      180ms cubic-bezier(.4,0,.2,1);
+  --sb-header-h:        64px;
+  --bottom-nav-h:       64px;
+}
+
+/* ── App layout wrapper ──────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-area {
+  flex: 1;
+  min-width: 0;
+  margin-inline-start: var(--sb-width-collapsed);
+  transition: margin-inline-start var(--sb-transition);
+  background: var(--background-color);
+}
+
+.app-layout.sb-pinned .main-area {
+  margin-inline-start: var(--sb-width-expanded);
+}
+
+/* ── Sidebar shell ───────────────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: 0; bottom: 0;
+  inset-inline-start: 0;
+  width: var(--sb-width-collapsed);
+  background: var(--sb-bg);
+  border-inline-end: 1px solid var(--sb-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 200;
+  transition: width var(--sb-transition);
+  /* don't clip shadows */
+  filter: drop-shadow(2px 0 8px rgba(0,0,0,0.15));
+}
+
+/* Hover-expand (only when not pinned) */
+.sidebar:hover,
+.sidebar.sb-expanded {
+  width: var(--sb-width-expanded);
+}
+
+/* ── Labels: hidden when collapsed ──────────────────────────── */
+.sb-label {
+  opacity: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+  transition: opacity var(--sb-transition), max-width var(--sb-transition);
+  font-size: 0.875rem;
+}
+
+.sidebar:hover .sb-label,
+.sidebar.sb-expanded .sb-label {
+  opacity: 1;
+  max-width: 180px;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.sb-header {
+  height: var(--sb-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--sb-border);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.sb-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: rgba(255,255,255,0.08);
+  padding: 3px;
+}
+
+.sb-pin-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--sb-text);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--sb-transition), background var(--sb-transition), color var(--sb-transition);
+}
+
+.sidebar:hover .sb-pin-btn,
+.sidebar.sb-expanded .sb-pin-btn {
+  opacity: 1;
+}
+
+.sb-pin-btn:hover { background: var(--sb-hover-bg); color: var(--sb-text-hover); }
+.sb-pin-btn.pinned { color: var(--sb-active-border); }
+.sb-pin-btn svg { width: 15px; height: 15px; }
+
+/* ── Nav scroll area ─────────────────────────────────────────── */
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  scrollbar-width: none;
+}
+.sb-nav::-webkit-scrollbar { display: none; }
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.sb-divider {
+  height: 1px;
+  background: var(--sb-border);
+  margin: 6px 14px;
+}
+
+/* ── Section label ───────────────────────────────────────────── */
+.sb-section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ── Nav group (collapsible) ─────────────────────────────────── */
+.sb-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  color: var(--sb-text);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: start;
+  transition: color var(--sb-transition), background var(--sb-transition);
+  border-radius: 0;
+}
+
+.sb-group-header:hover {
+  color: var(--sb-text-hover);
+  background: var(--sb-hover-bg);
+}
+
+.sb-group-header svg:first-child {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.sb-chevron {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  transition: transform var(--sb-transition), opacity var(--sb-transition);
+  opacity: 0;
+}
+
+.sidebar:hover .sb-chevron,
+.sidebar.sb-expanded .sb-chevron { opacity: 1; }
+
+.sb-group.open .sb-chevron { transform: rotate(90deg); }
+[dir="rtl"] .sb-group.open .sb-chevron { transform: rotate(-90deg); }
+
+/* Group items container */
+.sb-group-items {
+  display: none;
+  padding-block: 2px;
+}
+.sb-group.open .sb-group-items { display: block; }
+
+/* ── Nav item ────────────────────────────────────────────────── */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  color: var(--sb-text);
+  text-decoration: none;
+  font-size: 0.845rem;
+  font-weight: 500;
+  border-inline-start: 2px solid transparent;
+  transition: all var(--sb-transition);
+  overflow: hidden;
+  position: relative;
+}
+
+.sb-item svg {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+}
+
+.sb-item:hover {
+  color: var(--sb-text-hover);
+  background: var(--sb-hover-bg);
+}
+
+.sb-item.active {
+  color: var(--sb-text-active);
+  background: var(--sb-active-bg);
+  border-inline-start-color: var(--sb-active-border);
+}
+
+/* Indented child items */
+.sb-group-items .sb-item {
+  padding-inline-start: 44px;
+  font-size: 0.82rem;
+}
+
+/* Soon badge */
+.sb-soon {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.sb-badge {
+  font-size: 0.6rem;
+  background: #334155;
+  color: #94a3b8;
+  padding: 1px 5px;
+  border-radius: 10px;
+  margin-inline-start: auto;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--sb-transition);
+}
+
+.sidebar:hover .sb-badge,
+.sidebar.sb-expanded .sb-badge { opacity: 1; }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.sb-footer {
+  border-top: 1px solid var(--sb-border);
+  padding: 10px 10px;
+  flex-shrink: 0;
+}
+
+.sb-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  color: var(--sb-text);
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 2px;
+}
+
+.sb-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--sb-active-border);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.sb-user-info {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.sb-user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sb-text-hover);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-user-role {
+  font-size: 0.72rem;
+  color: var(--sb-text);
+  text-transform: capitalize;
+}
+
+.sb-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  color: #f87171;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.845rem;
+  font-weight: 500;
+  overflow: hidden;
+  transition: background var(--sb-transition), color var(--sb-transition);
+}
+.sb-logout:hover { background: rgba(248,113,113,0.1); color: #fca5a5; }
+.sb-logout svg { flex-shrink: 0; width: 17px; height: 17px; }
+
+/* ── Hide old top navbar when sidebar is present ─────────────── */
+.app-layout .navbar,
+.app-layout .header-nav {
+  display: none !important;
+}
+
+/* ── Mobile: hide sidebar entirely ───────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-area {
+    margin-inline-start: 0 !important;
+    padding-bottom: calc(var(--bottom-nav-h) + 16px);
+  }
+  .app-layout.sb-pinned .main-area {
+    margin-inline-start: 0 !important;
+  }
+}

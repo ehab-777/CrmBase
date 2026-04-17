@@ -115,6 +115,14 @@ def teardown_db(error):
 def health():
     return jsonify({'status': 'ok'}), 200
 
+@app.route('/sw.js')
+def service_worker():
+    resp = app.send_static_file('sw.js')
+    resp.headers['Content-Type'] = 'application/javascript'
+    resp.headers['Service-Worker-Allowed'] = '/'
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
+
 @app.route('/')
 def index():
     if 'salesperson_id' in session:

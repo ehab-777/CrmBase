@@ -536,3 +536,39 @@ def assign_customer_submit():
     else:
         abort(403)
     return redirect(url_for('auth.login')) 
+
+# ── Quick-add customer (mobile FAB / Telegram) ────────────────────────────────
+@customers_bp.route('/quick-add', methods=['POST'])
+@require_tenant
+def quick_add():
+    """JSON endpoint: create a customer with just name + phone."""
+    if 'salesperson_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.get_json(force=True, silent=True) or {}
+    name  = (data.get('name') or '').strip()
+    phone = (data.get('phone') or '').strip()
+
+    if not name:
+        return jsonify({'error': 'Customer name is required'}), 400
+
+    salesperson_id = session['salesperson_id']
+    tenant_id      = session['tenant_id']
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO customers
+                (company_name, contact_person, phone_number,
+                 assigned_salesperson_id, tenant_id, date_added)
+            VALUES (?, ?, ?, ?, ?, datetime('now','localtime'))
+        ''', (name, 'غير محدد', phone or 'غير محدد', salesperson_id, tenant_id))
+        conn.commit()
+        customer_id = cursor.lastrowid
+        return jsonify({'customer_id': customer_id, 'name': name}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()

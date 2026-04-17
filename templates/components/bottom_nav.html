@@ -1,0 +1,40 @@
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <div class="bn-items">
+
+    {% if session.get('role') in ['admin', 'manager'] %}
+    <a href="{{ url_for('dashboard.manager_dashboard') }}"
+       class="bn-item {% if request.endpoint in ['dashboard.manager_dashboard','dashboard.admin_dashboard','dashboard.dashboard'] %}active{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span>{{ _('Home') }}</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('dashboard.dashboard') }}"
+       class="bn-item {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span>{{ _('Home') }}</span>
+    </a>
+    {% endif %}
+
+    <a href="{{ url_for('customers.customer_list') }}"
+       class="bn-item {% if request.endpoint and 'customer' in request.endpoint %}active{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>{{ _('Customers') }}</span>
+    </a>
+
+    {# Center space for FAB #}
+    <div class="bn-fab-space"></div>
+
+    <a href="/quotations"
+       class="bn-item {% if request.endpoint and 'quotation' in request.endpoint %}active{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>{{ _('Quotes') }}</span>
+    </a>
+
+    <a href="{{ url_for('telegram.link_account') }}"
+       class="bn-item {% if request.endpoint and 'telegram' in request.endpoint %}active{% endif %}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      <span>{{ _('Bot') }}</span>
+    </a>
+
+  </div>
+</nav>
