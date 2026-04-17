@@ -7,13 +7,13 @@
   --sb-width-collapsed: 64px;
   --sb-width-expanded:  248px;
   --sb-bg:              #0f172a;
-  --sb-border:          rgba(255,255,255,0.07);
-  --sb-text:            #94a3b8;
-  --sb-text-hover:      #cbd5e1;
+  --sb-border:          rgba(255,255,255,0.10);
+  --sb-text:            #c4cfe0;       /* was #94a3b8 — much clearer */
+  --sb-text-hover:      #e8edf5;       /* was #cbd5e1 */
   --sb-text-active:     #ffffff;
-  --sb-active-bg:       rgba(37,99,235,0.18);
+  --sb-active-bg:       rgba(37,99,235,0.22);
   --sb-active-border:   #3b82f6;
-  --sb-hover-bg:        rgba(255,255,255,0.05);
+  --sb-hover-bg:        rgba(255,255,255,0.07);
   --sb-transition:      180ms cubic-bezier(.4,0,.2,1);
   --sb-header-h:        64px;
   --bottom-nav-h:       64px;
@@ -164,7 +164,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: #7a90aa;       /* was #475569 — more visible */
   overflow: hidden;
   white-space: nowrap;
 }
@@ -175,10 +175,10 @@
   align-items: center;
   gap: 12px;
   padding: 9px 20px;
-  color: var(--sb-text);
+  color: var(--sb-text-hover);   /* one level brighter than normal items */
   cursor: pointer;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   background: none;
   width: 100%;
@@ -261,7 +261,7 @@
 
 /* Soon badge */
 .sb-soon {
-  opacity: 0.4;
+  opacity: 0.55;       /* was 0.4 — more readable */
   pointer-events: none;
 }
 
