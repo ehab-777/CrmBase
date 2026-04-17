@@ -182,7 +182,6 @@ def quotation_list():
     if 'salesperson_id' not in session:
         return redirect(url_for('auth.login'))
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
 
@@ -245,7 +244,6 @@ def new_quotation():
     if 'salesperson_id' not in session:
         return redirect(url_for('auth.login'))
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
     custs = _customers(tid, conn)
@@ -315,7 +313,6 @@ def edit_quotation(quotation_id):
     if 'salesperson_id' not in session:
         return redirect(url_for('auth.login'))
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
 
@@ -390,7 +387,6 @@ def quotation_detail(quotation_id):
     if 'salesperson_id' not in session:
         return redirect(url_for('auth.login'))
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
 
@@ -436,7 +432,6 @@ def change_status(quotation_id):
     if new_status not in STATUSES:
         abort(400)
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
     conn.execute(
@@ -457,7 +452,6 @@ def export_pdf(quotation_id):
     if 'salesperson_id' not in session:
         return redirect(url_for('auth.login'))
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
 
@@ -514,7 +508,6 @@ def delete_quotation(quotation_id):
     if session.get('role') not in ['admin', 'manager']:
         abort(403)
 
-    ensure_tables()
     tid  = get_current_tenant_id()
     conn = get_db()
     conn.execute(

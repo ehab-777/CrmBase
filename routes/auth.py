@@ -18,68 +18,54 @@ def login():
         username = request.form['username']
         password = request.form['password']
         db_key = request.form.get('db_key', 'default')
-        
-        print(f"Login attempt - Username: {username}, Database Key: {db_key}")  # Debug log
-        
+
         conn = get_db()
         cursor = conn.cursor()
-        
+
         try:
             # Get tenant by db_key
             cursor.execute("SELECT id, name FROM tenants WHERE db_key = ?", (db_key,))
             tenant = cursor.fetchone()
-            
+
             if not tenant:
-                print(f"Tenant not found for db_key: {db_key}")  # Debug log
                 return render_template('auth/login.html', error="Invalid database key")
-            
-            print(f"Found tenant: {tenant['name']} (ID: {tenant['id']})")  # Debug log
-            
+
             # Check sales_team table for user
             cursor.execute("""
                 SELECT salesperson_id, username, first_name, role, tenant_id, password 
                 FROM sales_team 
                 WHERE username = ? AND tenant_id = ?
             """, (username, tenant['id']))
-            
+
             user = cursor.fetchone()
-            
+
             if not user:
-                print(f"User {username} not found in tenant {tenant['name']} (ID: {tenant['id']})")  # Debug log
                 return render_template('auth/login.html', error="Wrong username")
-            
-            print(f"Found user: {user['username']}, Role: {user['role']}")  # Debug log
-            
-            # If user exists, check password using bcrypt
+
+            # Verify password using bcrypt
             try:
                 if not bcrypt.check_password_hash(user['password'], password):
-                    print("Password verification failed")  # Debug log
                     return render_template('auth/login.html', error="Wrong password")
-            except ValueError as e:
-                print(f"Password verification error: {e}")
-                print(f"Stored password hash: {user['password']}")  # Debug log
+            except ValueError:
                 return render_template('auth/login.html', error="Invalid password format")
-            
+
             # Set session variables
             session['salesperson_id'] = user['salesperson_id']
             session['salesperson_name'] = user['first_name']
             session['role'] = user['role']
             session['tenant_id'] = user['tenant_id']
-            
-            print(f"Login successful for user {username} in tenant {tenant['name']}")  # Debug log
-            
+
             # Redirect based on role
             if user['role'] in ['admin', 'manager']:
                 return redirect(url_for('dashboard.manager_dashboard'))
             return redirect(url_for('dashboard.dashboard'))
-            
+
         except sqlite3.Error as e:
-            print(f"Database error during login: {e}")
             return render_template('auth/login.html', error="Database error occurred")
         finally:
             if conn:
                 conn.close()
-    
+
     return render_template('auth/login.html')
 
 @auth_bp.route('/logout')
@@ -93,49 +79,34 @@ def logout():
 @auth_bp.route('/check_username', methods=['POST'])
 def check_username():
     try:
-        print("Received check_username request")  # Debug log
-        print("Request data:", request.get_data())  # Debug log
-        print("Request headers:", request.headers)  # Debug log
-        
         # Skip CSRF check for this endpoint since it's a pre-login check
         data = request.get_json()
-        print("Parsed JSON data:", data)  # Debug log
-        
+
         if not data:
-            print("No JSON data received")  # Debug log
             return jsonify({'error': 'No data received'}), 400
-            
+
         username = data.get('username')
-        print("Username from request:", username)  # Debug log
-        
+
         if not username:
-            print("No username provided")  # Debug log
             return jsonify({'error': 'Username is required'}), 400
-            
+
         conn = get_db()
         cursor = conn.cursor()
-        
+
         try:
-            print(f"Checking username: {username} across all tenants")  # Debug log
-            
-            # First, get all tenants
+            # Get all tenants and check each for the username
             cursor.execute('SELECT id, name, db_key FROM tenants')
             tenants = cursor.fetchall()
-            print(f"Found {len(tenants)} tenants")  # Debug log
-            
-            # Then check each tenant for the username
+
             for tenant in tenants:
-                print(f"Checking tenant: {tenant['name']} (ID: {tenant['id']}, db_key: {tenant['db_key']})")  # Debug log
-                
                 cursor.execute("""
                     SELECT salesperson_id, username, first_name, role
                     FROM sales_team 
                     WHERE username = ? AND tenant_id = ?
                 """, (username, tenant['id']))
-                
+
                 user = cursor.fetchone()
                 if user:
-                    print(f"Found user {username} in tenant: {tenant['name']} (ID: {tenant['id']}, db_key: {tenant['db_key']})")  # Debug log
                     return jsonify({
                         'tenant': {
                             'id': tenant['id'],
@@ -143,20 +114,15 @@ def check_username():
                             'db_key': tenant['db_key']
                         }
                     })
-            
-            print(f"User {username} not found in any tenant")  # Debug log
+
             return jsonify({'tenant': None})
-                
+
         except sqlite3.Error as e:
-            print(f"Database error in check_username: {str(e)}")
-            print(f"Error details: {traceback.format_exc()}")
             return jsonify({'error': 'Database error occurred'}), 500
         finally:
             conn.close()
-            
+
     except Exception as e:
-        print(f"Error checking username: {str(e)}")
-        print(f"Error details: {traceback.format_exc()}")
         return jsonify({'error': 'An error occurred while checking the username'}), 500
 
 @auth_bp.route('/check_user/<username>', methods=['GET'])
@@ -171,9 +137,9 @@ def check_user(username):
             JOIN tenants t ON s.tenant_id = t.id
             WHERE s.username = ?
         """, (username,))
-        
+
         user = cursor.fetchone()
-        
+
         if user:
             return jsonify({
                 'exists': True,
@@ -191,16 +157,15 @@ def check_user(username):
                 'exists': False,
                 'message': f'User {username} not found in sales_team table'
             })
-            
+
     except sqlite3.Error as e:
-        print(f"Database error in check_user: {e}")
         return jsonify({
             'error': 'Database error occurred',
             'details': str(e)
         }), 500
     finally:
         if conn:
-            conn.close() 
+            conn.close()
 
 @auth_bp.route('/check_tenant_users/<int:tenant_id>', methods=['GET'])
 def check_tenant_users(tenant_id):
@@ -214,21 +179,21 @@ def check_tenant_users(tenant_id):
             WHERE id = ?
         """, (tenant_id,))
         tenant = cursor.fetchone()
-        
+
         if not tenant:
             return jsonify({
                 'error': f'Tenant ID {tenant_id} not found'
             }), 404
-            
+
         # Get all users in this tenant
         cursor.execute("""
             SELECT salesperson_id, username, first_name, role
             FROM sales_team
             WHERE tenant_id = ?
         """, (tenant_id,))
-        
+
         users = cursor.fetchall()
-        
+
         return jsonify({
             'tenant': {
                 'id': tenant['id'],
@@ -237,13 +202,12 @@ def check_tenant_users(tenant_id):
             },
             'users': [dict(user) for user in users]
         })
-            
+
     except sqlite3.Error as e:
-        print(f"Database error in check_tenant_users: {e}")
         return jsonify({
             'error': 'Database error occurred',
             'details': str(e)
         }), 500
     finally:
         if conn:
-            conn.close() 
+            conn.close()

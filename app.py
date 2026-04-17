@@ -58,7 +58,7 @@ def get_locale():
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:////data/crm_multi.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
+app.config['SQLALCHEMY_ECHO'] = False
 
 # Initialize SQLAlchemy and Flask-Migrate
 db = SQLAlchemy(app)
@@ -108,6 +108,9 @@ def _ensure_telegram_columns():
 
 with app.app_context():
     _ensure_telegram_columns()
+    # Bootstrap quotation tables once at startup
+    from routes.quotations import ensure_tables
+    ensure_tables()
 
 @app.teardown_appcontext
 def teardown_db(error):
