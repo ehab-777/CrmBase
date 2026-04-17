@@ -285,6 +285,363 @@ def create_customer_from_telegram(text, salesperson_id, tenant_id):
         return None, f'خطأ: {e}'
 
 
+# ─── Quotation conversation state (in-memory, keyed by chat_id) ───────────────
+# Structure per chat_id:
+# {
+#   'step': 'select_customer' | 'add_items' | 'discount' | 'notes',
+#   'tenant_id': int,
+#   'salesperson_id': int,
+#   'customer_id': int,
+#   'customer_name': str,
+#   'items': [{'name', 'quantity', 'unit_price', 'discount_pct'}],
+#   'discount_type': 'none'|'percent'|'fixed',
+#   'discount_value': float,
+#   'notes': str,
+#   'customers': [{'customer_id', 'company_name'}],   # for selection step
+# }
+_QUOTATION_STATE: dict = {}
+
+QUOTATION_TRIGGERS = [
+    'عرض سعر', 'عرض اسعار', 'عرض أسعار', 'انشاء عرض', 'إنشاء عرض',
+    'اضف عرض', 'أضف عرض', 'new quotation', 'quote', '/quote',
+    'عرض جديد', 'اريد عرض', 'أريد عرض',
+]
+
+DONE_KEYWORDS   = ['انتهيت', 'خلاص', 'كفاية', 'done', '/done', 'انهيت', 'اكمل', 'أكمل']
+CANCEL_KEYWORDS = ['الغ', 'إلغاء', 'cancel', '/cancel', 'الغاء', 'وقف', 'خروج']
+SKIP_KEYWORDS   = ['لا', 'تخطى', 'skip', 'بدون', 'بدون خصم', 'لا خصم', 'لا يوجد']
+
+
+def detect_quotation_intent(text):
+    t = text.lower().strip()
+    return any(trigger in t for trigger in QUOTATION_TRIGGERS)
+
+
+def parse_item_line(text):
+    """
+    Parse a line like:
+      كرسي مكتب × 5 × 200
+      كرسي × 5 × 200 (5%)
+      Chair 3 150
+    Returns dict or None.
+    """
+    # Try separator-based parsing first (× , x , -)
+    separators = r'[×xX\-\|,،]'
+    parts = [p.strip() for p in re.split(separators, text) if p.strip()]
+
+    # Fallback: last 1-2 tokens are numbers, rest is name
+    if len(parts) < 2:
+        tokens = text.strip().split()
+        nums = []
+        name_tokens = []
+        for tok in reversed(tokens):
+            clean = re.sub(r'[^\d.]', '', tok)
+            if clean and len(nums) < 2:
+                nums.insert(0, clean)
+            else:
+                name_tokens.insert(0, tok)
+        if len(nums) >= 1 and name_tokens:
+            parts = [' '.join(name_tokens)] + nums
+
+    if len(parts) < 2:
+        return None
+
+    name = parts[0].strip()
+    if not name:
+        return None
+
+    # Extract optional discount like "(10%)"
+    disc_pct = 0.0
+    disc_match = re.search(r'\((\d+(?:\.\d+)?)\s*%\)', text)
+    if disc_match:
+        disc_pct = float(disc_match.group(1))
+        name = re.sub(r'\(\d+(?:\.\d+)?%\)', '', name).strip()
+
+    try:
+        if len(parts) >= 3:
+            qty   = float(re.sub(r'[^\d.]', '', parts[1]) or 1)
+            price = float(re.sub(r'[^\d.]', '', parts[2]) or 0)
+        else:
+            qty   = 1.0
+            price = float(re.sub(r'[^\d.]', '', parts[1]) or 0)
+    except ValueError:
+        return None
+
+    if price == 0:
+        return None
+
+    return {
+        'name': name,
+        'quantity': qty,
+        'unit_price': price,
+        'discount_pct': disc_pct,
+        'line_total': qty * price * (1 - disc_pct / 100),
+    }
+
+
+def parse_discount_input(text):
+    """Return (discount_type, discount_value) or ('none', 0)."""
+    text = text.strip()
+    if any(kw in text.lower() for kw in SKIP_KEYWORDS):
+        return 'none', 0.0
+    pct_match = re.search(r'(\d+(?:\.\d+)?)\s*%', text)
+    if pct_match:
+        return 'percent', float(pct_match.group(1))
+    num_match = re.search(r'(\d+(?:\.\d+)?)', text)
+    if num_match:
+        return 'fixed', float(num_match.group(1))
+    return 'none', 0.0
+
+
+def _items_summary(items):
+    lines = []
+    for i, it in enumerate(items, 1):
+        disc = f' (-{it["discount_pct"]}%)' if it['discount_pct'] else ''
+        lines.append(
+            f'{i}. {it["name"]} — {it["quantity"]:g} × {it["unit_price"]:,.0f}{disc} = {it["line_total"]:,.0f}'
+        )
+    return '\n'.join(lines)
+
+
+def _calc_totals_bot(items, discount_type, discount_value):
+    subtotal = sum(i['line_total'] for i in items)
+    if discount_type == 'percent':
+        disc_amt = subtotal * discount_value / 100
+    elif discount_type == 'fixed':
+        disc_amt = min(discount_value, subtotal)
+    else:
+        disc_amt = 0.0
+    total = subtotal - disc_amt
+    return subtotal, disc_amt, total
+
+
+def create_quotation_from_state(state):
+    """
+    Insert a quotation + items into the DB.
+    Returns (quotation_number, quotation_id) or raises.
+    """
+    conn = get_db_for_tenant(state['tenant_id'])
+    if not conn:
+        raise RuntimeError('DB error')
+
+    items = state['items']
+    disc_type  = state.get('discount_type', 'none')
+    disc_value = state.get('discount_value', 0.0)
+    subtotal, disc_amt, total = _calc_totals_bot(items, disc_type, disc_value)
+    notes = state.get('notes', '')
+
+    from datetime import date as _date
+    cursor = conn.cursor()
+
+    # Insert quotation
+    cursor.execute('''
+        INSERT INTO quotations
+            (customer_id, salesperson_id, status, issue_date,
+             discount_type, discount_value, tax_percent,
+             subtotal, discount_amount, tax_amount, total,
+             currency, notes, tenant_id)
+        VALUES (?, ?, 'draft', ?, ?, ?, 0, ?, ?, 0, ?, 'SAR', ?, ?)
+    ''', (
+        state['customer_id'], state['salesperson_id'],
+        _date.today().isoformat(),
+        disc_type, disc_value,
+        subtotal, disc_amt, total,
+        notes, state['tenant_id'],
+    ))
+    qid = cursor.lastrowid
+
+    # Set quotation number
+    year = _date.today().year
+    q_number = f'QT-{year}-{qid:04d}'
+    cursor.execute('UPDATE quotations SET quotation_number = ? WHERE quotation_id = ?',
+                   (q_number, qid))
+
+    # Insert items
+    for idx, item in enumerate(items):
+        cursor.execute('''
+            INSERT INTO quotation_items
+                (quotation_id, name, quantity, unit_price,
+                 discount_pct, line_total, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (qid, item['name'], item['quantity'], item['unit_price'],
+              item['discount_pct'], item['line_total'], idx))
+
+    conn.commit()
+    conn.close()
+    return q_number, qid
+
+
+def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
+    """
+    Drive the multi-step quotation creation conversation.
+    Returns the reply string to send back.
+    """
+    state = _QUOTATION_STATE.get(chat_id)
+
+    # ── Cancel at any point ──
+    if any(kw in text.lower() for kw in CANCEL_KEYWORDS):
+        _QUOTATION_STATE.pop(chat_id, None)
+        return '❌ تم إلغاء إنشاء عرض السعر.'
+
+    # ── Step 0: Start — list customers ──
+    if state is None:
+        conn = get_db_for_tenant(tenant_id)
+        if not conn:
+            return '⚠️ خطأ في قاعدة البيانات.'
+        cursor = conn.cursor()
+        cursor.execute(
+            '''SELECT customer_id, company_name FROM customers
+               WHERE tenant_id = ? AND assigned_salesperson_id = ?
+               ORDER BY company_name LIMIT 20''',
+            (tenant_id, salesperson_id)
+        )
+        customers = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+
+        if not customers:
+            return '⚠️ لا يوجد عملاء مسجلون باسمك. أضف عميلاً أولاً.'
+
+        _QUOTATION_STATE[chat_id] = {
+            'step': 'select_customer',
+            'tenant_id': tenant_id,
+            'salesperson_id': salesperson_id,
+            'customers': customers,
+            'items': [],
+            'discount_type': 'none',
+            'discount_value': 0.0,
+            'notes': '',
+        }
+        lines = '\n'.join(f'{i+1}. {c["company_name"]}' for i, c in enumerate(customers))
+        return (
+            '📄 <b>إنشاء عرض سعر جديد</b>\n\n'
+            'اختر العميل بإرسال الرقم أو اسم الشركة:\n\n' + lines +
+            '\n\nأرسل /cancel للإلغاء.'
+        )
+
+    step = state['step']
+
+    # ── Step 1: Customer selection ──
+    if step == 'select_customer':
+        customers = state['customers']
+        chosen = None
+
+        # Try numeric index
+        num_match = re.fullmatch(r'\d+', text.strip())
+        if num_match:
+            idx = int(text.strip()) - 1
+            if 0 <= idx < len(customers):
+                chosen = customers[idx]
+
+        # Try name match
+        if not chosen:
+            t = text.strip().lower()
+            for c in customers:
+                if t in c['company_name'].lower() or c['company_name'].lower() in t:
+                    chosen = c
+                    break
+
+        if not chosen:
+            return '❓ لم أجد هذا العميل. أرسل رقم العميل من القائمة أو جزءاً من اسمه.'
+
+        state['customer_id']   = chosen['customer_id']
+        state['customer_name'] = chosen['company_name']
+        state['step']          = 'add_items'
+
+        return (
+            f'✅ العميل: <b>{chosen["company_name"]}</b>\n\n'
+            '📦 أرسل المنتجات/الخدمات بهذا الشكل:\n'
+            '<code>اسم المنتج × الكمية × السعر</code>\n\n'
+            'مثال:\n'
+            '<code>كرسي مكتب × 5 × 200</code>\n'
+            '<code>طاولة × 2 × 750</code>\n\n'
+            'عند الانتهاء أرسل: <b>انتهيت</b>'
+        )
+
+    # ── Step 2: Add items ──
+    if step == 'add_items':
+        if any(kw in text.lower() for kw in DONE_KEYWORDS):
+            if not state['items']:
+                return '⚠️ لم تضف أي منتجات بعد. أرسل منتجاً واحداً على الأقل.'
+            state['step'] = 'discount'
+            summary = _items_summary(state['items'])
+            subtotal = sum(i['line_total'] for i in state['items'])
+            return (
+                f'📋 <b>الطلبيات حتى الآن:</b>\n{summary}\n\n'
+                f'💰 الإجمالي قبل الخصم: <b>{subtotal:,.0f} SAR</b>\n\n'
+                'هل تريد إضافة خصم؟\n'
+                '• أرسل نسبة مثل: <code>10%</code>\n'
+                '• أو مبلغ ثابت مثل: <code>500</code>\n'
+                '• أو <b>لا</b> لتخطي الخصم'
+            )
+
+        item = parse_item_line(text)
+        if not item:
+            return (
+                '❓ لم أفهم. أرسل المنتج بهذا الشكل:\n'
+                '<code>اسم المنتج × الكمية × السعر</code>\n\n'
+                'مثال: <code>كرسي مكتب × 5 × 200</code>'
+            )
+
+        state['items'].append(item)
+        disc_str = f' (خصم {item["discount_pct"]}%)' if item['discount_pct'] else ''
+        return (
+            f'✅ تمت الإضافة: <b>{item["name"]}</b> — '
+            f'{item["quantity"]:g} × {item["unit_price"]:,.0f}{disc_str} = {item["line_total"]:,.0f} SAR\n\n'
+            f'أرسل منتجاً آخر أو <b>انتهيت</b> للمتابعة.'
+        )
+
+    # ── Step 3: Discount ──
+    if step == 'discount':
+        disc_type, disc_value = parse_discount_input(text)
+        state['discount_type']  = disc_type
+        state['discount_value'] = disc_value
+        state['step'] = 'notes'
+
+        subtotal, disc_amt, total = _calc_totals_bot(state['items'], disc_type, disc_value)
+        disc_str = (
+            f'\n🏷️ خصم: {disc_amt:,.0f} SAR'
+            if disc_type != 'none' else ''
+        )
+        return (
+            f'💰 الإجمالي: <b>{total:,.0f} SAR</b>{disc_str}\n\n'
+            'أرسل ملاحظات لعرض السعر (أو <b>لا</b> لتخطي):'
+        )
+
+    # ── Step 4: Notes → Create ──
+    if step == 'notes':
+        if not any(kw in text.lower() for kw in SKIP_KEYWORDS):
+            state['notes'] = text.strip()
+
+        try:
+            q_number, qid = create_quotation_from_state(state)
+        except Exception as e:
+            _QUOTATION_STATE.pop(chat_id, None)
+            return f'❌ فشل إنشاء العرض: {e}'
+
+        _QUOTATION_STATE.pop(chat_id, None)
+
+        subtotal, disc_amt, total = _calc_totals_bot(
+            state['items'], state['discount_type'], state['discount_value']
+        )
+        summary = _items_summary(state['items'])
+        disc_line = f'\n🏷️ خصم: {disc_amt:,.0f} SAR' if disc_amt else ''
+
+        return (
+            f'✅ <b>تم إنشاء عرض السعر بنجاح!</b>\n\n'
+            f'📄 رقم العرض: <b>{q_number}</b>\n'
+            f'🏢 العميل: {state["customer_name"]}\n\n'
+            f'<b>المنتجات:</b>\n{summary}\n\n'
+            f'💰 الإجمالي الفرعي: {subtotal:,.0f} SAR'
+            f'{disc_line}\n'
+            f'💵 <b>الإجمالي: {total:,.0f} SAR</b>\n\n'
+            f'يمكنك مراجعة العرض وإرساله من التطبيق.'
+        )
+
+    # Unknown state — reset
+    _QUOTATION_STATE.pop(chat_id, None)
+    return '⚠️ حدث خطأ. أرسل /start للبدء من جديد.'
+
+
 def get_db_for_tenant(tenant_id):
     """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
     try:
@@ -347,7 +704,9 @@ def webhook():
                 conn.close()
                 send_message(chat_id,
                     f'✅ تم ربط حسابك بنجاح! مرحباً {sp["first_name"]}.\n\n'
-                    f'يمكنك الآن:\n'
+                    f'يمكنك الآن:\n\n'
+                    f'📄 <b>إنشاء عرض سعر:</b>\n'
+                    f'أرسل: <code>عرض سعر</code>\n\n'
                     f'🏢 <b>إنشاء عميل جديد:</b>\n'
                     f'<code>عميل جديد: شركة النور، المسؤول خالد، 0556789012</code>\n\n'
                     f'📝 <b>تسجيل متابعة:</b>\n'
@@ -413,8 +772,15 @@ def webhook():
         send_message(chat_id, f'📝 فهمت: "{transcribed}"')
         text = transcribed   # fall through to NLP parser below
 
-    # ── Text message → new customer OR follow-up ──
+    # ── Text message → quotation | new customer | follow-up ──
     if text:
+        # ── Active quotation conversation ──
+        if chat_id in _QUOTATION_STATE or detect_quotation_intent(text):
+            conn.close()
+            reply = handle_quotation_flow(chat_id, text, salesperson_id, tenant_id)
+            send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
         # Check for new customer intent first
         if detect_new_customer_intent(text):
             customer_id, result = create_customer_from_telegram(text, salesperson_id, tenant_id)
