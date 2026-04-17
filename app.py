@@ -123,6 +123,13 @@ def service_worker():
     resp.headers['Cache-Control'] = 'no-cache'
     return resp
 
+@app.route('/manifest.json')
+def manifest():
+    resp = app.send_static_file('manifest.json')
+    resp.headers['Content-Type'] = 'application/manifest+json'
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
+
 @app.route('/')
 def index():
     if 'salesperson_id' in session:

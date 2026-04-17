@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}{{ _('CRM System') }}{% endblock %} - {{ _('CRM Base') }}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/my_logo.png') }}">
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" crossorigin="use-credentials">
+    <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon-192.png') }}">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -168,11 +168,47 @@
     <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
     {% endif %}
 
-    {# PWA service worker #}
+    {# PWA service worker + install prompt #}
     <script>
+    // Register service worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(function(){});
+        navigator.serviceWorker.register('/sw.js', {scope: '/'})
+            .then(function(r){ console.log('[SW] registered', r.scope); })
+            .catch(function(e){ console.warn('[SW] failed', e); });
     }
+
+    // Capture install prompt
+    var _pwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        _pwaPrompt = e;
+        // Show install button wherever it exists
+        document.querySelectorAll('.pwa-install-btn').forEach(function(btn){
+            btn.style.display = 'flex';
+        });
+        // Show install banner on mobile
+        var banner = document.getElementById('pwaBanner');
+        if (banner) banner.style.display = 'flex';
+    });
+
+    window.installPWA = function() {
+        if (!_pwaPrompt) return;
+        _pwaPrompt.prompt();
+        _pwaPrompt.userChoice.then(function(r){
+            console.log('[PWA] install choice:', r.outcome);
+            _pwaPrompt = null;
+            document.querySelectorAll('.pwa-install-btn').forEach(function(btn){
+                btn.style.display = 'none';
+            });
+            var banner = document.getElementById('pwaBanner');
+            if (banner) banner.style.display = 'none';
+        });
+    };
+
+    window.addEventListener('appinstalled', function() {
+        console.log('[PWA] installed!');
+        _pwaPrompt = null;
+    });
     </script>
 
     {% block scripts %}{% endblock %}
