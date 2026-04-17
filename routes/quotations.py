@@ -49,7 +49,7 @@ NEXT_STATUSES = {
 
 def ensure_tables():
     conn = get_db()
-    conn.executescript('''
+    conn.execute('''
         CREATE TABLE IF NOT EXISTS quotations (
             quotation_id    INTEGER PRIMARY KEY AUTOINCREMENT,
             quotation_number TEXT,
@@ -71,8 +71,9 @@ def ensure_tables():
             tenant_id       INTEGER NOT NULL,
             created_at      DATETIME DEFAULT (datetime('now','localtime')),
             updated_at      DATETIME DEFAULT (datetime('now','localtime'))
-        );
-
+        )
+    ''')
+    conn.execute('''
         CREATE TABLE IF NOT EXISTS quotation_items (
             item_id      INTEGER PRIMARY KEY AUTOINCREMENT,
             quotation_id INTEGER NOT NULL,
@@ -85,7 +86,7 @@ def ensure_tables():
             discount_pct REAL    DEFAULT 0,
             line_total   REAL    NOT NULL DEFAULT 0,
             sort_order   INTEGER DEFAULT 0
-        );
+        )
     ''')
     conn.commit()
     conn.close()

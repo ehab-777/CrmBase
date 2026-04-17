@@ -109,21 +109,7 @@
             background: #fff;
         }
 
-        /* Language toggle (keep in corner) */
-        .language-toggle {
-            position: fixed;
-            top: 14px;
-            inset-inline-end: 16px;
-            background: var(--card-background);
-            padding: 6px 14px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 1000;
-            font-size: 0.8rem;
-            border: 1px solid var(--border-color);
-        }
-        .language-toggle a { color: var(--text-secondary); text-decoration: none; margin: 0 4px; }
-        .language-toggle a:hover { color: var(--primary-color); }
+        /* Language toggle — moved to profile page */
 
         /* RTL */
         [dir="rtl"] .btn { flex-direction: row-reverse; }
@@ -136,12 +122,6 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-
-    {# Language toggle — always visible #}
-    <div class="language-toggle">
-        <a href="{{ url_for('change_lang', lang='en') }}">EN</a> |
-        <a href="{{ url_for('change_lang', lang='ar') }}">ع</a>
-    </div>
 
     {% if session.get('salesperson_id') %}
     <div class="app-layout" id="appLayout">
