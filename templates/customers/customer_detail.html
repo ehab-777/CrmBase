@@ -315,8 +315,8 @@
                 <span class="info-value">{{ customer.company_industry or 'N/A' }}</span>
             </div>
             <div class="info-group">
-                <span class="info-label">Assigned Salesperson</span>
-                <span class="info-value">{{ customer.salesperson_name or 'N/A' }}</span>
+                <span class="info-label">{{ _('Assigned Salesperson') }}</span>
+                <span class="info-value">{{ customer.salesperson_name or _('N/A') }}</span>
             </div>
             <div class="info-group">
                 <span class="info-label">Initial Interest</span>
@@ -340,9 +340,9 @@
 
     <div class="followups-section">
         <div class="section-header">
-            <h2 class="section-title">Follow-ups</h2>
+            <h2 class="section-title">{{ _('Follow-ups') }}</h2>
             <a href="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}" class="btn-link">
-                Add Follow-up
+                {{ _('Add Follow-up') }}
             </a>
         </div>
 
@@ -383,7 +383,7 @@
                 </div>
                 <div class="followup-created">
                     <div style="text-align: right; font-size: 0.8em; color: var(--text-secondary); margin-bottom: 0.25rem;">
-                        Created by: {{ followup.salesperson_name or 'N/A' }}
+                        {{ _('Created by') }}: {{ followup.salesperson_name or _('N/A') }}
                     </div>
                     Created: {{ followup.created_at }}
                 </div>
