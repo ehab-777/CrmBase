@@ -1,18 +1,17 @@
-# English translations for PROJECT.
-# Copyright (C) 2025 ORGANIZATION
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-04-17 19:45+0300\n"
-"PO-Revision-Date: 2025-05-25 21:26+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: en\n"
-"Language-Team: en <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,41 +19,40 @@ msgstr ""
 
 #: templates/base.html:7
 msgid "CRM System"
-msgstr "CRM System"
+msgstr ""
 
 #: templates/base.html:7 templates/components/navbar.html:3
 msgid "CRM Base"
-msgstr "CRM Base"
+msgstr ""
 
 #: templates/auth/login.html:4 templates/auth/login.html:322
 #: templates/dashboard/dashboard.html:251
 msgid "Welcome"
-msgstr "Welcome"
+msgstr ""
 
 #: templates/auth/login.html:330
 msgid "Username"
-msgstr "Username"
+msgstr ""
 
 #: templates/auth/login.html:338
 msgid "Password"
-msgstr "Password"
+msgstr ""
 
 #: templates/auth/login.html:348
 msgid "Login"
-msgstr "Login"
+msgstr ""
 
 #: templates/components/bottom_nav.html:8
 #: templates/components/bottom_nav.html:14
-#, fuzzy
 msgid "Home"
-msgstr "Phone"
+msgstr ""
 
 #: templates/components/bottom_nav.html:21 templates/components/navbar.html:13
 #: templates/components/sidebar.html:101
 #: templates/customers/customer_list.html:3
 #: templates/customers/customer_list.html:359
 msgid "Customers"
-msgstr "Customers"
+msgstr ""
 
 #: templates/components/bottom_nav.html:30
 msgid "Quotes"
@@ -76,35 +74,31 @@ msgstr ""
 #: templates/customers/customer_list.html:362
 #: templates/dashboard/dashboard.html:252
 msgid "Add Customer"
-msgstr "Add Customer"
+msgstr ""
 
 #: templates/components/fab.html:31
-#, fuzzy
 msgid "Full Customer Form"
-msgstr "No customers found"
+msgstr ""
 
 #: templates/components/fab.html:38
 #: templates/quotations/quotation_builder.html:2
 #: templates/quotations/quotation_builder.html:172
 #: templates/quotations/quotation_list.html:104
 #: templates/quotations/quotation_list.html:208
-#, fuzzy
 msgid "New Quotation"
-msgstr "Next Action"
+msgstr ""
 
 #: templates/components/fab.html:47
 msgid "Quick actions"
 msgstr ""
 
 #: templates/components/fab.html:57
-#, fuzzy
 msgid "Quick Add Customer"
-msgstr "Add Customer"
+msgstr ""
 
 #: templates/components/fab.html:58
-#, fuzzy
 msgid "Close"
-msgstr "Close Won"
+msgstr ""
 
 #: templates/components/fab.html:64
 msgid "Company / Customer name *"
@@ -115,44 +109,42 @@ msgid "Phone number"
 msgstr ""
 
 #: templates/components/fab.html:68 templates/components/fab.html:69
-#, fuzzy
 msgid "Save Customer"
-msgstr "Add Customer"
+msgstr ""
 
 #: templates/components/navbar.html:7
 msgid "Toggle menu"
-msgstr "Toggle menu"
+msgstr ""
 
 #: templates/components/navbar.html:17 templates/components/navbar.html:21
 #: templates/components/sidebar.html:26 templates/components/sidebar.html:32
 #: templates/dashboard/dashboard.html:3
 msgid "Dashboard"
-msgstr "Dashboard"
+msgstr ""
 
 #: templates/components/navbar.html:26 templates/components/sidebar.html:125
 msgid "Sales Team"
-msgstr "Sales Team"
+msgstr ""
 
 #: templates/components/navbar.html:31 templates/components/sidebar.html:150
 msgid "Tenants"
-msgstr "Tenants"
+msgstr ""
 
 #: templates/components/navbar.html:35 templates/components/sidebar.html:181
 msgid "Telegram"
-msgstr "Telegram"
+msgstr ""
 
 #: templates/components/navbar.html:38 templates/components/sidebar.html:203
 msgid "Logout"
-msgstr "Logout"
+msgstr ""
 
 #: templates/components/sidebar.html:9
 msgid "Pin sidebar"
 msgstr ""
 
 #: templates/components/sidebar.html:42
-#, fuzzy
 msgid "Sales"
-msgstr "Sales Team"
+msgstr ""
 
 #: templates/components/sidebar.html:48
 msgid "Leads"
@@ -163,9 +155,8 @@ msgid "Deals"
 msgstr ""
 
 #: templates/components/sidebar.html:63
-#, fuzzy
 msgid "Follow-ups"
-msgstr "Add Follow-up"
+msgstr ""
 
 #: templates/components/sidebar.html:69
 msgid "Calls"
@@ -210,14 +201,12 @@ msgid "Lead Sources"
 msgstr ""
 
 #: templates/components/sidebar.html:160
-#, fuzzy
 msgid "Activities"
-msgstr "Active"
+msgstr ""
 
 #: templates/components/sidebar.html:165
-#, fuzzy
 msgid "Cities"
-msgstr "Active"
+msgstr ""
 
 #: templates/components/sidebar.html:170
 msgid "Job Titles"
@@ -232,170 +221,168 @@ msgstr ""
 #: templates/customers/add_followup.html:274
 #: templates/customers/customer_list.html:421
 msgid "Add Follow-up"
-msgstr "Add Follow-up"
+msgstr ""
 
 #: templates/customers/add_followup.html:196
 msgid "Back to Customer"
-msgstr "Back to Customer"
+msgstr ""
 
 #: templates/customers/add_followup.html:200
 #: templates/customers/add_followup.html:204
 #: templates/customers/customer_list.html:365
 msgid "Back to Dashboard"
-msgstr "Back to Dashboard"
+msgstr ""
 
 #: templates/customers/add_followup.html:215
 msgid "Last Contact Date"
-msgstr "Last Contact Date"
+msgstr ""
 
 #: templates/customers/add_followup.html:221
 msgid "Contact Method"
-msgstr "Contact Method"
+msgstr ""
 
 #: templates/customers/add_followup.html:233
 msgid "Current Sales Stage"
-msgstr "Current Sales Stage"
+msgstr ""
 
 #: templates/customers/add_followup.html:235
 msgid "Select stage"
-msgstr "Select stage"
+msgstr ""
 
 #: templates/customers/add_followup.html:246
 msgid "Next Action"
-msgstr "Next Action"
+msgstr ""
 
 #: templates/customers/add_followup.html:248
 msgid "Select next action"
-msgstr "Select next action"
+msgstr ""
 
 #: templates/customers/add_followup.html:259
 msgid "Next Action Date"
-msgstr "Next Action Date"
+msgstr ""
 
 #: templates/customers/add_followup.html:264
 msgid "Deal Value (SAR)"
-msgstr "Deal Value (SAR)"
+msgstr ""
 
 #: templates/customers/add_followup.html:269
 #: templates/dashboard/dashboard.html:340
 #: templates/quotations/quotation_builder.html:320
 msgid "Summary"
-msgstr "Summary"
+msgstr ""
 
 #: templates/customers/customer_list.html:371
 msgid "Search by company, contact, phone, or stage..."
-msgstr "Search by company, contact, phone, or stage..."
+msgstr ""
 
 #: templates/customers/customer_list.html:374
 msgid "All Stages"
-msgstr "All Stages"
+msgstr ""
 
 #: templates/customers/customer_list.html:394
 msgid "Contact"
-msgstr "Contact"
+msgstr ""
 
 #: templates/customers/customer_list.html:398
 msgid "Phone"
-msgstr "Phone"
+msgstr ""
 
 #: templates/customers/customer_list.html:402
 msgid "Industry"
-msgstr "Industry"
+msgstr ""
 
 #: templates/customers/customer_list.html:406
 msgid "Potential Value"
-msgstr "Potential Value"
+msgstr ""
 
 #: templates/customers/customer_list.html:412
 msgid "Last Contact"
-msgstr "Last Contact"
+msgstr ""
 
 #: templates/customers/customer_list.html:418
 msgid "View Details"
-msgstr "View Details"
+msgstr ""
 
 #: templates/customers/customer_list.html:453
 msgid "No customers found"
-msgstr "No customers found"
+msgstr ""
 
 #: templates/customers/customer_list.html:454
 msgid "Add your first customer to get started"
-msgstr "Add your first customer to get started"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:258
 #: templates/dashboard/manager_dashboard.html:753
 msgid "Total Customers"
-msgstr "Total Customers"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:262
 msgid "Active"
-msgstr "Active"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:267
 msgid "Close Won"
-msgstr "Close Won"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:272
 msgid "Close Lost"
-msgstr "Close Lost"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:277
 msgid "Total Potential Value"
-msgstr "Total Potential Value"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:285
 msgid "Sales Pipeline"
-msgstr "Sales Pipeline"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:316
 msgid "No leads in the pipeline."
-msgstr "No leads in the pipeline."
+msgstr ""
 
 #: templates/dashboard/dashboard.html:323
 msgid "Upcoming Follow-ups"
-msgstr "Upcoming Follow-ups"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:338
 msgid "Next"
-msgstr "Next"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:339
 msgid "Due"
-msgstr "Due"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:341
 msgid "Value"
-msgstr "Value"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:350
 msgid "Today"
-msgstr "Today"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:351
 msgid "This Week"
-msgstr "This Week"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:352
 msgid "Next Week"
-msgstr "Next Week"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:353
 msgid "Later"
-msgstr "Later"
+msgstr ""
 
 #: templates/dashboard/dashboard.html:356
 msgid "No upcoming follow-ups."
-msgstr "No upcoming follow-ups."
+msgstr ""
 
 #: templates/dashboard/manager_dashboard.html:757
-#, fuzzy
 msgid "Pipeline Value"
-msgstr "Potential Value"
+msgstr ""
 
 #: templates/dashboard/manager_dashboard.html:761
-#, fuzzy
 msgid "Active Stages"
-msgstr "All Stages"
+msgstr ""
 
 #: templates/dashboard/manager_dashboard.html:765
 msgid "Team Size"
@@ -417,9 +404,8 @@ msgid "Add New Product"
 msgstr ""
 
 #: templates/products/product_form.html:154
-#, fuzzy
 msgid "Back to Products"
-msgstr "Back to Customer"
+msgstr ""
 
 #: templates/products/product_form.html:163
 msgid "Basic Information"
@@ -435,9 +421,8 @@ msgstr ""
 
 #: templates/products/product_form.html:172
 #: templates/products/product_list.html:325
-#, fuzzy
 msgid "Category"
-msgstr "Later"
+msgstr ""
 
 #: templates/products/product_form.html:176
 msgid "e.g. Software, Hardware…"
@@ -508,9 +493,8 @@ msgid "Search name, description, category…"
 msgstr ""
 
 #: templates/products/product_list.html:302
-#, fuzzy
 msgid "All Categories"
-msgstr "All Stages"
+msgstr ""
 
 #: templates/products/product_list.html:307
 #: templates/quotations/quotation_list.html:120
@@ -519,9 +503,8 @@ msgstr ""
 
 #: templates/products/product_list.html:309
 #: templates/quotations/quotation_list.html:122
-#, fuzzy
 msgid "Clear"
-msgstr "Later"
+msgstr ""
 
 #: templates/products/product_list.html:314
 #: templates/quotations/quotation_list.html:127
@@ -560,9 +543,8 @@ msgstr ""
 
 #: templates/products/product_list.html:331
 #: templates/quotations/quotation_list.html:142
-#, fuzzy
 msgid "Actions"
-msgstr "Next Action"
+msgstr ""
 
 #: templates/products/product_list.html:359
 #: templates/quotations/quotation_detail.html:108
@@ -579,18 +561,16 @@ msgid "Delete"
 msgstr ""
 
 #: templates/products/product_list.html:397
-#, fuzzy
 msgid "No products found"
-msgstr "No customers found"
+msgstr ""
 
 #: templates/products/product_list.html:399
 msgid "Try clearing your search filters."
 msgstr ""
 
 #: templates/products/product_list.html:401
-#, fuzzy
 msgid "Add your first product or service to get started."
-msgstr "Add your first customer to get started"
+msgstr ""
 
 #: templates/products/product_list.html:404
 msgid "Add First Product"
@@ -598,9 +578,8 @@ msgstr ""
 
 #: templates/quotations/quotation_builder.html:2
 #: templates/quotations/quotation_builder.html:171
-#, fuzzy
 msgid "Edit Quotation"
-msgstr "Next Action"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:174
 #: templates/quotations/quotation_detail.html:111
@@ -609,20 +588,17 @@ msgstr ""
 
 #: templates/quotations/quotation_builder.html:189
 #: templates/quotations/quotation_detail.html:127
-#, fuzzy
 msgid "Quotation Details"
-msgstr "View Details"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:192
 #: templates/quotations/quotation_list.html:137
-#, fuzzy
 msgid "Customer"
-msgstr "Customers"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:194
-#, fuzzy
 msgid "Select customer"
-msgstr "Select stage"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:204
 #: templates/quotations/quotation_detail.html:128
@@ -642,9 +618,8 @@ msgid "Currency"
 msgstr ""
 
 #: templates/quotations/quotation_builder.html:226
-#, fuzzy
 msgid "Line Items"
-msgstr "Sales Team"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:236
 msgid "Search products to add…"
@@ -671,9 +646,8 @@ msgstr ""
 #: templates/quotations/quotation_builder.html:249
 #: templates/quotations/quotation_detail.html:147
 #: templates/quotations/quotation_list.html:141
-#, fuzzy
 msgid "Total"
-msgstr "Today"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:258
 msgid "Add blank line"
@@ -702,19 +676,16 @@ msgid "e.g. Payment due within 30 days"
 msgstr ""
 
 #: templates/quotations/quotation_builder.html:284
-#, fuzzy
 msgid "Discount & Tax"
-msgstr "Disconnect Telegram"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:287
-#, fuzzy
 msgid "Discount Type"
-msgstr "Disconnect Telegram"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:290
-#, fuzzy
 msgid "None"
-msgstr "Phone"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:294
 #: templates/quotations/quotation_detail.html:181
@@ -722,9 +693,8 @@ msgid "Fixed"
 msgstr ""
 
 #: templates/quotations/quotation_builder.html:302
-#, fuzzy
 msgid "Discount Value"
-msgstr "Potential Value"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:310
 msgid "Tax %"
@@ -747,9 +717,8 @@ msgstr ""
 
 #: templates/quotations/quotation_builder.html:334
 #: templates/quotations/quotation_detail.html:194
-#, fuzzy
 msgid "TOTAL"
-msgstr "Today"
+msgstr ""
 
 #: templates/quotations/quotation_builder.html:342
 msgid "Save Quotation"
@@ -812,9 +781,8 @@ msgid "Search number or customer…"
 msgstr ""
 
 #: templates/quotations/quotation_list.html:113
-#, fuzzy
 msgid "All Statuses"
-msgstr "All Stages"
+msgstr ""
 
 #: templates/quotations/quotation_list.html:128
 msgid "quotations"
@@ -825,27 +793,24 @@ msgid "Number"
 msgstr ""
 
 #: templates/quotations/quotation_list.html:138
-#, fuzzy
 msgid "Status"
-msgstr "Tenants"
+msgstr ""
 
 #: templates/quotations/quotation_list.html:169
 msgid "View"
 msgstr ""
 
 #: templates/quotations/quotation_list.html:205
-#, fuzzy
 msgid "No quotations found"
-msgstr "No customers found"
+msgstr ""
 
 #: templates/quotations/quotation_list.html:206
-#, fuzzy
 msgid "Create your first quotation to get started."
-msgstr "Add your first customer to get started"
+msgstr ""
 
 #: templates/telegram/link.html:3 templates/telegram/link.html:196
 msgid "Connect Telegram"
-msgstr "Connect Telegram"
+msgstr ""
 
 #: templates/telegram/link.html:197
 msgid "Log follow-ups and get reminders via Telegram"
@@ -853,7 +818,7 @@ msgstr ""
 
 #: templates/telegram/link.html:201
 msgid "Telegram account connected"
-msgstr "Telegram account connected"
+msgstr ""
 
 #: templates/telegram/link.html:204
 msgid "Your Telegram is linked. Send any message to the bot to log a follow-up."
@@ -861,16 +826,15 @@ msgstr ""
 
 #: templates/telegram/link.html:209
 msgid "Disconnect Telegram"
-msgstr "Disconnect Telegram"
+msgstr ""
 
 #: templates/telegram/link.html:214
-#, fuzzy
 msgid "Not connected"
-msgstr "Telegram account connected"
+msgstr ""
 
 #: templates/telegram/link.html:219
 msgid "Your link code"
-msgstr "Your link code"
+msgstr ""
 
 #: templates/telegram/link.html:221
 msgid "Tap to copy · expires after use"
@@ -889,39 +853,34 @@ msgid "Or send"
 msgstr ""
 
 #: templates/telegram/link.html:234
-#, fuzzy
 msgid "Open bot in Telegram"
-msgstr "Connect Telegram"
+msgstr ""
 
 #: templates/telegram/link.html:239
 msgid "Generate new code"
-msgstr "Generate new code"
+msgstr ""
 
 #: templates/telegram/link.html:246
 msgid "Click the button below to generate a link code"
 msgstr ""
 
 #: templates/telegram/link.html:247
-#, fuzzy
 msgid "Send the code to the bot on Telegram"
-msgstr "Send this code to the bot"
+msgstr ""
 
 #: templates/telegram/link.html:248
 msgid "Done — start logging follow-ups by voice or text"
 msgstr ""
 
 #: templates/telegram/link.html:254
-#, fuzzy
 msgid "Generate link code"
-msgstr "Generate new code"
+msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/_termui_impl.py:613
-#, python-brace-format
 msgid "{editor}: Editing failed"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/_termui_impl.py:617
-#, python-brace-format
 msgid "{editor}: Editing failed: {e}"
 msgstr ""
 
@@ -937,7 +896,6 @@ msgid "Options"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/core.py:1247
-#, python-brace-format
 msgid "Got unexpected extra argument ({args})"
 msgid_plural "Got unexpected extra arguments ({args})"
 msgstr[0] ""
@@ -962,7 +920,6 @@ msgid "Missing command."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/core.py:1931
-#, python-brace-format
 msgid "No such command {name!r}."
 msgstr ""
 
@@ -971,7 +928,6 @@ msgid "Value must be an iterable."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/core.py:2385
-#, python-brace-format
 msgid "Takes {nargs} values but 1 was given."
 msgid_plural "Takes {nargs} values but {len} were given."
 msgstr[0] ""
@@ -985,14 +941,12 @@ msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/core.py:3037
 #: venv/lib/python3.11/site-packages/typer/core.py:540
-#, python-brace-format
 msgid "env var: {var}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/core.py:3040
 #: venv/lib/python3.11/site-packages/typer/core.py:361
 #: venv/lib/python3.11/site-packages/typer/core.py:561
-#, python-brace-format
 msgid "default: {default}"
 msgstr ""
 
@@ -1022,22 +976,18 @@ msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:50
 #: venv/lib/python3.11/site-packages/click/exceptions.py:89
-#, python-brace-format
 msgid "Error: {message}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:81
-#, python-brace-format
 msgid "Try '{command} {option}' for help."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:130
-#, python-brace-format
 msgid "Invalid value: {message}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:132
-#, python-brace-format
 msgid "Invalid value for {param_hint}: {message}"
 msgstr ""
 
@@ -1054,22 +1004,18 @@ msgid "Missing parameter"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:196
-#, python-brace-format
 msgid "Missing {param_type}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:203
-#, python-brace-format
 msgid "Missing parameter: {param_name}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:223
-#, python-brace-format
 msgid "No such option: {name}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:237
-#, python-brace-format
 msgid "Did you mean {possibility}?"
 msgid_plural "(Possible options: {possibilities})"
 msgstr[0] ""
@@ -1080,22 +1026,18 @@ msgid "unknown error"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/exceptions.py:289
-#, python-brace-format
 msgid "Could not open file {filename!r}: {message}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/parser.py:199
-#, python-brace-format
 msgid "Argument {name!r} takes {nargs} values."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/parser.py:381
-#, python-brace-format
 msgid "Option {name!r} does not take a value."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/parser.py:443
-#, python-brace-format
 msgid "Option {name!r} requires an argument."
 msgid_plural "Option {name!r} requires {nargs} arguments."
 msgstr[0] ""
@@ -1118,7 +1060,6 @@ msgid "Error: The value you entered was invalid."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/termui.py:183
-#, python-brace-format
 msgid "Error: {e.message}"
 msgstr ""
 
@@ -1135,33 +1076,28 @@ msgid "Press any key to continue..."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:332
-#, python-brace-format
 msgid ""
 "Choose from:\n"
 "\t{choices}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:371
-#, python-brace-format
 msgid "{value!r} is not {choice}."
 msgid_plural "{value!r} is not one of {choices}."
 msgstr[0] ""
 msgstr[1] ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:462
-#, python-brace-format
 msgid "{value!r} does not match the format {format}."
 msgid_plural "{value!r} does not match the formats {formats}."
 msgstr[0] ""
 msgstr[1] ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:482
-#, python-brace-format
 msgid "{value!r} is not a valid {number_type}."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:538
-#, python-brace-format
 msgid "{value} is not in the range {range}."
 msgstr ""
 
@@ -1170,7 +1106,6 @@ msgid "{value!r} is not a valid boolean. Recognized values: {states}"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:747
-#, python-brace-format
 msgid "{value!r} is not a valid UUID."
 msgstr ""
 
@@ -1187,27 +1122,22 @@ msgid "path"
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:988
-#, python-brace-format
 msgid "{name} {filename!r} does not exist."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:997
-#, python-brace-format
 msgid "{name} {filename!r} is a file."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:1005
-#, python-brace-format
 msgid "{name} {filename!r} is a directory."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:1014
-#, python-brace-format
 msgid "{name} {filename!r} is not readable."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:1023
-#, python-brace-format
 msgid "{name} {filename!r} is not writable."
 msgstr ""
 
@@ -1216,7 +1146,6 @@ msgid "{name} {filename!r} is not executable."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/click/types.py:1098
-#, python-brace-format
 msgid "{len_type} values are required, but {len_value} was given."
 msgid_plural "{len_type} values are required, but {len_value} were given."
 msgstr[0] ""
@@ -1229,7 +1158,6 @@ msgid "This field is required."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/flask_wtf/file.py:83
-#, python-brace-format
 msgid "File does not have an approved extension: {extensions}"
 msgstr ""
 
@@ -1238,7 +1166,6 @@ msgid "File does not have an approved extension."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/flask_wtf/file.py:121
-#, python-brace-format
 msgid "File must be between {min_size} and {max_size} bytes."
 msgstr ""
 
@@ -1451,52 +1378,4 @@ msgstr ""
 #: venv/lib/python3.11/site-packages/wtforms/fields/numeric.py:197
 msgid "Not a valid float value."
 msgstr ""
-
-#~ msgid ""
-#~ "Click will abort further execution "
-#~ "because Python was configured to use "
-#~ "ASCII as encoding for the environment."
-#~ " Consult https://click.palletsprojects.com/unicode-"
-#~ "support/ for mitigation steps."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Additional information: on this system "
-#~ "no suitable UTF-8 locales were "
-#~ "discovered. This most likely requires "
-#~ "resolving by reconfiguring the locale "
-#~ "system."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This system supports the C.UTF-8 locale"
-#~ " which is recommended. You might be"
-#~ " able to resolve your issue by "
-#~ "exporting the following environment variables:"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This system lists some UTF-8 supporting"
-#~ " locales that you can pick from. "
-#~ "The following suitable locales were "
-#~ "discovered: {locales}"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Click discovered that you exported a "
-#~ "UTF-8 locale but the locale system "
-#~ "could not pick up from it because"
-#~ " it does not exist. The exported "
-#~ "locale is {locale!r} but it is not"
-#~ " supported."
-#~ msgstr ""
-
-#~ msgid "(Deprecated) {text}"
-#~ msgstr ""
-
-#~ msgid "DeprecationWarning: The command {name!r} is deprecated."
-#~ msgstr ""
-
-#~ msgid "{value!r} is not a valid boolean."
-#~ msgstr ""
 

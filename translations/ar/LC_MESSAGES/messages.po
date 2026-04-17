@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-25 21:26+0300\n"
+"POT-Creation-Date: 2026-04-17 19:45+0300\n"
 "PO-Revision-Date: 2025-05-25 21:26+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ar\n"
@@ -17,82 +17,927 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.12.1\n"
 
-#: templates/base.html:6
+#: templates/base.html:7
 msgid "CRM System"
 msgstr "نظام إدارة علاقات العملاء"
 
-#: templates/base.html:6
+#: templates/base.html:7 templates/components/navbar.html:3
 msgid "CRM Base"
 msgstr "قاعدة إدارة علاقات العملاء"
 
-#: venv/lib/python3.11/site-packages/click/_termui_impl.py:495
+#: templates/auth/login.html:4 templates/auth/login.html:322
+#: templates/dashboard/dashboard.html:251
+msgid "Welcome"
+msgstr "مرحبًا"
+
+#: templates/auth/login.html:330
+msgid "Username"
+msgstr "اسم المستخدم"
+
+#: templates/auth/login.html:338
+msgid "Password"
+msgstr "كلمة المرور"
+
+#: templates/auth/login.html:348
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+#: templates/components/bottom_nav.html:8
+#: templates/components/bottom_nav.html:14
+#, fuzzy
+msgid "Home"
+msgstr "الهاتف"
+
+#: templates/components/bottom_nav.html:21 templates/components/navbar.html:13
+#: templates/components/sidebar.html:101
+#: templates/customers/customer_list.html:3
+#: templates/customers/customer_list.html:359
+msgid "Customers"
+msgstr "العملاء"
+
+#: templates/components/bottom_nav.html:30
+msgid "Quotes"
+msgstr ""
+
+#: templates/components/bottom_nav.html:36
+msgid "Bot"
+msgstr ""
+
+#: templates/components/fab.html:9
+msgid "Install for quick access"
+msgstr ""
+
+#: templates/components/fab.html:12
+msgid "Install"
+msgstr ""
+
+#: templates/components/fab.html:24 templates/components/fab.html:55
+#: templates/customers/customer_list.html:362
+#: templates/dashboard/dashboard.html:252
+msgid "Add Customer"
+msgstr "إضافة عميل"
+
+#: templates/components/fab.html:31
+#, fuzzy
+msgid "Full Customer Form"
+msgstr "لا يوجد عملاء"
+
+#: templates/components/fab.html:38
+#: templates/quotations/quotation_builder.html:2
+#: templates/quotations/quotation_builder.html:172
+#: templates/quotations/quotation_list.html:104
+#: templates/quotations/quotation_list.html:208
+#, fuzzy
+msgid "New Quotation"
+msgstr "الإجراء التالي"
+
+#: templates/components/fab.html:47
+msgid "Quick actions"
+msgstr ""
+
+#: templates/components/fab.html:57
+#, fuzzy
+msgid "Quick Add Customer"
+msgstr "إضافة عميل"
+
+#: templates/components/fab.html:58
+#, fuzzy
+msgid "Close"
+msgstr "صفقات مكتملة"
+
+#: templates/components/fab.html:64
+msgid "Company / Customer name *"
+msgstr ""
+
+#: templates/components/fab.html:66
+msgid "Phone number"
+msgstr ""
+
+#: templates/components/fab.html:68 templates/components/fab.html:69
+#, fuzzy
+msgid "Save Customer"
+msgstr "إضافة عميل"
+
+#: templates/components/navbar.html:7
+msgid "Toggle menu"
+msgstr "فتح القائمة"
+
+#: templates/components/navbar.html:17 templates/components/navbar.html:21
+#: templates/components/sidebar.html:26 templates/components/sidebar.html:32
+#: templates/dashboard/dashboard.html:3
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: templates/components/navbar.html:26 templates/components/sidebar.html:125
+msgid "Sales Team"
+msgstr "فريق المبيعات"
+
+#: templates/components/navbar.html:31 templates/components/sidebar.html:150
+msgid "Tenants"
+msgstr "الشركات"
+
+#: templates/components/navbar.html:35 templates/components/sidebar.html:181
+msgid "Telegram"
+msgstr "تيليجرام"
+
+#: templates/components/navbar.html:38 templates/components/sidebar.html:203
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+#: templates/components/sidebar.html:9
+msgid "Pin sidebar"
+msgstr ""
+
+#: templates/components/sidebar.html:42
+#, fuzzy
+msgid "Sales"
+msgstr "فريق المبيعات"
+
+#: templates/components/sidebar.html:48
+msgid "Leads"
+msgstr ""
+
+#: templates/components/sidebar.html:53
+msgid "Deals"
+msgstr ""
+
+#: templates/components/sidebar.html:63
+#, fuzzy
+msgid "Follow-ups"
+msgstr "إضافة متابعة"
+
+#: templates/components/sidebar.html:69
+msgid "Calls"
+msgstr ""
+
+#: templates/components/sidebar.html:74
+msgid "Meetings"
+msgstr ""
+
+#: templates/components/sidebar.html:79
+msgid "Messages"
+msgstr ""
+
+#: templates/components/sidebar.html:84
+msgid "Reminders"
+msgstr ""
+
+#: templates/components/sidebar.html:94
+msgid "Records"
+msgstr ""
+
+#: templates/components/sidebar.html:106
+#: templates/quotations/quotation_list.html:2
+#: templates/quotations/quotation_list.html:96
+msgid "Quotations"
+msgstr ""
+
+#: templates/components/sidebar.html:115
+msgid "Products"
+msgstr ""
+
+#: templates/components/sidebar.html:131
+msgid "Permissions"
+msgstr ""
+
+#: templates/components/sidebar.html:142
+msgid "Settings"
+msgstr ""
+
+#: templates/components/sidebar.html:155
+msgid "Lead Sources"
+msgstr ""
+
+#: templates/components/sidebar.html:160
+#, fuzzy
+msgid "Activities"
+msgstr "نشط"
+
+#: templates/components/sidebar.html:165
+#, fuzzy
+msgid "Cities"
+msgstr "نشط"
+
+#: templates/components/sidebar.html:170
+msgid "Job Titles"
+msgstr ""
+
+#: templates/components/sidebar.html:192
+msgid "Install App"
+msgstr ""
+
+#: templates/customers/add_followup.html:3
+#: templates/customers/add_followup.html:191
+#: templates/customers/add_followup.html:274
+#: templates/customers/customer_list.html:421
+msgid "Add Follow-up"
+msgstr "إضافة متابعة"
+
+#: templates/customers/add_followup.html:196
+msgid "Back to Customer"
+msgstr "العودة للعميل"
+
+#: templates/customers/add_followup.html:200
+#: templates/customers/add_followup.html:204
+#: templates/customers/customer_list.html:365
+msgid "Back to Dashboard"
+msgstr "العودة للوحة التحكم"
+
+#: templates/customers/add_followup.html:215
+msgid "Last Contact Date"
+msgstr "تاريخ آخر تواصل"
+
+#: templates/customers/add_followup.html:221
+msgid "Contact Method"
+msgstr "طريقة التواصل"
+
+#: templates/customers/add_followup.html:233
+msgid "Current Sales Stage"
+msgstr "مرحلة البيع الحالية"
+
+#: templates/customers/add_followup.html:235
+msgid "Select stage"
+msgstr "اختر المرحلة"
+
+#: templates/customers/add_followup.html:246
+msgid "Next Action"
+msgstr "الإجراء التالي"
+
+#: templates/customers/add_followup.html:248
+msgid "Select next action"
+msgstr "اختر الإجراء التالي"
+
+#: templates/customers/add_followup.html:259
+msgid "Next Action Date"
+msgstr "تاريخ الإجراء التالي"
+
+#: templates/customers/add_followup.html:264
+msgid "Deal Value (SAR)"
+msgstr "قيمة الصفقة (ريال)"
+
+#: templates/customers/add_followup.html:269
+#: templates/dashboard/dashboard.html:340
+#: templates/quotations/quotation_builder.html:320
+msgid "Summary"
+msgstr "الملخص"
+
+#: templates/customers/customer_list.html:371
+msgid "Search by company, contact, phone, or stage..."
+msgstr "البحث بالشركة أو المسؤول أو الهاتف أو المرحلة..."
+
+#: templates/customers/customer_list.html:374
+msgid "All Stages"
+msgstr "كل المراحل"
+
+#: templates/customers/customer_list.html:394
+msgid "Contact"
+msgstr "المسؤول"
+
+#: templates/customers/customer_list.html:398
+msgid "Phone"
+msgstr "الهاتف"
+
+#: templates/customers/customer_list.html:402
+msgid "Industry"
+msgstr "القطاع"
+
+#: templates/customers/customer_list.html:406
+msgid "Potential Value"
+msgstr "القيمة المتوقعة"
+
+#: templates/customers/customer_list.html:412
+msgid "Last Contact"
+msgstr "آخر تواصل"
+
+#: templates/customers/customer_list.html:418
+msgid "View Details"
+msgstr "عرض التفاصيل"
+
+#: templates/customers/customer_list.html:453
+msgid "No customers found"
+msgstr "لا يوجد عملاء"
+
+#: templates/customers/customer_list.html:454
+msgid "Add your first customer to get started"
+msgstr "أضف عميلك الأول للبدء"
+
+#: templates/dashboard/dashboard.html:258
+#: templates/dashboard/manager_dashboard.html:753
+msgid "Total Customers"
+msgstr "إجمالي العملاء"
+
+#: templates/dashboard/dashboard.html:262
+msgid "Active"
+msgstr "نشط"
+
+#: templates/dashboard/dashboard.html:267
+msgid "Close Won"
+msgstr "صفقات مكتملة"
+
+#: templates/dashboard/dashboard.html:272
+msgid "Close Lost"
+msgstr "صفقات خاسرة"
+
+#: templates/dashboard/dashboard.html:277
+msgid "Total Potential Value"
+msgstr "إجمالي القيمة المتوقعة"
+
+#: templates/dashboard/dashboard.html:285
+msgid "Sales Pipeline"
+msgstr "خط المبيعات"
+
+#: templates/dashboard/dashboard.html:316
+msgid "No leads in the pipeline."
+msgstr "لا يوجد عملاء في خط المبيعات."
+
+#: templates/dashboard/dashboard.html:323
+msgid "Upcoming Follow-ups"
+msgstr "المتابعات القادمة"
+
+#: templates/dashboard/dashboard.html:338
+msgid "Next"
+msgstr "التالي"
+
+#: templates/dashboard/dashboard.html:339
+msgid "Due"
+msgstr "الموعد"
+
+#: templates/dashboard/dashboard.html:341
+msgid "Value"
+msgstr "القيمة"
+
+#: templates/dashboard/dashboard.html:350
+msgid "Today"
+msgstr "اليوم"
+
+#: templates/dashboard/dashboard.html:351
+msgid "This Week"
+msgstr "هذا الأسبوع"
+
+#: templates/dashboard/dashboard.html:352
+msgid "Next Week"
+msgstr "الأسبوع القادم"
+
+#: templates/dashboard/dashboard.html:353
+msgid "Later"
+msgstr "لاحقاً"
+
+#: templates/dashboard/dashboard.html:356
+msgid "No upcoming follow-ups."
+msgstr "لا توجد متابعات قادمة."
+
+#: templates/dashboard/manager_dashboard.html:757
+#, fuzzy
+msgid "Pipeline Value"
+msgstr "القيمة المتوقعة"
+
+#: templates/dashboard/manager_dashboard.html:761
+#, fuzzy
+msgid "Active Stages"
+msgstr "كل المراحل"
+
+#: templates/dashboard/manager_dashboard.html:765
+msgid "Team Size"
+msgstr "حجم الفريق"
+
+#: templates/products/product_form.html:4
+#: templates/products/product_form.html:149
+msgid "Edit Product"
+msgstr ""
+
+#: templates/products/product_form.html:4
+#: templates/products/product_form.html:233
+#: templates/products/product_list.html:291
+msgid "Add Product"
+msgstr ""
+
+#: templates/products/product_form.html:150
+msgid "Add New Product"
+msgstr ""
+
+#: templates/products/product_form.html:154
+#, fuzzy
+msgid "Back to Products"
+msgstr "العودة للعميل"
+
+#: templates/products/product_form.html:163
+msgid "Basic Information"
+msgstr ""
+
+#: templates/products/product_form.html:166
+msgid "Product / Service Name"
+msgstr ""
+
+#: templates/products/product_form.html:169
+msgid "e.g. Annual Maintenance Contract"
+msgstr ""
+
+#: templates/products/product_form.html:172
+#: templates/products/product_list.html:325
+#, fuzzy
+msgid "Category"
+msgstr "لاحقاً"
+
+#: templates/products/product_form.html:176
+msgid "e.g. Software, Hardware…"
+msgstr ""
+
+#: templates/products/product_form.html:184
+msgid "Unit of Measure"
+msgstr ""
+
+#: templates/products/product_form.html:194
+msgid "Description"
+msgstr ""
+
+#: templates/products/product_form.html:196
+msgid "Optional description, specs, or notes…"
+msgstr ""
+
+#: templates/products/product_form.html:200
+msgid "Pricing"
+msgstr ""
+
+#: templates/products/product_form.html:203
+#: templates/products/product_list.html:327
+msgid "Selling Price"
+msgstr ""
+
+#: templates/products/product_form.html:208
+msgid "Default list price"
+msgstr ""
+
+#: templates/products/product_form.html:211
+msgid "Minimum Price"
+msgstr ""
+
+#: templates/products/product_form.html:216
+msgid "Floor for discounts"
+msgstr ""
+
+#: templates/products/product_form.html:219
+msgid "Cost / Purchase Price"
+msgstr ""
+
+#: templates/products/product_form.html:224
+msgid "Internal use only"
+msgstr ""
+
+#: templates/products/product_form.html:232
+msgid "Save Changes"
+msgstr ""
+
+#: templates/products/product_form.html:237
+#: templates/quotations/quotation_builder.html:345
+#: templates/quotations/quotation_detail.html:242
+msgid "Cancel"
+msgstr ""
+
+#: templates/products/product_list.html:3
+#: templates/products/product_list.html:284
+msgid "Products & Services"
+msgstr ""
+
+#: templates/products/product_list.html:285
+msgid "Manage your product catalog and pricing"
+msgstr ""
+
+#: templates/products/product_list.html:300
+msgid "Search name, description, category…"
+msgstr ""
+
+#: templates/products/product_list.html:302
+#, fuzzy
+msgid "All Categories"
+msgstr "كل المراحل"
+
+#: templates/products/product_list.html:307
+#: templates/quotations/quotation_list.html:120
+msgid "Search"
+msgstr ""
+
+#: templates/products/product_list.html:309
+#: templates/quotations/quotation_list.html:122
+#, fuzzy
+msgid "Clear"
+msgstr "لاحقاً"
+
+#: templates/products/product_list.html:314
+#: templates/quotations/quotation_list.html:127
+msgid "Showing"
+msgstr ""
+
+#: templates/products/product_list.html:315
+#: templates/quotations/quotation_list.html:128
+msgid "of"
+msgstr ""
+
+#: templates/products/product_list.html:315
+msgid "products"
+msgstr ""
+
+#: templates/products/product_list.html:316
+msgid "filtered by"
+msgstr ""
+
+#: templates/products/product_list.html:324
+msgid "Product / Service"
+msgstr ""
+
+#: templates/products/product_list.html:326
+#: templates/quotations/quotation_builder.html:246
+msgid "Unit"
+msgstr ""
+
+#: templates/products/product_list.html:328
+msgid "Min Price"
+msgstr ""
+
+#: templates/products/product_list.html:329
+msgid "Cost"
+msgstr ""
+
+#: templates/products/product_list.html:331
+#: templates/quotations/quotation_list.html:142
+#, fuzzy
+msgid "Actions"
+msgstr "الإجراء التالي"
+
+#: templates/products/product_list.html:359
+#: templates/quotations/quotation_detail.html:108
+#: templates/quotations/quotation_list.html:174
+msgid "Edit"
+msgstr ""
+
+#: templates/products/product_list.html:362
+msgid "Delete this product?"
+msgstr ""
+
+#: templates/products/product_list.html:363
+msgid "Delete"
+msgstr ""
+
+#: templates/products/product_list.html:397
+#, fuzzy
+msgid "No products found"
+msgstr "لا يوجد عملاء"
+
+#: templates/products/product_list.html:399
+msgid "Try clearing your search filters."
+msgstr ""
+
+#: templates/products/product_list.html:401
+#, fuzzy
+msgid "Add your first product or service to get started."
+msgstr "أضف عميلك الأول للبدء"
+
+#: templates/products/product_list.html:404
+msgid "Add First Product"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:2
+#: templates/quotations/quotation_builder.html:171
+#, fuzzy
+msgid "Edit Quotation"
+msgstr "الإجراء التالي"
+
+#: templates/quotations/quotation_builder.html:174
+#: templates/quotations/quotation_detail.html:111
+msgid "Back"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:189
+#: templates/quotations/quotation_detail.html:127
+#, fuzzy
+msgid "Quotation Details"
+msgstr "عرض التفاصيل"
+
+#: templates/quotations/quotation_builder.html:192
+#: templates/quotations/quotation_list.html:137
+#, fuzzy
+msgid "Customer"
+msgstr "العملاء"
+
+#: templates/quotations/quotation_builder.html:194
+#, fuzzy
+msgid "Select customer"
+msgstr "اختر المرحلة"
+
+#: templates/quotations/quotation_builder.html:204
+#: templates/quotations/quotation_detail.html:128
+#: templates/quotations/quotation_list.html:139
+msgid "Issue Date"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:209
+#: templates/quotations/quotation_detail.html:129
+#: templates/quotations/quotation_list.html:140
+msgid "Valid Until"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:214
+#: templates/quotations/quotation_detail.html:130
+msgid "Currency"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:226
+#, fuzzy
+msgid "Line Items"
+msgstr "فريق المبيعات"
+
+#: templates/quotations/quotation_builder.html:236
+msgid "Search products to add…"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:244
+msgid "Product / Description"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:245
+#: templates/quotations/quotation_detail.html:144
+msgid "Qty"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:247
+#: templates/quotations/quotation_detail.html:145
+msgid "Unit Price"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:248
+msgid "Disc%"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:249
+#: templates/quotations/quotation_detail.html:147
+#: templates/quotations/quotation_list.html:141
+#, fuzzy
+msgid "Total"
+msgstr "اليوم"
+
+#: templates/quotations/quotation_builder.html:258
+msgid "Add blank line"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:264
+msgid "Notes & Terms"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:266
+#: templates/quotations/quotation_detail.html:208
+msgid "Notes"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:268
+msgid "e.g. Delivery within 5 business days"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:271
+#: templates/quotations/quotation_detail.html:217
+msgid "Terms & Conditions"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:273
+msgid "e.g. Payment due within 30 days"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:284
+#, fuzzy
+msgid "Discount & Tax"
+msgstr "فك ربط تيليجرام"
+
+#: templates/quotations/quotation_builder.html:287
+#, fuzzy
+msgid "Discount Type"
+msgstr "فك ربط تيليجرام"
+
+#: templates/quotations/quotation_builder.html:290
+#, fuzzy
+msgid "None"
+msgstr "الهاتف"
+
+#: templates/quotations/quotation_builder.html:294
+#: templates/quotations/quotation_detail.html:181
+msgid "Fixed"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:302
+#, fuzzy
+msgid "Discount Value"
+msgstr "القيمة المتوقعة"
+
+#: templates/quotations/quotation_builder.html:310
+msgid "Tax %"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:322
+#: templates/quotations/quotation_detail.html:173
+msgid "Subtotal"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:326
+#: templates/quotations/quotation_detail.html:179
+msgid "Discount"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:330
+#: templates/quotations/quotation_detail.html:189
+msgid "Tax"
+msgstr ""
+
+#: templates/quotations/quotation_builder.html:334
+#: templates/quotations/quotation_detail.html:194
+#, fuzzy
+msgid "TOTAL"
+msgstr "اليوم"
+
+#: templates/quotations/quotation_builder.html:342
+msgid "Save Quotation"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:104
+msgid "Download PDF"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:119
+msgid "Bill To"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:131
+msgid "Prepared By"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:132
+msgid "Email"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:143
+msgid "Item"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:146
+msgid "Disc %"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:231
+msgid "Change Status"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:239
+msgid "Mark Sent"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:240
+msgid "Mark Accepted"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:241
+msgid "Mark Rejected"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:243
+msgid "Reopen as Draft"
+msgstr ""
+
+#: templates/quotations/quotation_detail.html:258
+msgid "Cancel / Delete"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:97
+msgid "Manage quotes sent to customers"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:111
+msgid "Search number or customer…"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:113
+#, fuzzy
+msgid "All Statuses"
+msgstr "كل المراحل"
+
+#: templates/quotations/quotation_list.html:128
+msgid "quotations"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:136
+msgid "Number"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:138
+#, fuzzy
+msgid "Status"
+msgstr "الشركات"
+
+#: templates/quotations/quotation_list.html:169
+msgid "View"
+msgstr ""
+
+#: templates/quotations/quotation_list.html:205
+#, fuzzy
+msgid "No quotations found"
+msgstr "لا يوجد عملاء"
+
+#: templates/quotations/quotation_list.html:206
+#, fuzzy
+msgid "Create your first quotation to get started."
+msgstr "أضف عميلك الأول للبدء"
+
+#: templates/telegram/link.html:3 templates/telegram/link.html:196
+msgid "Connect Telegram"
+msgstr "ربط تيليجرام"
+
+#: templates/telegram/link.html:197
+msgid "Log follow-ups and get reminders via Telegram"
+msgstr ""
+
+#: templates/telegram/link.html:201
+msgid "Telegram account connected"
+msgstr "تم ربط حساب تيليجرام"
+
+#: templates/telegram/link.html:204
+msgid "Your Telegram is linked. Send any message to the bot to log a follow-up."
+msgstr ""
+
+#: templates/telegram/link.html:209
+msgid "Disconnect Telegram"
+msgstr "فك ربط تيليجرام"
+
+#: templates/telegram/link.html:214
+#, fuzzy
+msgid "Not connected"
+msgstr "تم ربط حساب تيليجرام"
+
+#: templates/telegram/link.html:219
+msgid "Your link code"
+msgstr "رمز الربط"
+
+#: templates/telegram/link.html:221
+msgid "Tap to copy · expires after use"
+msgstr ""
+
+#: templates/telegram/link.html:227
+msgid "Open Telegram and find"
+msgstr ""
+
+#: templates/telegram/link.html:228
+msgid "Send the bot this code"
+msgstr ""
+
+#: templates/telegram/link.html:229
+msgid "Or send"
+msgstr ""
+
+#: templates/telegram/link.html:234
+#, fuzzy
+msgid "Open bot in Telegram"
+msgstr "ربط تيليجرام"
+
+#: templates/telegram/link.html:239
+msgid "Generate new code"
+msgstr "توليد رمز جديد"
+
+#: templates/telegram/link.html:246
+msgid "Click the button below to generate a link code"
+msgstr ""
+
+#: templates/telegram/link.html:247
+#, fuzzy
+msgid "Send the code to the bot on Telegram"
+msgstr "أرسل هذا الرمز للبوت"
+
+#: templates/telegram/link.html:248
+msgid "Done — start logging follow-ups by voice or text"
+msgstr ""
+
+#: templates/telegram/link.html:254
+#, fuzzy
+msgid "Generate link code"
+msgstr "توليد رمز جديد"
+
+#: venv/lib/python3.11/site-packages/click/_termui_impl.py:613
 #, python-brace-format
 msgid "{editor}: Editing failed"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/_termui_impl.py:499
+#: venv/lib/python3.11/site-packages/click/_termui_impl.py:617
 #, python-brace-format
 msgid "{editor}: Editing failed: {e}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/_unicodefun.py:20
-msgid ""
-"Click will abort further execution because Python was configured to use "
-"ASCII as encoding for the environment. Consult "
-"https://click.palletsprojects.com/unicode-support/ for mitigation steps."
+#: venv/lib/python3.11/site-packages/click/core.py:1114
+#: venv/lib/python3.11/site-packages/click/core.py:1151
+msgid "{text} {deprecated_message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/_unicodefun.py:56
-msgid ""
-"Additional information: on this system no suitable UTF-8 locales were "
-"discovered. This most likely requires resolving by reconfiguring the "
-"locale system."
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/_unicodefun.py:65
-msgid ""
-"This system supports the C.UTF-8 locale which is recommended. You might "
-"be able to resolve your issue by exporting the following environment "
-"variables:"
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/_unicodefun.py:75
-#, python-brace-format
-msgid ""
-"This system lists some UTF-8 supporting locales that you can pick from. "
-"The following suitable locales were discovered: {locales}"
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/_unicodefun.py:93
-#, python-brace-format
-msgid ""
-"Click discovered that you exported a UTF-8 locale but the locale system "
-"could not pick up from it because it does not exist. The exported locale "
-"is {locale!r} but it is not supported."
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/core.py:1104
-msgid "Aborted!"
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/core.py:1288
-#: venv/lib/python3.11/site-packages/click/decorators.py:435
-msgid "Show this message and exit."
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/core.py:1317
-#: venv/lib/python3.11/site-packages/click/core.py:1343
-#, python-brace-format
-msgid "(Deprecated) {text}"
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/core.py:1360
+#: venv/lib/python3.11/site-packages/click/core.py:1170
+#: venv/lib/python3.11/site-packages/typer/core.py:623
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:91
 msgid "Options"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:1384
+#: venv/lib/python3.11/site-packages/click/core.py:1247
 #, python-brace-format
 msgid "Got unexpected extra argument ({args})"
 msgid_plural "Got unexpected extra arguments ({args})"
@@ -103,29 +948,34 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:1399
-#, python-brace-format
-msgid "DeprecationWarning: The command {name!r} is deprecated."
+#: venv/lib/python3.11/site-packages/click/core.py:1263
+msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:1616
+#: venv/lib/python3.11/site-packages/click/core.py:1448
+#: venv/lib/python3.11/site-packages/typer/core.py:245
+msgid "Aborted!"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/core.py:1822
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:92
 msgid "Commands"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:1648
+#: venv/lib/python3.11/site-packages/click/core.py:1853
 msgid "Missing command."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:1726
+#: venv/lib/python3.11/site-packages/click/core.py:1931
 #, python-brace-format
 msgid "No such command {name!r}."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:2274
+#: venv/lib/python3.11/site-packages/click/core.py:2360
 msgid "Value must be an iterable."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:2294
+#: venv/lib/python3.11/site-packages/click/core.py:2385
 #, python-brace-format
 msgid "Takes {nargs} values but 1 was given."
 msgid_plural "Takes {nargs} values but {len} were given."
@@ -136,82 +986,98 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:2718
+#: venv/lib/python3.11/site-packages/click/core.py:2571
+msgid ""
+"DeprecationWarning: The {param_type} {name!r} is "
+"deprecated.{extra_message}"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/core.py:3037
+#: venv/lib/python3.11/site-packages/typer/core.py:540
 #, python-brace-format
 msgid "env var: {var}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:2741
-msgid "(dynamic)"
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/core.py:2751
+#: venv/lib/python3.11/site-packages/click/core.py:3040
+#: venv/lib/python3.11/site-packages/typer/core.py:361
+#: venv/lib/python3.11/site-packages/typer/core.py:561
 #, python-brace-format
 msgid "default: {default}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/core.py:2760
+#: venv/lib/python3.11/site-packages/click/core.py:3044
+#: venv/lib/python3.11/site-packages/typer/core.py:363
+#: venv/lib/python3.11/site-packages/typer/core.py:570
 msgid "required"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/decorators.py:339
+#: venv/lib/python3.11/site-packages/click/core.py:3104
+#: venv/lib/python3.11/site-packages/typer/core.py:110
+msgid "(dynamic)"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/decorators.py:465
 #, python-format
 msgid "%(prog)s, version %(version)s"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/decorators.py:404
+#: venv/lib/python3.11/site-packages/click/decorators.py:522
 msgid "Show the version and exit."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:43
-#: venv/lib/python3.11/site-packages/click/exceptions.py:79
+#: venv/lib/python3.11/site-packages/click/decorators.py:548
+msgid "Show this message and exit."
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/exceptions.py:50
+#: venv/lib/python3.11/site-packages/click/exceptions.py:89
 #, python-brace-format
 msgid "Error: {message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:71
+#: venv/lib/python3.11/site-packages/click/exceptions.py:81
 #, python-brace-format
 msgid "Try '{command} {option}' for help."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:120
+#: venv/lib/python3.11/site-packages/click/exceptions.py:130
 #, python-brace-format
 msgid "Invalid value: {message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:122
+#: venv/lib/python3.11/site-packages/click/exceptions.py:132
 #, python-brace-format
 msgid "Invalid value for {param_hint}: {message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:178
+#: venv/lib/python3.11/site-packages/click/exceptions.py:190
 msgid "Missing argument"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:180
+#: venv/lib/python3.11/site-packages/click/exceptions.py:192
 msgid "Missing option"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:182
+#: venv/lib/python3.11/site-packages/click/exceptions.py:194
 msgid "Missing parameter"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:184
+#: venv/lib/python3.11/site-packages/click/exceptions.py:196
 #, python-brace-format
 msgid "Missing {param_type}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:191
+#: venv/lib/python3.11/site-packages/click/exceptions.py:203
 #, python-brace-format
 msgid "Missing parameter: {param_name}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:211
+#: venv/lib/python3.11/site-packages/click/exceptions.py:223
 #, python-brace-format
 msgid "No such option: {name}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:223
+#: venv/lib/python3.11/site-packages/click/exceptions.py:237
 #, python-brace-format
 msgid "Did you mean {possibility}?"
 msgid_plural "(Possible options: {possibilities})"
@@ -222,26 +1088,26 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:261
+#: venv/lib/python3.11/site-packages/click/exceptions.py:282
 msgid "unknown error"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/exceptions.py:268
+#: venv/lib/python3.11/site-packages/click/exceptions.py:289
 #, python-brace-format
 msgid "Could not open file {filename!r}: {message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/parser.py:231
+#: venv/lib/python3.11/site-packages/click/parser.py:199
 #, python-brace-format
 msgid "Argument {name!r} takes {nargs} values."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/parser.py:413
+#: venv/lib/python3.11/site-packages/click/parser.py:381
 #, python-brace-format
 msgid "Option {name!r} does not take a value."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/parser.py:474
+#: venv/lib/python3.11/site-packages/click/parser.py:443
 #, python-brace-format
 msgid "Option {name!r} requires an argument."
 msgid_plural "Option {name!r} requires {nargs} arguments."
@@ -252,47 +1118,47 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/shell_completion.py:314
+#: venv/lib/python3.11/site-packages/click/shell_completion.py:331
 msgid "Shell completion is not supported for Bash versions older than 4.4."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/shell_completion.py:320
+#: venv/lib/python3.11/site-packages/click/shell_completion.py:339
 msgid "Couldn't detect Bash version, shell completion is not supported."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:161
+#: venv/lib/python3.11/site-packages/click/termui.py:165
 msgid "Repeat for confirmation"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:178
+#: venv/lib/python3.11/site-packages/click/termui.py:181
 msgid "Error: The value you entered was invalid."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:180
+#: venv/lib/python3.11/site-packages/click/termui.py:183
 #, python-brace-format
 msgid "Error: {e.message}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:191
+#: venv/lib/python3.11/site-packages/click/termui.py:194
 msgid "Error: The two entered values do not match."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:245
+#: venv/lib/python3.11/site-packages/click/termui.py:253
 msgid "Error: invalid input"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/termui.py:796
+#: venv/lib/python3.11/site-packages/click/termui.py:872
 msgid "Press any key to continue..."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:258
+#: venv/lib/python3.11/site-packages/click/types.py:332
 #, python-brace-format
 msgid ""
 "Choose from:\n"
 "\t{choices}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:290
+#: venv/lib/python3.11/site-packages/click/types.py:371
 #, python-brace-format
 msgid "{value!r} is not {choice}."
 msgid_plural "{value!r} is not one of {choices}."
@@ -303,7 +1169,7 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:380
+#: venv/lib/python3.11/site-packages/click/types.py:462
 #, python-brace-format
 msgid "{value!r} does not match the format {format}."
 msgid_plural "{value!r} does not match the formats {formats}."
@@ -314,64 +1180,67 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:402
+#: venv/lib/python3.11/site-packages/click/types.py:482
 #, python-brace-format
 msgid "{value!r} is not a valid {number_type}."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:458
+#: venv/lib/python3.11/site-packages/click/types.py:538
 #, python-brace-format
 msgid "{value} is not in the range {range}."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:599
-#, python-brace-format
-msgid "{value!r} is not a valid boolean."
+#: venv/lib/python3.11/site-packages/click/types.py:718
+msgid "{value!r} is not a valid boolean. Recognized values: {states}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:623
+#: venv/lib/python3.11/site-packages/click/types.py:747
 #, python-brace-format
 msgid "{value!r} is not a valid UUID."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:801
+#: venv/lib/python3.11/site-packages/click/types.py:937
 msgid "file"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:803
+#: venv/lib/python3.11/site-packages/click/types.py:939
 msgid "directory"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:805
+#: venv/lib/python3.11/site-packages/click/types.py:941
 msgid "path"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:851
+#: venv/lib/python3.11/site-packages/click/types.py:988
 #, python-brace-format
 msgid "{name} {filename!r} does not exist."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:860
+#: venv/lib/python3.11/site-packages/click/types.py:997
 #, python-brace-format
 msgid "{name} {filename!r} is a file."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:868
+#: venv/lib/python3.11/site-packages/click/types.py:1005
 #, python-brace-format
 msgid "{name} {filename!r} is a directory."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:876
-#, python-brace-format
-msgid "{name} {filename!r} is not writable."
-msgstr ""
-
-#: venv/lib/python3.11/site-packages/click/types.py:884
+#: venv/lib/python3.11/site-packages/click/types.py:1014
 #, python-brace-format
 msgid "{name} {filename!r} is not readable."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/click/types.py:951
+#: venv/lib/python3.11/site-packages/click/types.py:1023
+#, python-brace-format
+msgid "{name} {filename!r} is not writable."
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/types.py:1032
+msgid "{name} {filename!r} is not executable."
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/click/types.py:1098
 #, python-brace-format
 msgid "{len_type} values are required, but {len_value} was given."
 msgid_plural "{len_type} values are required, but {len_value} were given."
@@ -382,24 +1251,72 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/flask_wtf/file.py:51
+#: venv/lib/python3.11/site-packages/flask_wtf/file.py:50
 #: venv/lib/python3.11/site-packages/wtforms/validators.py:293
 #: venv/lib/python3.11/site-packages/wtforms/validators.py:323
 msgid "This field is required."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/flask_wtf/file.py:84
+#: venv/lib/python3.11/site-packages/flask_wtf/file.py:83
 #, python-brace-format
 msgid "File does not have an approved extension: {extensions}"
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/flask_wtf/file.py:89
+#: venv/lib/python3.11/site-packages/flask_wtf/file.py:88
 msgid "File does not have an approved extension."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/flask_wtf/file.py:121
 #, python-brace-format
 msgid "File must be between {min_size} and {max_size} bytes."
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/kombu/transport/qpid.py:1311
+#, python-format
+msgid "Attempting to connect to qpid with SASL mechanism %s"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/kombu/transport/qpid.py:1316
+#, python-format
+msgid "Connected to qpid with SASL mechanism %s"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/kombu/transport/qpid.py:1334
+#, python-format
+msgid "Unable to connect to qpid with SASL mechanism %s"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/core.py:620
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:90
+msgid "Arguments"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:84
+msgid "(deprecated) "
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:85
+msgid "[default: {}]"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:86
+msgid "[env var: {}]"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:88
+msgid "[required]"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:93
+msgid "Error"
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:94
+msgid "Aborted."
+msgstr ""
+
+#: venv/lib/python3.11/site-packages/typer/rich_utils.py:95
+msgid "Try [blue]'{command_path} {help_option}'[/] for help."
 msgstr ""
 
 #: venv/lib/python3.11/site-packages/wtforms/validators.py:86
@@ -412,7 +1329,7 @@ msgstr ""
 msgid "Field must be equal to %(other_name)s."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/wtforms/validators.py:146
+#: venv/lib/python3.11/site-packages/wtforms/validators.py:145
 #, python-format
 msgid "Field must be at least %(min)d character long."
 msgid_plural "Field must be at least %(min)d characters long."
@@ -423,7 +1340,7 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/wtforms/validators.py:152
+#: venv/lib/python3.11/site-packages/wtforms/validators.py:151
 #, python-format
 msgid "Field cannot be longer than %(max)d character."
 msgid_plural "Field cannot be longer than %(max)d characters."
@@ -434,7 +1351,7 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/wtforms/validators.py:158
+#: venv/lib/python3.11/site-packages/wtforms/validators.py:157
 #, python-format
 msgid "Field must be exactly %(max)d character long."
 msgid_plural "Field must be exactly %(max)d characters long."
@@ -445,7 +1362,7 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: venv/lib/python3.11/site-packages/wtforms/validators.py:164
+#: venv/lib/python3.11/site-packages/wtforms/validators.py:163
 #, python-format
 msgid "Field must be between %(min)d and %(max)d characters long."
 msgstr ""
@@ -536,11 +1453,11 @@ msgstr ""
 msgid "Not a valid choice."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/wtforms/fields/choices.py:194
+#: venv/lib/python3.11/site-packages/wtforms/fields/choices.py:193
 msgid "Invalid choice(s): one or more data inputs could not be coerced."
 msgstr ""
 
-#: venv/lib/python3.11/site-packages/wtforms/fields/choices.py:212
+#: venv/lib/python3.11/site-packages/wtforms/fields/choices.py:214
 #, python-format
 msgid "'%(value)s' is not a valid choice for this field."
 msgid_plural "'%(value)s' are not valid choices for this field."
@@ -580,171 +1497,51 @@ msgstr ""
 msgid "Not a valid float value."
 msgstr ""
 
-msgid "Welcome"
-msgstr "مرحبًا"
+#~ msgid ""
+#~ "Click will abort further execution "
+#~ "because Python was configured to use "
+#~ "ASCII as encoding for the environment."
+#~ " Consult https://click.palletsprojects.com/unicode-"
+#~ "support/ for mitigation steps."
+#~ msgstr ""
 
-msgid "Username"
-msgstr "اسم المستخدم"
+#~ msgid ""
+#~ "Additional information: on this system "
+#~ "no suitable UTF-8 locales were "
+#~ "discovered. This most likely requires "
+#~ "resolving by reconfiguring the locale "
+#~ "system."
+#~ msgstr ""
 
-msgid "Password"
-msgstr "كلمة المرور"
+#~ msgid ""
+#~ "This system supports the C.UTF-8 locale"
+#~ " which is recommended. You might be"
+#~ " able to resolve your issue by "
+#~ "exporting the following environment variables:"
+#~ msgstr ""
 
-msgid "Login"
-msgstr "تسجيل الدخول"
+#~ msgid ""
+#~ "This system lists some UTF-8 supporting"
+#~ " locales that you can pick from. "
+#~ "The following suitable locales were "
+#~ "discovered: {locales}"
+#~ msgstr ""
 
-msgid "Dashboard"
-msgstr "لوحة التحكم"
+#~ msgid ""
+#~ "Click discovered that you exported a "
+#~ "UTF-8 locale but the locale system "
+#~ "could not pick up from it because"
+#~ " it does not exist. The exported "
+#~ "locale is {locale!r} but it is not"
+#~ " supported."
+#~ msgstr ""
 
-msgid "Customers"
-msgstr "العملاء"
+#~ msgid "(Deprecated) {text}"
+#~ msgstr ""
 
-msgid "Add Customer"
-msgstr "إضافة عميل"
+#~ msgid "DeprecationWarning: The command {name!r} is deprecated."
+#~ msgstr ""
 
-msgid "Back to Dashboard"
-msgstr "العودة للوحة التحكم"
-
-msgid "Back to Customer"
-msgstr "العودة للعميل"
-
-msgid "Search by company, contact, phone, or stage..."
-msgstr "البحث بالشركة أو المسؤول أو الهاتف أو المرحلة..."
-
-msgid "All Stages"
-msgstr "كل المراحل"
-
-msgid "Contact"
-msgstr "المسؤول"
-
-msgid "Phone"
-msgstr "الهاتف"
-
-msgid "Industry"
-msgstr "القطاع"
-
-msgid "Potential Value"
-msgstr "القيمة المتوقعة"
-
-msgid "Last Contact"
-msgstr "آخر تواصل"
-
-msgid "View Details"
-msgstr "عرض التفاصيل"
-
-msgid "Add Follow-up"
-msgstr "إضافة متابعة"
-
-msgid "No customers found"
-msgstr "لا يوجد عملاء"
-
-msgid "Add your first customer to get started"
-msgstr "أضف عميلك الأول للبدء"
-
-msgid "Total Customers"
-msgstr "إجمالي العملاء"
-
-msgid "Active"
-msgstr "نشط"
-
-msgid "Close Won"
-msgstr "صفقات مكتملة"
-
-msgid "Close Lost"
-msgstr "صفقات خاسرة"
-
-msgid "Total Potential Value"
-msgstr "إجمالي القيمة المتوقعة"
-
-msgid "Sales Pipeline"
-msgstr "خط المبيعات"
-
-msgid "No leads in the pipeline."
-msgstr "لا يوجد عملاء في خط المبيعات."
-
-msgid "Upcoming Follow-ups"
-msgstr "المتابعات القادمة"
-
-msgid "Today"
-msgstr "اليوم"
-
-msgid "This Week"
-msgstr "هذا الأسبوع"
-
-msgid "Next Week"
-msgstr "الأسبوع القادم"
-
-msgid "Later"
-msgstr "لاحقاً"
-
-msgid "Next"
-msgstr "التالي"
-
-msgid "Due"
-msgstr "الموعد"
-
-msgid "Summary"
-msgstr "الملخص"
-
-msgid "Value"
-msgstr "القيمة"
-
-msgid "No upcoming follow-ups."
-msgstr "لا توجد متابعات قادمة."
-
-msgid "Last Contact Date"
-msgstr "تاريخ آخر تواصل"
-
-msgid "Contact Method"
-msgstr "طريقة التواصل"
-
-msgid "Select stage"
-msgstr "اختر المرحلة"
-
-msgid "Current Sales Stage"
-msgstr "مرحلة البيع الحالية"
-
-msgid "Select next action"
-msgstr "اختر الإجراء التالي"
-
-msgid "Next Action"
-msgstr "الإجراء التالي"
-
-msgid "Next Action Date"
-msgstr "تاريخ الإجراء التالي"
-
-msgid "Deal Value (SAR)"
-msgstr "قيمة الصفقة (ريال)"
-
-msgid "Toggle menu"
-msgstr "فتح القائمة"
-
-msgid "Sales Team"
-msgstr "فريق المبيعات"
-
-msgid "Tenants"
-msgstr "الشركات"
-
-msgid "Telegram"
-msgstr "تيليجرام"
-
-msgid "Logout"
-msgstr "تسجيل الخروج"
-
-msgid "Connect Telegram"
-msgstr "ربط تيليجرام"
-
-msgid "Your link code"
-msgstr "رمز الربط"
-
-msgid "Send this code to the bot"
-msgstr "أرسل هذا الرمز للبوت"
-
-msgid "Telegram account connected"
-msgstr "تم ربط حساب تيليجرام"
-
-msgid "Disconnect Telegram"
-msgstr "فك ربط تيليجرام"
-
-msgid "Generate new code"
-msgstr "توليد رمز جديد"
+#~ msgid "{value!r} is not a valid boolean."
+#~ msgstr ""
 
