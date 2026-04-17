@@ -564,7 +564,7 @@
         background-color: var(--background-color);
         cursor: pointer;
         transition: all 0.2s ease;
-        min-width: 180px;
+        min-width: min(180px, 100%);
     }
 
     .filter-select:focus {
@@ -581,12 +581,16 @@
 
     @media (max-width: 768px) {
         .dashboard-container {
-            padding: 1rem;
+            padding: 0.75rem;
+            overflow-x: hidden;
         }
 
+        /* NO negative margins — they cause horizontal overflow */
         .table-container {
-            margin: 0 -1rem;
-            border-radius: 0;
+            margin: 0;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .stage-content {
@@ -606,16 +610,37 @@
         .search-filter-container {
             flex-direction: column;
             align-items: stretch;
-            gap: 1rem;
-            padding: 1rem;
+            gap: 0.625rem;
+            padding: 0.875rem;
         }
 
-        .search-box-container, .filter-select {
-            width: 100%;
-        }
-
+        .search-box-container,
+        .filter-select,
         .filter-group {
             width: 100%;
+            min-width: 0;
+        }
+
+        /* Chart stacks on mobile */
+        .chart-container {
+            flex-direction: column;
+        }
+
+        .chart-container > div:first-child,
+        .chart-container > div:last-child {
+            flex: 1;
+            width: 100%;
+        }
+
+        /* Canvas max width */
+        canvas {
+            max-width: 100% !important;
+        }
+
+        /* Customers grid single col */
+        .customers-grid {
+            grid-template-columns: 1fr;
+            padding: 0.75rem;
         }
     }
 

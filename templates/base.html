@@ -38,11 +38,23 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* Global overflow lock — nothing should exceed viewport width */
+        html {
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background-color: var(--background-color);
             color: var(--text-primary);
             line-height: 1.5;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        /* Images and media never exceed their container */
+        img, canvas, video, iframe {
+            max-width: 100%;
         }
 
         /* Content padding inside main-area */
