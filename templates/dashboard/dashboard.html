@@ -228,6 +228,21 @@
         .metric-card.value .metric-value { font-size: 1.1rem; }
         .followup-meta { grid-template-columns: 1fr; }
     }
+
+    /* Stage Badges */
+    .badge-stage {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .badge-potential { background: #f1f5f9; color: var(--stage-potential, #94a3b8); }
+    .badge-contacted { background: #eff6ff; color: var(--stage-contacted, #3b82f6); }
+    .badge-quoted { background: #f5f3ff; color: var(--stage-quoted, #8b5cf6); }
+    .badge-negotiation { background: #fffbeb; color: var(--stage-negotiation, #f59e0b); }
+    .badge-won { background: #ecfdf5; color: var(--stage-won, #10b981); }
+    .badge-lost { background: #fef2f2; color: var(--stage-lost, #ef4444); }
 </style>
 {% endblock %}
 
