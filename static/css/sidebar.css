@@ -28,6 +28,8 @@
 .main-area {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   margin-inline-start: var(--sb-width-collapsed);
   transition: margin-inline-start var(--sb-transition);
   background: var(--background-color);

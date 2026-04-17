@@ -259,3 +259,191 @@
 
 .qm-submit:active { background: #1d4ed8; }
 .qm-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+
+
+/* ================================================================
+   RESPONSIVE OVERRIDES — fix horizontal overflow on mobile
+   Targets all screen widths ≤ 640px (phones)
+   ================================================================ */
+
+@media (max-width: 640px) {
+
+  /* ── Prevent any element from overflowing the viewport ────── */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* ── Main content area: no horizontal overflow ─────────────── */
+  .main-area {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* ── All tables: force horizontal scroll inside container ───── */
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 500px; /* let table scroll rather than squash */
+  }
+
+  /* ── Search + filter row: stack vertically ──────────────────── */
+  .search-filter-container {
+    flex-direction: column !important;
+    gap: 0.625rem !important;
+  }
+
+  .search-box {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .filter-select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── Customer grid: single column ───────────────────────────── */
+  .customer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.875rem !important;
+  }
+
+  /* ── Customers grid (manager dashboard): single column ──────── */
+  .customers-grid {
+    grid-template-columns: 1fr !important;
+    padding: 0.875rem !important;
+    gap: 0.875rem !important;
+  }
+
+  /* ── Metrics grid: 2 columns on phone ───────────────────────── */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.625rem !important;
+  }
+
+  /* ── Info grid (customer detail): single column ─────────────── */
+  .info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Form grid: single column ───────────────────────────────── */
+  .form-grid,
+  .form-grid-2,
+  [style*="grid-template-columns: repeat(2"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Stage/pipeline cards: single column ───────────────────── */
+  .stage-content,
+  .pipeline-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Follow-up meta grid ────────────────────────────────────── */
+  .followup-meta {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Chart container: stack vertically ─────────────────────── */
+  .chart-container {
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  /* ── Remove min-width from info labels ──────────────────────── */
+  .info-label,
+  .followup-label {
+    min-width: 0 !important;
+    flex-shrink: 0;
+  }
+
+  /* ── Welcome header: stack ──────────────────────────────────── */
+  .welcome-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  .header-nav {
+    display: none !important; /* replaced by sidebar on desktop, hidden on mobile */
+  }
+
+  /* ── Cards: tighter padding on phone ───────────────────────── */
+  .customer-card,
+  .card {
+    padding: 1rem !important;
+  }
+
+  /* ── Dashboard container: no horizontal padding overflow ──── */
+  .dashboard-container {
+    padding: 0.75rem !important;
+    overflow-x: hidden;
+  }
+
+  /* ── Page content ───────────────────────────────────────────── */
+  .page-content,
+  .container {
+    padding: 0.875rem !important;
+    overflow-x: hidden;
+  }
+
+  /* ── Metric value font size: smaller on tiny screens ────────── */
+  .metric-value {
+    font-size: 1.5rem !important;
+  }
+
+  /* ── Buttons: full width where inside form actions ──────────── */
+  .form-actions {
+    flex-direction: column !important;
+  }
+
+  .form-actions .btn {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* ── Nav components already inline in templates ─────────────── */
+  .search-box-container {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── Pagination: smaller, wrap ──────────────────────────────── */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  /* ── Customer header inside cards ───────────────────────────── */
+  .customer-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* ── Stage analysis table ───────────────────────────────────── */
+  .stage-details-table,
+  .analysis-table {
+    overflow-x: auto !important;
+    display: block;
+  }
+}
+
+/* ── Extra-small: phones < 380px ────────────────────────────── */
+@media (max-width: 380px) {
+
+  .metrics-grid {
+    grid-template-columns: 1fr !important; /* single column on very small */
+  }
+
+  .metric-value {
+    font-size: 1.3rem !important;
+  }
+
+  .customer-card,
+  .card {
+    padding: 0.75rem !important;
+  }
+}
