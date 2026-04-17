@@ -10,10 +10,11 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
+        html, body { height: 100%; margin: 0; }
+
         body {
             font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f3f3f3;
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -204,27 +205,29 @@
 
         /* ── Mobile: card fills the whole screen ── */
         @media (max-width: 600px) {
-            body {
-                padding: 0;
-                align-items: stretch;
+            html, body {
+                height: 100%;
                 background-color: #fff;
             }
 
+            body {
+                padding: 0;
+                align-items: stretch;   /* stretch child to full height */
+            }
+
             .login-card {
+                flex: 1;               /* fill all available body height */
                 border-radius: 0;
                 box-shadow: none;
-                padding: 48px 28px 40px;
-                min-height: 100dvh;
-                min-height: 100vh;
+                padding: 52px 28px 44px;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 max-width: 100%;
+                width: 100%;
             }
 
-            .login-card img.logo {
-                max-height: 100px;
-            }
+            .login-card img.logo { max-height: 100px; }
 
             .login-card h2 {
                 font-size: 2.6rem;
