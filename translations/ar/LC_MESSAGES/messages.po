@@ -1950,3 +1950,9 @@ msgstr "تسجيل Webhook"
 #~ msgid "{value!r} is not a valid boolean."
 #~ msgstr ""
 
+
+msgid "Companies"
+msgstr "الشركات"
+
+msgid "Projects"
+msgstr "المشاريع"
