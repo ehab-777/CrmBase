@@ -82,6 +82,66 @@ def send_message(chat_id, text, parse_mode='HTML'):
     }, timeout=10)
 
 
+def send_document(chat_id, pdf_bytes, filename, caption=''):
+    """Send a PDF file to a Telegram chat via sendDocument."""
+    if not BOT_TOKEN:
+        return
+    requests.post(
+        f'{TELEGRAM_API}/sendDocument',
+        data={'chat_id': chat_id, 'caption': caption, 'parse_mode': 'HTML'},
+        files={'document': (filename, pdf_bytes, 'application/pdf')},
+        timeout=30,
+    )
+
+
+def generate_quotation_pdf_bytes(quotation_id, tenant_id):
+    """
+    Fetch quotation from DB, render quotation_pdf.html, convert to PDF bytes.
+    Returns (pdf_bytes, quotation_number) or raises RuntimeError.
+    Must be called from within a Flask application context.
+    """
+    from flask import render_template as _render
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        raise RuntimeError('DB connection failed')
+
+    q = conn.execute('''
+        SELECT q.*,
+               c.company_name, c.contact_person, c.phone_number,
+               c.email_address, c.company_address,
+               sp.salesperson_name, sp.work_email AS sp_email,
+               sp.phone_number AS sp_phone
+        FROM quotations q
+        JOIN customers  c  ON q.customer_id   = c.customer_id
+        JOIN sales_team sp ON q.salesperson_id = sp.salesperson_id
+        WHERE q.quotation_id = ? AND q.tenant_id = ?
+    ''', (quotation_id, tenant_id)).fetchone()
+
+    if not q:
+        conn.close()
+        raise RuntimeError('Quotation not found')
+
+    items = conn.execute(
+        'SELECT * FROM quotation_items WHERE quotation_id = ? ORDER BY sort_order',
+        (quotation_id,)
+    ).fetchall()
+    conn.close()
+
+    html = _render('quotations/quotation_pdf.html',
+                   quotation=dict(q), items=items)
+
+    try:
+        from xhtml2pdf import pisa
+        import io as _io
+        buf = _io.BytesIO()
+        status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8')
+        if status.err:
+            raise RuntimeError('xhtml2pdf error')
+        return buf.getvalue(), dict(q).get('quotation_number', str(quotation_id))
+    except ImportError:
+        raise RuntimeError('xhtml2pdf not installed')
+
+
 def generate_link_token():
     alphabet = string.ascii_uppercase + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(6))
@@ -471,6 +531,74 @@ def create_quotation_from_state(state):
     return q_number, qid
 
 
+PDF_TRIGGERS = ['pdf', 'بي دي اف', 'ارسل العرض', 'أرسل العرض', 'ارسل pdf', 'إرسال العرض']
+
+
+def _send_quotation_pdf(chat_id, quotation_id, tenant_id, q_number=None):
+    """Generate PDF for quotation_id and send it to chat_id."""
+    try:
+        pdf_bytes, q_num = generate_quotation_pdf_bytes(quotation_id, tenant_id)
+        fname   = f'quotation-{q_num}.pdf'
+        caption = f'📄 عرض السعر <b>{q_num}</b>'
+        send_document(chat_id, pdf_bytes, fname, caption)
+    except Exception as e:
+        send_message(chat_id, f'⚠️ تعذّر إنشاء PDF: {e}')
+
+
+def handle_pdf_command(chat_id, text, salesperson_id, tenant_id):
+    """
+    Handle: pdf QT-2026-0001  OR  pdf 5  (quotation_id)
+    Returns reply string or None if already sent.
+    """
+    # Extract identifier after the trigger keyword
+    parts = text.strip().split(maxsplit=1)
+    identifier = parts[1].strip() if len(parts) > 1 else ''
+
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return '⚠️ خطأ في قاعدة البيانات.'
+
+    q = None
+    if identifier:
+        # Try quotation number match first
+        q = conn.execute(
+            '''SELECT quotation_id, quotation_number FROM quotations
+               WHERE tenant_id = ? AND (quotation_number = ? OR quotation_id = ?)
+               ORDER BY created_at DESC LIMIT 1''',
+            (tenant_id, identifier.upper(), identifier if identifier.isdigit() else -1)
+        ).fetchone()
+
+    if not q:
+        # No identifier — list last 5 quotations for this salesperson
+        rows = conn.execute(
+            '''SELECT q.quotation_id, q.quotation_number, c.company_name, q.total, q.status
+               FROM quotations q
+               JOIN customers c ON q.customer_id = c.customer_id
+               WHERE q.tenant_id = ? AND q.salesperson_id = ?
+                 AND q.status != 'cancelled'
+               ORDER BY q.created_at DESC LIMIT 8''',
+            (tenant_id, salesperson_id)
+        ).fetchall()
+        conn.close()
+
+        if not rows:
+            return '⚠️ لا توجد عروض أسعار.'
+
+        lines = '\n'.join(
+            f'{i+1}. <b>{r["quotation_number"]}</b> — {r["company_name"]} — {r["total"]:,.0f} SAR ({r["status"]})'
+            for i, r in enumerate(rows)
+        )
+        return (
+            '📄 <b>عروض الأسعار الأخيرة:</b>\n\n' + lines +
+            '\n\nأرسل: <code>pdf QT-2026-0001</code> لاستلام PDF'
+        )
+
+    conn.close()
+    send_message(chat_id, f'⏳ جاري إنشاء PDF لعرض <b>{q["quotation_number"]}</b>...')
+    _send_quotation_pdf(chat_id, q['quotation_id'], tenant_id, q['quotation_number'])
+    return None
+
+
 def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
     """
     Drive the multi-step quotation creation conversation.
@@ -607,7 +735,7 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
             'أرسل ملاحظات لعرض السعر (أو <b>لا</b> لتخطي):'
         )
 
-    # ── Step 4: Notes → Create ──
+    # ── Step 4: Notes → Create → Send PDF ──
     if step == 'notes':
         if not any(kw in text.lower() for kw in SKIP_KEYWORDS):
             state['notes'] = text.strip()
@@ -623,10 +751,10 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
         subtotal, disc_amt, total = _calc_totals_bot(
             state['items'], state['discount_type'], state['discount_value']
         )
-        summary = _items_summary(state['items'])
+        summary  = _items_summary(state['items'])
         disc_line = f'\n🏷️ خصم: {disc_amt:,.0f} SAR' if disc_amt else ''
 
-        return (
+        confirmation = (
             f'✅ <b>تم إنشاء عرض السعر بنجاح!</b>\n\n'
             f'📄 رقم العرض: <b>{q_number}</b>\n'
             f'🏢 العميل: {state["customer_name"]}\n\n'
@@ -634,8 +762,12 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
             f'💰 الإجمالي الفرعي: {subtotal:,.0f} SAR'
             f'{disc_line}\n'
             f'💵 <b>الإجمالي: {total:,.0f} SAR</b>\n\n'
-            f'يمكنك مراجعة العرض وإرساله من التطبيق.'
+            f'⏳ جاري إنشاء ملف PDF...'
         )
+        # Send text confirmation first, then PDF
+        send_message(chat_id, confirmation)
+        _send_quotation_pdf(chat_id, qid, state['tenant_id'], q_number)
+        return None   # already sent above
 
     # Unknown state — reset
     _QUOTATION_STATE.pop(chat_id, None)
@@ -772,13 +904,24 @@ def webhook():
         send_message(chat_id, f'📝 فهمت: "{transcribed}"')
         text = transcribed   # fall through to NLP parser below
 
-    # ── Text message → quotation | new customer | follow-up ──
+    # ── Text message → pdf | quotation | new customer | follow-up ──
     if text:
+        t_lower = text.lower().strip()
+
+        # ── PDF request ──
+        if any(t_lower.startswith(kw) for kw in PDF_TRIGGERS):
+            conn.close()
+            reply = handle_pdf_command(chat_id, text, salesperson_id, tenant_id)
+            if reply:
+                send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
         # ── Active quotation conversation ──
         if chat_id in _QUOTATION_STATE or detect_quotation_intent(text):
             conn.close()
             reply = handle_quotation_flow(chat_id, text, salesperson_id, tenant_id)
-            send_message(chat_id, reply)
+            if reply:
+                send_message(chat_id, reply)
             return jsonify({'ok': True})
 
         # Check for new customer intent first
