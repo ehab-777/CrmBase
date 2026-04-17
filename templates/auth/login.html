@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Engagement&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
             font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f3f3f3;
@@ -16,7 +18,8 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            min-height: 100dvh;
+            padding: 24px 16px;
         }
 
         /* RTL specific styles */
@@ -42,31 +45,30 @@
 
         .login-card {
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+            padding: 40px 36px;
             width: 100%;
-            max-width: 400px;
-            box-sizing: border-box;
+            max-width: 440px;
         }
 
         .login-card .logo-container {
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .login-card img.logo {
             max-width: 100%;
             height: auto;
-            max-height: 150px;
+            max-height: 120px;
         }
 
         .login-card h2 {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 4px;
             color: #333;
             font-weight: 400;
-            font-size: clamp(2em, 5vw, 3em);
+            font-size: 2.4rem;
             font-family: "Engagement", cursive;
         }
 
@@ -90,31 +92,50 @@
             position: relative;
         }
 
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
         .form-group input {
             width: 100%;
-            padding: 12px;
-            padding-right: 40px; /* Add space for the eye icon */
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: clamp(0.9em, 2vw, 1em);
-            box-sizing: border-box;
+            padding: 14px 16px;
+            padding-right: 44px;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fafafa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.12);
+            background: #fff;
         }
 
         .login-button {
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 12px 15px;
+            border-radius: 10px;
+            padding: 15px;
             width: 100%;
             cursor: pointer;
-            font-size: clamp(0.9em, 2vw, 1em);
-            transition: background-color 0.3s ease;
+            font-size: 1.05rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: background-color 0.2s ease, transform 0.1s;
+            margin-top: 4px;
         }
 
-        .login-button:hover {
-            background-color: #0056b3;
-        }
+        .login-button:hover { background-color: #0056b3; }
+        .login-button:active { transform: scale(0.98); }
 
         .error-message {
             color: #dc3545;
@@ -181,45 +202,54 @@
             text-decoration: underline;
         }
 
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 20px;
-            }
-
-            .login-card h2 {
-                margin-bottom: 20px;
-            }
-
-            .form-group {
-                margin-bottom: 15px;
-            }
-
-            .form-group input {
-                padding: 10px;
-                padding-right: 35px;
-            }
-
-            .login-button {
-                padding: 10px;
-            }
-        }
-
-        @media (max-height: 600px) {
+        /* ── Mobile: card fills the whole screen ── */
+        @media (max-width: 600px) {
             body {
-                padding: 10px;
+                padding: 0;
+                align-items: stretch;
+                background-color: #fff;
             }
 
             .login-card {
-                padding: 20px;
-            }
-
-            .login-card .logo-container {
-                margin-bottom: 10px;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 48px 28px 40px;
+                min-height: 100dvh;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                max-width: 100%;
             }
 
             .login-card img.logo {
-                max-height: 60px;
+                max-height: 100px;
             }
+
+            .login-card h2 {
+                font-size: 2.6rem;
+                margin-bottom: 6px;
+            }
+
+            .form-group input {
+                padding: 15px 16px;
+                padding-right: 46px;
+                font-size: 1.05rem;
+            }
+
+            .login-button {
+                padding: 16px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-height: 600px) and (max-width: 600px) {
+            .login-card {
+                padding: 24px 24px 28px;
+                justify-content: flex-start;
+            }
+            .login-card img.logo { max-height: 60px; }
+            .login-card h2 { font-size: 2rem; }
         }
     </style>
     <script>
