@@ -224,7 +224,7 @@
         font-weight: 500;
         color: var(--text-primary);
         min-width: 100px;
-        text-align: left;
+        text-align: start;
     }
 
     .customer-detail-value {
@@ -232,7 +232,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        text-align: left;
+        text-align: start;
     }
 
     .customer-footer {
@@ -250,7 +250,7 @@
         align-items: center;
         gap: 0.5rem;
         color: var(--text-secondary);
-        text-align: left;
+        text-align: start;
         font-weight: 500;
     }
 
@@ -268,7 +268,7 @@
     .customer-date {
         color: var(--text-secondary);
         font-size: 0.75rem;
-        text-align: left;
+        text-align: start;
     }
 
     @media (max-width: 1400px) {
@@ -328,7 +328,7 @@
     .stage-details-table th,
     .stage-details-table td {
         padding: 0.5rem 0.75rem;
-        text-align: left;
+        text-align: start;
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -692,16 +692,27 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <div class="welcome-header">
-        <h1>Welcome, {{ salesperson_name }}!</h1>
-        <div class="header-nav">
-            <a href="#leads" onclick="openTab('leads')" class="active">Leads</a>
-            <a href="#sales-team" onclick="openTab('sales-team')">Sales Team</a>
-            {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('dashboard.admin_dashboard') }}">Admin Tool</a>
-            {% endif %}
-            <a href="{{ url_for('telegram.link_account') }}" style="color:#0088cc;">💬 Telegram</a>
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+    <div class="welcome-header" style="border:none; margin-bottom: 0;">
+        <h1>!Welcome, {{ salesperson_name }}</h1>
+    </div>
+
+    <!-- KPI Summary Strip -->
+    <div class="kpi-container mt-4">
+        <div class="kpi-card" style="border-inline-start: 4px solid var(--primary-color);">
+            <div class="kpi-title">{{ _('Total Customers')|default('Total Customers') }}</div>
+            <div class="kpi-value">{{ total_customers_filtered }}</div>
+        </div>
+        <div class="kpi-card" style="border-inline-start: 4px solid var(--success-color);">
+            <div class="kpi-title">{{ _('Pipeline Value')|default('Pipeline Value') }}</div>
+            <div class="kpi-value">{{ "{:,.2f}".format(total_value) }}</div>
+        </div>
+        <div class="kpi-card" style="border-inline-start: 4px solid var(--stage-contacted);">
+            <div class="kpi-title">{{ _('Active Stages')|default('Active Stages') }}</div>
+            <div class="kpi-value">{{ sales_stages|length }}</div>
+        </div>
+        <div class="kpi-card" style="border-inline-start: 4px solid var(--stage-potential);">
+            <div class="kpi-title">{{ _('Team Size')|default('Sales Team') }}</div>
+            <div class="kpi-value">{{ salespeople|length }}</div>
         </div>
     </div>
 
@@ -746,7 +757,21 @@
                                 {{ customer.company_name }}
                             </a>
                         </h3>
-                        <span class="customer-stage">{{ customer.current_sales_stage or 'N/A' }}</span>
+                        {% set stage_color = '' %}
+                        {% if 'نجاح' in (customer.current_sales_stage or '') or 'won' in (customer.current_sales_stage or '')|lower %}
+                            {% set stage_color = 'badge-won' %}
+                        {% elif 'فشل' in (customer.current_sales_stage or '') or 'lost' in (customer.current_sales_stage or '')|lower %}
+                            {% set stage_color = 'badge-lost' %}
+                        {% elif 'تفاوض' in (customer.current_sales_stage or '') or 'negotiation' in (customer.current_sales_stage or '')|lower %}
+                            {% set stage_color = 'badge-negotiation' %}
+                        {% elif 'عرض' in (customer.current_sales_stage or '') or 'quot' in (customer.current_sales_stage or '')|lower %}
+                            {% set stage_color = 'badge-quoted' %}
+                        {% elif 'محتمل' in (customer.current_sales_stage or '') or 'potential' in (customer.current_sales_stage or '')|lower %}
+                            {% set stage_color = 'badge-potential' %}
+                        {% else %}
+                            {% set stage_color = 'badge-contacted' %}
+                        {% endif %}
+                        <span class="badge-stage {{ stage_color }}">{{ customer.current_sales_stage or 'N/A' }}</span>
                     </div>
                     <div class="customer-details">
                         <div class="customer-detail">
@@ -851,9 +876,23 @@
         <div class="stage-details">
             <h2>Sales Pipeline</h2>
             {% for stage, data in pipeline_by_stage.items() %}
-            <div class="stage-section">
-                <div class="stage-header" onclick="toggleStage('{{ stage|replace(' ', '_') }}')">
-                    <h3>{{ stage }}</h3>
+            <div class="stage-section mb-3">
+                {% set stage_color = '' %}
+                {% if 'نجاح' in stage or 'won' in stage|lower %}
+                    {% set stage_color = 'badge-won' %}
+                {% elif 'فشل' in stage or 'lost' in stage|lower %}
+                    {% set stage_color = 'badge-lost' %}
+                {% elif 'تفاوض' in stage or 'negotiation' in stage|lower %}
+                    {% set stage_color = 'badge-negotiation' %}
+                {% elif 'عرض' in stage or 'quot' in stage|lower %}
+                    {% set stage_color = 'badge-quoted' %}
+                {% elif 'محتمل' in stage or 'potential' in stage|lower %}
+                    {% set stage_color = 'badge-potential' %}
+                {% else %}
+                    {% set stage_color = 'badge-contacted' %}
+                {% endif %}
+                <div class="stage-header {{ stage_color }}" style="border-radius: 0.5rem; padding: 1rem 1.25rem; font-weight: 600;" onclick="toggleStage('{{ stage|replace(' ', '_') }}')">
+                    <h3 style="color: inherit; margin: 0; flex-grow: 1;">{{ stage }}</h3>
                     <span>Total Value: ر.س {{ "{:,.0f}".format(data.total_value|float) }}</span>
                     <span class="toggle-icon" id="toggle-icon-{{ stage|replace(' ', '_') }}">▼</span>
                 </div>

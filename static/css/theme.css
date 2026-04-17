@@ -7,6 +7,14 @@
     --border-color: #e2e8f0;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
+    
+    /* Stage Colors */
+    --stage-potential: #94a3b8;    /* Slate */
+    --stage-contacted: #3b82f6;    /* Blue */
+    --stage-quoted: #8b5cf6;       /* Purple */
+    --stage-negotiation: #f59e0b;  /* Amber */
+    --stage-won: #10b981;          /* Emerald */
+    --stage-lost: #ef4444;         /* Red */
 }
 
 /* Layout */
@@ -143,6 +151,55 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+/* KPI Cards Strip */
+.kpi-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.kpi-card {
+    background: var(--card-background);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.kpi-title {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-value {
+    color: var(--text-primary);
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+/* Stage Badge generic class */
+.badge-stage {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-potential { background: #f1f5f9; color: var(--stage-potential); }
+.badge-contacted { background: #eff6ff; color: var(--stage-contacted); }
+.badge-quoted { background: #f5f3ff; color: var(--stage-quoted); }
+.badge-negotiation { background: #fffbeb; color: var(--stage-negotiation); }
+.badge-won { background: #ecfdf5; color: var(--stage-won); }
+.badge-lost { background: #fef2f2; color: var(--stage-lost); }
 
 /* Form Elements */
 .form-group {

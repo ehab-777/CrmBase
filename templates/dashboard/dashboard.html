@@ -271,10 +271,24 @@
     </div>
     {% if sales_pipeline %}
         {% for stage, leads in sales_pipeline.items() %}
-        <div class="pipeline-stage">
+        <div class="pipeline-stage mb-3">
             <div class="pipeline-stage-name">
                 <span>{{ stage }}</span>
-                <span class="stage-badge">{{ leads|length }}</span>
+                {% set stage_color = '' %}
+                {% if 'نجاح' in stage or 'won' in stage|lower %}
+                    {% set stage_color = 'badge-won' %}
+                {% elif 'فشل' in stage or 'lost' in stage|lower %}
+                    {% set stage_color = 'badge-lost' %}
+                {% elif 'تفاوض' in stage or 'negotiation' in stage|lower %}
+                    {% set stage_color = 'badge-negotiation' %}
+                {% elif 'عرض' in stage or 'quot' in stage|lower %}
+                    {% set stage_color = 'badge-quoted' %}
+                {% elif 'محتمل' in stage or 'potential' in stage|lower %}
+                    {% set stage_color = 'badge-potential' %}
+                {% else %}
+                    {% set stage_color = 'badge-contacted' %}
+                {% endif %}
+                <span class="stage-badge {{ stage_color }}" style="border-radius: 2rem;">{{ leads|length }}</span>
             </div>
             <ul class="company-list">
                 {% for lead in leads %}

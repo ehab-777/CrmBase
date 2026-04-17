@@ -194,13 +194,18 @@
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         _pwaPrompt = e;
-        // Show install button wherever it exists
-        document.querySelectorAll('.pwa-install-btn').forEach(function(btn){
-            btn.style.display = 'flex';
-        });
-        // Show install banner on mobile
-        var banner = document.getElementById('pwaBanner');
-        if (banner) banner.style.display = 'flex';
+        
+        // Only show install prompts on mobile devices (width < 768px)
+        // and if it hasn't been dismissed recently
+        if (window.innerWidth < 768 && !localStorage.getItem('pwa_dismissed')) {
+            // Show install button wherever it exists
+            document.querySelectorAll('.pwa-install-btn').forEach(function(btn){
+                btn.style.display = 'flex';
+            });
+            // Show install banner on mobile
+            var banner = document.getElementById('pwaBanner');
+            if (banner) banner.style.display = 'flex';
+        }
     });
 
     window.installPWA = function() {
