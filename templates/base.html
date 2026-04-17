@@ -131,28 +131,18 @@
     </div>
 
     {% if session.get('salesperson_id') %}
-    {# ── Authenticated layout: sidebar + main ── #}
     <div class="app-layout" id="appLayout">
-
-        {# Desktop sidebar #}
         {% include 'components/sidebar.html' %}
-
-        {# Main content area #}
         <div class="main-area">
-            {% block content %}{% endblock %}
-        </div>
+    {% endif %}
 
-    </div>
-
-    {# Mobile bottom nav #}
-    {% include 'components/bottom_nav.html' %}
-
-    {# Mobile FAB #}
-    {% include 'components/fab.html' %}
-
-    {% else %}
-    {# ── Guest layout: full page (login, etc.) ── #}
     {% block content %}{% endblock %}
+
+    {% if session.get('salesperson_id') %}
+        </div>{# /main-area #}
+    </div>{# /app-layout #}
+    {% include 'components/bottom_nav.html' %}
+    {% include 'components/fab.html' %}
     {% endif %}
 
     {# CSRF auto-inject into all forms #}
