@@ -327,9 +327,13 @@
                 <span class="status-badge status-{{ customer.status|lower|replace(' ', '-') }}">{{ customer.status }}</span>
             </div>
         </div>
-        <div class="section-footer">
+        <div class="section-footer" style="display:flex;gap:.75rem;flex-wrap:wrap;">
             <a href="{{ url_for('customers.edit_customer', customer_id=customer.customer_id) }}" class="btn btn-secondary">
                 Edit Customer
+            </a>
+            <a href="{{ url_for('quotations.new_quotation', customer_id=customer.customer_id) }}"
+               class="btn btn-primary">
+                📄 Create Quotation
             </a>
         </div>
     </div>

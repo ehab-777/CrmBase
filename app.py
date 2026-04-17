@@ -25,6 +25,7 @@ from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.telegram import telegram_bp
 from routes.products import products_bp
+from routes.quotations import quotations_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -88,6 +89,7 @@ app.register_blueprint(users_bp)
 app.register_blueprint(dashboard_bp)  # Register dashboard blueprint
 app.register_blueprint(telegram_bp)
 app.register_blueprint(products_bp)
+app.register_blueprint(quotations_bp)
 
 def _ensure_telegram_columns():
     """Safe migration: add Telegram columns to sales_team if missing."""

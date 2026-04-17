@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}{{ quotation.quotation_number or 'Quotation' }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+.container { max-width:960px; margin:0 auto; padding:2rem; }
+
+.page-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;
+}
+.page-title { font-size:1.5rem; font-weight:700; color:var(--text-primary); }
+
+/* Status badge */
+.status-badge {
+    display:inline-block; padding:.3rem .9rem;
+    border-radius:9999px; font-size:.82rem; font-weight:700;
+}
+
+/* Card */
+.card { background:#fff; border-radius:.75rem; border:1px solid var(--border-color);
+        box-shadow:0 1px 3px rgba(0,0,0,.07); padding:1.75rem; margin-bottom:1.25rem; }
+
+/* Two-col header info */
+.info-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.info-block h4 { font-size:.75rem; font-weight:700; text-transform:uppercase;
+                 letter-spacing:.04em; color:var(--text-secondary); margin-bottom:.6rem; }
+.info-block p  { font-size:.9rem; color:var(--text-primary); margin:.25rem 0; }
+.info-block p span { color:var(--text-secondary); font-size:.8rem; }
+
+/* Items table */
+.items-table-wrap { overflow-x:auto; margin-bottom:1.25rem; }
+table { width:100%; border-collapse:collapse; font-size:.875rem; }
+thead th { background:#f8fafc; padding:.75rem 1rem; text-align:start;
+           font-weight:600; color:var(--text-secondary); border-bottom:2px solid var(--border-color); }
+tbody td { padding:.75rem 1rem; border-bottom:1px solid var(--border-color); vertical-align:top; }
+tbody tr:last-child td { border-bottom:none; }
+.item-name { font-weight:600; }
+.item-desc { font-size:.78rem; color:var(--text-secondary); margin-top:.15rem; }
+.num { text-align:end; }
+
+/* Totals */
+.totals-box {
+    display:flex; flex-direction:column; align-items:flex-end; gap:.4rem;
+    padding:1rem 1.25rem; background:#f8fafc;
+    border-radius:.5rem; border:1px solid var(--border-color);
+}
+.totals-row { display:flex; gap:3rem; justify-content:flex-end; font-size:.875rem; }
+.totals-row .lbl { color:var(--text-secondary); min-width:140px; text-align:end; }
+.totals-row .val { min-width:100px; text-align:end; font-weight:500; }
+.totals-total { font-size:1.2rem; font-weight:800; color:#059669; }
+
+/* Action buttons */
+.action-bar { display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem; }
+.status-form { display:inline-flex; }
+.btn-status {
+    padding:.5rem 1rem; border-radius:.5rem; font-size:.82rem;
+    font-weight:600; cursor:pointer; font-family:inherit; border:none;
+    transition:all .15s;
+}
+.btn-sent      { background:#eff6ff; color:#2563eb; }
+.btn-accepted  { background:#ecfdf5; color:#059669; }
+.btn-rejected  { background:#fef2f2; color:#dc2626; }
+.btn-cancelled { background:#f1f5f9; color:#64748b; }
+.btn-draft     { background:#f1f5f9; color:#64748b; }
+.btn-status:hover { filter:brightness(.93); transform:translateY(-1px); }
+
+/* Notes/terms */
+.text-block { font-size:.875rem; color:var(--text-primary); white-space:pre-wrap; }
+
+@media (max-width:640px) {
+    .container { padding:1rem; }
+    .info-cols { grid-template-columns:1fr; }
+    .page-header { flex-direction:column; align-items:flex-start; }
+    .totals-row .lbl { min-width:100px; }
+    thead th:nth-child(4), tbody td:nth-child(4) { display:none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}{% for cat, msg in msgs %}
+    <div class="alert alert-{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+    {% endfor %}{% endif %}{% endwith %}
+
+    {% set sm = status_meta[quotation.status] %}
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                📄 {{ quotation.quotation_number or '#' ~ quotation.quotation_id }}
+            </h1>
+            <span class="status-badge"
+                  style="color:{{ sm.color }};background:{{ sm.bg }};margin-top:.25rem;display:inline-block;">
+                {{ sm.label }}
+            </span>
+        </div>
+        <div class="action-bar">
+            <a href="{{ url_for('quotations.export_pdf', quotation_id=quotation.quotation_id) }}"
+               class="btn btn-primary">
+                ⬇️ {{ _('Download PDF') }}
+            </a>
+            {% if quotation.status == 'draft' %}
+            <a href="{{ url_for('quotations.edit_quotation', quotation_id=quotation.quotation_id) }}"
+               class="btn btn-secondary">✏️ {{ _('Edit') }}</a>
+            {% endif %}
+            <a href="{{ url_for('quotations.quotation_list') }}"
+               class="btn btn-secondary">← {{ _('Back') }}</a>
+        </div>
+    </div>
+
+    {# ── Header info card ── #}
+    <div class="card">
+        <div class="info-cols">
+            <div class="info-block">
+                <h4>{{ _('Bill To') }}</h4>
+                <p><strong>{{ quotation.company_name }}</strong></p>
+                {% if quotation.contact_person %}<p>{{ quotation.contact_person }}</p>{% endif %}
+                {% if quotation.phone_number %}<p>📞 {{ quotation.phone_number }}</p>{% endif %}
+                {% if quotation.email_address %}<p>✉️ {{ quotation.email_address }}</p>{% endif %}
+                {% if quotation.company_address %}<p><span>{{ quotation.company_address }}</span></p>{% endif %}
+            </div>
+            <div class="info-block">
+                <h4>{{ _('Quotation Details') }}</h4>
+                <p><span>{{ _('Issue Date') }}:</span> {{ quotation.issue_date or '—' }}</p>
+                <p><span>{{ _('Valid Until') }}:</span> {{ quotation.valid_until or '—' }}</p>
+                <p><span>{{ _('Currency') }}:</span> {{ quotation.currency }}</p>
+                <p><span>{{ _('Prepared By') }}:</span> {{ quotation.salesperson_name }}</p>
+                {% if quotation.sp_email %}<p><span>{{ _('Email') }}:</span> {{ quotation.sp_email }}</p>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Line items ── #}
+    <div class="card">
+        <div class="items-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40%">{{ _('Item') }}</th>
+                        <th class="num">{{ _('Qty') }}</th>
+                        <th class="num">{{ _('Unit Price') }}</th>
+                        <th class="num">{{ _('Disc %') }}</th>
+                        <th class="num">{{ _('Total') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div class="item-name">{{ item['name'] }}</div>
+                        {% if item['description'] %}
+                        <div class="item-desc">{{ item['description'] }}</div>
+                        {% endif %}
+                        <div style="font-size:.75rem;color:var(--text-secondary);">{{ item['unit'] }}</div>
+                    </td>
+                    <td class="num">{{ item['quantity']|int if item['quantity'] == item['quantity']|int else item['quantity'] }}</td>
+                    <td class="num">{{ '{:,.2f}'.format(item['unit_price']) }}</td>
+                    <td class="num">{% if item['discount_pct'] %}{{ item['discount_pct'] }}%{% else %}—{% endif %}</td>
+                    <td class="num" style="font-weight:600;">{{ '{:,.2f}'.format(item['line_total']) }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Totals #}
+        <div class="totals-box">
+            <div class="totals-row">
+                <span class="lbl">{{ _('Subtotal') }}</span>
+                <span class="val">{{ quotation.currency }} {{ '{:,.2f}'.format(quotation.subtotal) }}</span>
+            </div>
+            {% if quotation.discount_amount %}
+            <div class="totals-row">
+                <span class="lbl">
+                    {{ _('Discount') }}
+                    {% if quotation.discount_type == 'percent' %}({{ quotation.discount_value }}%)
+                    {% elif quotation.discount_type == 'fixed' %}({{ _('Fixed') }})
+                    {% endif %}
+                </span>
+                <span class="val" style="color:#dc2626;">- {{ quotation.currency }} {{ '{:,.2f}'.format(quotation.discount_amount) }}</span>
+            </div>
+            {% endif %}
+            {% if quotation.tax_amount %}
+            <div class="totals-row">
+                <span class="lbl">{{ _('Tax') }} ({{ quotation.tax_percent }}%)</span>
+                <span class="val">{{ quotation.currency }} {{ '{:,.2f}'.format(quotation.tax_amount) }}</span>
+            </div>
+            {% endif %}
+            <div class="totals-row totals-total" style="border-top:2px solid var(--border-color);padding-top:.5rem;margin-top:.25rem;">
+                <span class="lbl">{{ _('TOTAL') }}</span>
+                <span class="val">{{ quotation.currency }} {{ '{:,.2f}'.format(quotation.total) }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ── Notes & Terms ── #}
+    {% if quotation.notes or quotation.terms %}
+    <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+            {% if quotation.notes %}
+            <div>
+                <h4 style="font-size:.75rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:.04em;color:var(--text-secondary);margin-bottom:.5rem;">
+                    {{ _('Notes') }}
+                </h4>
+                <p class="text-block">{{ quotation.notes }}</p>
+            </div>
+            {% endif %}
+            {% if quotation.terms %}
+            <div>
+                <h4 style="font-size:.75rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:.04em;color:var(--text-secondary);margin-bottom:.5rem;">
+                    {{ _('Terms & Conditions') }}
+                </h4>
+                <p class="text-block">{{ quotation.terms }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Status actions ── #}
+    {% if next_statuses %}
+    <div class="card">
+        <h4 style="font-size:.82rem;font-weight:700;text-transform:uppercase;
+                    letter-spacing:.04em;color:var(--text-secondary);margin-bottom:.75rem;">
+            {{ _('Change Status') }}
+        </h4>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            {% for ns in next_statuses %}
+            <form method="POST" action="{{ url_for('quotations.change_status', quotation_id=quotation.quotation_id) }}"
+                  class="status-form">
+                <input type="hidden" name="status" value="{{ ns }}">
+                <button type="submit" class="btn-status btn-{{ ns }}">
+                    {% if ns == 'sent' %}📤 {{ _('Mark Sent') }}
+                    {% elif ns == 'accepted' %}✅ {{ _('Mark Accepted') }}
+                    {% elif ns == 'rejected' %}❌ {{ _('Mark Rejected') }}
+                    {% elif ns == 'cancelled' %}🚫 {{ _('Cancel') }}
+                    {% elif ns == 'draft' %}↩️ {{ _('Reopen as Draft') }}
+                    {% else %}{{ ns|title }}{% endif %}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Danger zone ── #}
+    {% if session.get('role') in ['admin', 'manager'] and quotation.status != 'cancelled' %}
+    <div style="margin-top:.5rem;text-align:end;">
+        <form method="POST" action="{{ url_for('quotations.delete_quotation', quotation_id=quotation.quotation_id) }}"
+              onsubmit="return confirm('Cancel this quotation?')">
+            <button type="submit" class="btn btn-danger" style="font-size:.8rem;">
+                🗑 {{ _('Cancel / Delete') }}
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

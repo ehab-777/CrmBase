@@ -99,6 +99,43 @@ CREATE TABLE IF NOT EXISTS permissions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS quotations (
+    quotation_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    quotation_number TEXT,
+    customer_id     INTEGER NOT NULL,
+    salesperson_id  INTEGER NOT NULL,
+    status          TEXT    DEFAULT 'draft',
+    issue_date      TEXT    DEFAULT (date('now','localtime')),
+    valid_until     TEXT,
+    notes           TEXT,
+    terms           TEXT,
+    discount_type   TEXT    DEFAULT 'none',
+    discount_value  REAL    DEFAULT 0,
+    tax_percent     REAL    DEFAULT 0,
+    subtotal        REAL    DEFAULT 0,
+    discount_amount REAL    DEFAULT 0,
+    tax_amount      REAL    DEFAULT 0,
+    total           REAL    DEFAULT 0,
+    currency        TEXT    DEFAULT 'SAR',
+    tenant_id       INTEGER NOT NULL,
+    created_at      DATETIME DEFAULT (datetime('now','localtime')),
+    updated_at      DATETIME DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS quotation_items (
+    item_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    quotation_id INTEGER NOT NULL,
+    product_id   INTEGER,
+    name         TEXT    NOT NULL,
+    description  TEXT,
+    quantity     REAL    NOT NULL DEFAULT 1,
+    unit         TEXT    DEFAULT 'unit',
+    unit_price   REAL    NOT NULL DEFAULT 0,
+    discount_pct REAL    DEFAULT 0,
+    line_total   REAL    NOT NULL DEFAULT 0,
+    sort_order   INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS products (
     product_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT NOT NULL,

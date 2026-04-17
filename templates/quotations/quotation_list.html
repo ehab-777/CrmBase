@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Quotations') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+.container { max-width:1400px; margin:0 auto; padding:2rem; }
+.page-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;
+}
+.page-title { font-size:1.75rem; font-weight:700; color:var(--text-primary); }
+.page-sub   { font-size:.875rem; color:var(--text-secondary); margin-top:.2rem; }
+
+/* Filter bar */
+.filter-bar { display:flex; gap:.75rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.filter-bar input, .filter-bar select {
+    padding:.6rem .875rem; border:1px solid var(--border-color);
+    border-radius:.5rem; font-size:.875rem; background:#fff;
+    font-family:inherit; transition:border-color .15s;
+}
+.filter-bar input:focus, .filter-bar select:focus {
+    outline:none; border-color:var(--primary-color);
+    box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+.filter-bar input  { flex:1; min-width:min(220px,100%); }
+.filter-bar select { min-width:min(160px,100%); }
+.btn-search {
+    background:var(--primary-color); color:#fff; border:none;
+    padding:.6rem 1rem; border-radius:.5rem; cursor:pointer;
+    font-family:inherit; font-size:.875rem; font-weight:500;
+}
+.btn-search:hover { background:#1d4ed8; }
+
+/* Status badges */
+.status-badge {
+    display:inline-block; padding:.2rem .65rem;
+    border-radius:9999px; font-size:.75rem; font-weight:600;
+    white-space:nowrap;
+}
+
+/* Table */
+.table-wrap {
+    overflow-x:auto; border-radius:.75rem;
+    border:1px solid var(--border-color);
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+table { width:100%; border-collapse:collapse; background:#fff; font-size:.875rem; }
+thead tr { background:#f8fafc; border-bottom:2px solid var(--border-color); }
+th { padding:.875rem 1rem; text-align:start; font-weight:600; color:var(--text-secondary); white-space:nowrap; }
+td { padding:.875rem 1rem; border-bottom:1px solid var(--border-color); vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:#f8fafc; }
+
+.qt-number { font-weight:700; color:var(--primary-color); }
+.total-cell { font-weight:700; color:#059669; }
+
+/* Empty */
+.empty-state { text-align:center; padding:4rem 2rem; background:#fff;
+    border-radius:.75rem; border:1px solid var(--border-color); }
+.empty-state-icon { font-size:3rem; margin-bottom:1rem; }
+.empty-state h2 { margin-bottom:.5rem; }
+
+/* Pagination */
+.pagination { display:flex; justify-content:center; gap:.4rem; margin-top:1.5rem; flex-wrap:wrap; }
+.page-link {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:2.25rem; height:2.25rem; padding:0 .75rem;
+    border:1px solid var(--border-color); border-radius:.4rem;
+    color:var(--text-primary); text-decoration:none; font-size:.875rem; background:#fff;
+    transition:all .15s;
+}
+.page-link:hover { background:#f1f5f9; border-color:var(--primary-color); }
+.page-link.active { background:var(--primary-color); border-color:var(--primary-color); color:#fff; font-weight:600; }
+
+@media (max-width:640px) {
+    .container { padding:1rem; }
+    .page-header { flex-direction:column; align-items:flex-start; }
+    .filter-bar { flex-direction:column; }
+    .filter-bar input, .filter-bar select { width:100%; min-width:0; }
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) { display:none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}{% for cat, msg in msgs %}
+    <div class="alert alert-{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+    {% endfor %}{% endif %}{% endwith %}
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">📄 {{ _('Quotations') }}</h1>
+            <p class="page-sub">{{ _('Manage quotes sent to customers') }}</p>
+        </div>
+        <a href="{{ url_for('quotations.new_quotation') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14"/><path d="M5 12h14"/>
+            </svg>
+            {{ _('New Quotation') }}
+        </a>
+    </div>
+
+    {# Filters #}
+    <form method="GET" action="{{ url_for('quotations.quotation_list') }}" class="filter-bar">
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="{{ _('Search number or customer…') }}">
+        <select name="status">
+            <option value="">{{ _('All Statuses') }}</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>
+                {{ status_meta[s].label }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-search">{{ _('Search') }}</button>
+        {% if search or status_filter %}
+        <a href="{{ url_for('quotations.quotation_list') }}" class="btn btn-secondary">{{ _('Clear') }}</a>
+        {% endif %}
+    </form>
+
+    <div style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1rem;">
+        {{ _('Showing') }} <strong>{{ quotations|length }}</strong>
+        {{ _('of') }} <strong>{{ total }}</strong> {{ _('quotations') }}
+    </div>
+
+    {% if quotations %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ _('Number') }}</th>
+                    <th>{{ _('Customer') }}</th>
+                    <th>{{ _('Status') }}</th>
+                    <th>{{ _('Issue Date') }}</th>
+                    <th>{{ _('Valid Until') }}</th>
+                    <th>{{ _('Total') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for q in quotations %}
+            {% set sm = status_meta[q['status']] %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('quotations.quotation_detail', quotation_id=q['quotation_id']) }}"
+                       class="qt-number">{{ q['quotation_number'] or '#' ~ q['quotation_id'] }}</a>
+                </td>
+                <td>{{ q['company_name'] }}</td>
+                <td>
+                    <span class="status-badge"
+                          style="color:{{ sm.color }};background:{{ sm.bg }};">
+                        {{ sm.label }}
+                    </span>
+                </td>
+                <td style="color:var(--text-secondary);">{{ q['issue_date'] or '—' }}</td>
+                <td style="color:var(--text-secondary);">{{ q['valid_until'] or '—' }}</td>
+                <td class="total-cell">
+                    {{ q['currency'] }} {{ '{:,.2f}'.format(q['total']) }}
+                </td>
+                <td>
+                    <div style="display:flex;gap:.5rem;">
+                        <a href="{{ url_for('quotations.quotation_detail', quotation_id=q['quotation_id']) }}"
+                           class="btn btn-secondary" style="padding:.35rem .7rem;font-size:.8rem;">
+                            👁 {{ _('View') }}
+                        </a>
+                        {% if q['status'] == 'draft' %}
+                        <a href="{{ url_for('quotations.edit_quotation', quotation_id=q['quotation_id']) }}"
+                           class="btn btn-secondary" style="padding:.35rem .7rem;font-size:.8rem;">
+                            ✏️ {{ _('Edit') }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('quotations.quotation_list', page=page-1, search=search, status=status_filter) }}"
+           class="page-link">&laquo;</a>
+        {% endif %}
+        {% for p in range(1, total_pages+1) %}
+        <a href="{{ url_for('quotations.quotation_list', page=p, search=search, status=status_filter) }}"
+           class="page-link {% if p==page %}active{% endif %}">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}
+        <a href="{{ url_for('quotations.quotation_list', page=page+1, search=search, status=status_filter) }}"
+           class="page-link">&raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📄</div>
+        <h2>{{ _('No quotations found') }}</h2>
+        <p>{{ _('Create your first quotation to get started.') }}</p>
+        <a href="{{ url_for('quotations.new_quotation') }}" class="btn btn-primary" style="margin-top:1rem;">
+            + {{ _('New Quotation') }}
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
