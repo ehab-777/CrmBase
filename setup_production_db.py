@@ -98,6 +98,20 @@ CREATE TABLE IF NOT EXISTS permissions (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS products (
+    product_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL,
+    category      TEXT,
+    description   TEXT,
+    selling_price REAL NOT NULL DEFAULT 0,
+    min_price     REAL DEFAULT 0,
+    cost          REAL DEFAULT 0,
+    unit          TEXT DEFAULT 'unit',
+    is_active     INTEGER DEFAULT 1,
+    tenant_id     INTEGER NOT NULL REFERENCES tenants(id),
+    created_at    DATETIME DEFAULT (datetime('now','localtime'))
+);
 ''')
 
 conn.commit()

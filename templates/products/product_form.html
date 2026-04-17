@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ _('Edit Product') if action == 'edit' else _('Add Product') }}
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .container {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .form-card {
+        background: #fff;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+        padding: 2rem;
+    }
+
+    .form-section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .form-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .form-label .req { color: #ef4444; margin-inline-start: 2px; }
+
+    .form-control {
+        padding: 0.65rem 0.875rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-family: inherit;
+        color: var(--text-primary);
+        background: var(--background-color);
+        transition: border-color 0.15s, box-shadow 0.15s;
+        width: 100%;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        background: #fff;
+    }
+
+    textarea.form-control { resize: vertical; min-height: 80px; }
+
+    /* Price hint */
+    .price-hint {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.2rem;
+    }
+
+    /* Margin indicator */
+    #marginDisplay {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #059669;
+        margin-top: 0.35rem;
+    }
+
+    .form-footer {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+        .container { padding: 1rem; }
+        .form-card { padding: 1.25rem; }
+        .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+        .span-2, .span-3 { grid-column: span 1; }
+        .page-header { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="page-header">
+        <h1 class="page-title">
+            {% if action == 'edit' %}✏️ {{ _('Edit Product') }}
+            {% else %}➕ {{ _('Add New Product') }}
+            {% endif %}
+        </h1>
+        <a href="{{ url_for('products.product_list') }}" class="btn btn-secondary">
+            ← {{ _('Back to Products') }}
+        </a>
+    </div>
+
+    <div class="form-card">
+        <form method="POST"
+              action="{{ url_for('products.edit_product', product_id=product_id) if action == 'edit' else url_for('products.add_product') }}">
+
+            {# ── Basic Info ── #}
+            <div class="form-section-title">{{ _('Basic Information') }}</div>
+            <div class="form-grid-2" style="margin-bottom:1rem;">
+                <div class="form-group span-2">
+                    <label for="name" class="form-label">{{ _('Product / Service Name') }} <span class="req">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control"
+                           value="{{ product.get('name', '') }}" required
+                           placeholder="{{ _('e.g. Annual Maintenance Contract') }}">
+                </div>
+                <div class="form-group">
+                    <label for="category" class="form-label">{{ _('Category') }}</label>
+                    <input type="text" id="category" name="category" class="form-control"
+                           value="{{ product.get('category', '') }}"
+                           list="category-list"
+                           placeholder="{{ _('e.g. Software, Hardware…') }}">
+                    <datalist id="category-list">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="unit" class="form-label">{{ _('Unit of Measure') }}</label>
+                    <select id="unit" name="unit" class="form-control">
+                        {% for u in units %}
+                        <option value="{{ u }}" {% if product.get('unit', 'unit') == u %}selected{% endif %}>{{ u }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.25rem;">
+                <label for="description" class="form-label">{{ _('Description') }}</label>
+                <textarea id="description" name="description" class="form-control"
+                          placeholder="{{ _('Optional description, specs, or notes…') }}">{{ product.get('description', '') }}</textarea>
+            </div>
+
+            {# ── Pricing ── #}
+            <div class="form-section-title">{{ _('Pricing') }}</div>
+            <div class="form-grid-3" style="margin-bottom:0.5rem;">
+                <div class="form-group">
+                    <label for="selling_price" class="form-label">{{ _('Selling Price') }} <span class="req">*</span></label>
+                    <input type="number" id="selling_price" name="selling_price" class="form-control"
+                           value="{{ product.get('selling_price', '') }}"
+                           min="0" step="0.01" required
+                           oninput="updateMargin()">
+                    <span class="price-hint">{{ _('Default list price') }}</span>
+                </div>
+                <div class="form-group">
+                    <label for="min_price" class="form-label">{{ _('Minimum Price') }}</label>
+                    <input type="number" id="min_price" name="min_price" class="form-control"
+                           value="{{ product.get('min_price', '') }}"
+                           min="0" step="0.01"
+                           oninput="updateMargin()">
+                    <span class="price-hint">{{ _('Floor for discounts') }}</span>
+                </div>
+                <div class="form-group">
+                    <label for="cost" class="form-label">{{ _('Cost / Purchase Price') }}</label>
+                    <input type="number" id="cost" name="cost" class="form-control"
+                           value="{{ product.get('cost', '') }}"
+                           min="0" step="0.01"
+                           oninput="updateMargin()">
+                    <span class="price-hint">{{ _('Internal use only') }}</span>
+                </div>
+            </div>
+            <div id="marginDisplay"></div>
+
+            {# ── Footer ── #}
+            <div class="form-footer">
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'edit' %}💾 {{ _('Save Changes') }}
+                    {% else %}✅ {{ _('Add Product') }}
+                    {% endif %}
+                </button>
+                <a href="{{ url_for('products.product_list') }}" class="btn btn-secondary">
+                    {{ _('Cancel') }}
+                </a>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateMargin() {
+    const sell = parseFloat(document.getElementById('selling_price').value) || 0;
+    const cost = parseFloat(document.getElementById('cost').value) || 0;
+    const el = document.getElementById('marginDisplay');
+
+    if (sell > 0 && cost > 0) {
+        const margin = ((sell - cost) / sell * 100).toFixed(1);
+        const profit = (sell - cost).toFixed(2);
+        el.textContent = `💹 Margin: ${margin}%  (profit: ${profit} per unit)`;
+        el.style.color = margin >= 0 ? '#059669' : '#dc2626';
+    } else {
+        el.textContent = '';
+    }
+}
+
+// Trigger on load for edit form
+updateMargin();
+</script>
+{% endblock %}
