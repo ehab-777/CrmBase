@@ -774,9 +774,9 @@
             </div>
             
             <div class="filter-group">
-                <label for="salesperson_filter" class="filter-label">Salesperson</label>
+                <label for="salesperson_filter" class="filter-label">{{ _('Salesperson') }}</label>
                 <select id="salesperson_filter" class="filter-select" onchange="applyFilters()">
-                    <option value="">All Salespeople</option>
+                    <option value="">{{ _('All Salespeople') }}</option>
                     {% for salesperson in salespeople %}
                     <option value="{{ salesperson.salesperson_id }}" {% if request.args.get('salesperson_id')|int == salesperson.salesperson_id %}selected{% endif %}>
                         {{ salesperson.first_name }}
@@ -786,9 +786,9 @@
             </div>
 
             <div class="filter-group">
-                <label for="stage_filter" class="filter-label">Sales Stage</label>
+                <label for="stage_filter" class="filter-label">{{ _('Sales Stage') }}</label>
                 <select id="stage_filter" class="filter-select" onchange="applyFilters()">
-                    <option value="">All Stages</option>
+                    <option value="">{{ _('All Stages') }}</option>
                     {% for stage in sales_stages %}
                     <option value="{{ stage }}" {% if request.args.get('stage') == stage %}selected{% endif %}>
                         {{ stage }}
@@ -826,16 +826,16 @@
                     </div>
                     <div class="customer-details">
                         <div class="customer-detail">
-                            <span class="customer-detail-label">Contact Person:</span>
-                            <span class="customer-detail-value">{{ customer.contact_person or 'N/A' }}</span>
+                            <span class="customer-detail-label">{{ _('Contact Person:') }}</span>
+                            <span class="customer-detail-value">{{ customer.contact_person or _('N/A') }}</span>
                         </div>
                         <div class="customer-detail">
-                            <span class="customer-detail-label">Position:</span>
-                            <span class="customer-detail-value">{{ customer.contact_person_position or 'N/A' }}</span>
+                            <span class="customer-detail-label">{{ _('Position:') }}</span>
+                            <span class="customer-detail-value">{{ customer.contact_person_position or _('N/A') }}</span>
                         </div>
                         <div class="customer-detail">
-                            <span class="customer-detail-label">Phone:</span>
-                            <span class="customer-detail-value">{{ customer.phone_number or 'N/A' }}</span>
+                            <span class="customer-detail-label">{{ _('Phone:') }}</span>
+                            <span class="customer-detail-value">{{ customer.phone_number or _('N/A') }}</span>
                         </div>
                     </div>
                     <div class="customer-footer">
@@ -844,13 +844,13 @@
                         </div>
                         <div class="customer-dates">
                             <div class="customer-date">
-                                Created: {{ customer.date_added }}
+                                {{ _('Created:') }} {{ customer.date_added }}
                             </div>
                             <div class="customer-date">
-                                Last Contact: {{ customer.last_contact_date or 'N/A' }}
+                                {{ _('Last Contact:') }} {{ customer.last_contact_date or _('N/A') }}
                             </div>
                             <div class="customer-date">
-                                Next Follow-up: {{ customer.next_followup_date or 'N/A' }}
+                                {{ _('Next Follow-up:') }} {{ customer.next_followup_date or _('N/A') }}
                             </div>
                         </div>
                     </div>
@@ -860,7 +860,7 @@
         </div>
 
         <div class="table-actions">
-            <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">Create New Customer</a>
+            <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">{{ _('Create New Customer') }}</a>
             <ul class="pagination">
                 {% if page > 1 %}
                 <li class="page-item">
@@ -888,7 +888,7 @@
         </div>
 
         <div class="chart-section">
-            <h2>Sales Stage Analysis</h2>
+            <h2>{{ _('Sales Stage Analysis') }}</h2>
             <div class="chart-container">
                 <div>
                     <canvas id="salesStageChart"></canvas>
@@ -897,10 +897,10 @@
                     <table class="stage-details-table">
                         <thead>
                             <tr>
-                                <th>Stage</th>
-                                <th>Count</th>
-                                <th>Total Value</th>
-                                <th>Percentage</th>
+                                <th>{{ _('Stage') }}</th>
+                                <th>{{ _('Count') }}</th>
+                                <th>{{ _('Total Value') }}</th>
+                                <th>{{ _('Percentage') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -913,7 +913,7 @@
                             </tr>
                             {% endfor %}
                             <tr class="total-row">
-                                <td>Total</td>
+                                <td>{{ _('Total') }}</td>
                                 <td>{{ total_customers_filtered }}</td>
                                 <td>ر.س {{ "{:,.0f}".format(sales_stage_counts.values()|sum(attribute='total_value')|float) }}</td>
                                 <td>100%</td>
@@ -925,7 +925,7 @@
         </div>
 
         <div class="stage-details">
-            <h2>Sales Pipeline</h2>
+            <h2>{{ _('Sales Pipeline') }}</h2>
             {% for stage, data in pipeline_by_stage.items() %}
             <div class="stage-section mb-3">
                 {% set stage_color = '' %}
@@ -944,7 +944,7 @@
                 {% endif %}
                 <div class="stage-header {{ stage_color }}" style="border-radius: 0.5rem; padding: 1rem 1.25rem; font-weight: 600;" onclick="toggleStage('{{ stage|replace(' ', '_') }}')">
                     <h3 style="color: inherit; margin: 0; flex-grow: 1;">{{ stage }}</h3>
-                    <span>Total Value: ر.س {{ "{:,.0f}".format(data.total_value|float) }}</span>
+                    <span>{{ _('Total Value') }}: ر.س {{ "{:,.0f}".format(data.total_value|float) }}</span>
                     <span class="toggle-icon" id="toggle-icon-{{ stage|replace(' ', '_') }}">▼</span>
                 </div>
                 <div id="{{ stage|replace(' ', '_') }}" class="stage-content">
@@ -957,17 +957,17 @@
                             <div class="followup-count">No.Followup {{ company.followup_count }}</div>
                         </div>
                         <div class="company-details">
-                            <div class="company-detail"><span>Contact Person:</span> {{ company.contact_person or 'N/A' }}</div>
-                            <div class="company-detail"><span>Phone:</span> {{ company.phone_number or 'N/A' }}</div>
-                            <div class="company-detail"><span>Salesperson:</span> {{ company.salesperson }}</div>
-                            <div class="company-detail"><span>Next Action:</span> {{ company.next_action or 'N/A' }}</div>
-                            <div class="company-detail"><span>Due Date:</span> {{ company.next_action_date or 'N/A' }}</div>
-                            <div class="company-detail"><span>Value:</span> {{ company.deal_value or 'N/A' }}</div>
-                            <div class="company-detail"><span>Last Contact:</span> {{ company.last_contact_date or 'N/A' }}</div>
-                            <div class="company-detail"><span>Summary:</span> {{ company.summary or 'N/A' }}</div>
+                            <div class="company-detail"><span>{{ _('Contact Person:') }}</span> {{ company.contact_person or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Phone:') }}</span> {{ company.phone_number or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Salesperson:') }}</span> {{ company.salesperson }}</div>
+                            <div class="company-detail"><span>{{ _('Next Action:') }}</span> {{ company.next_action or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Due Date:') }}</span> {{ company.next_action_date or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Value:') }}</span> {{ company.deal_value or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Last Contact:') }}</span> {{ company.last_contact_date or _('N/A') }}</div>
+                            <div class="company-detail"><span>{{ _('Summary:') }}</span> {{ company.summary or _('N/A') }}</div>
                         </div>
                         <div class="company-actions">
-                            <a href="{{ url_for('customers.assign_customer', customer_id=company.customer_id) }}" class="btn btn-secondary">Change Salesperson</a>
+                            <a href="{{ url_for('customers.assign_customer', customer_id=company.customer_id) }}" class="btn btn-secondary">{{ _('Change Salesperson') }}</a>
                         </div>
                     </div>
                     {% endfor %}
@@ -979,9 +979,9 @@
 
     <div id="sales-team" class="tab-content">
         <div class="action-buttons">
-            <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">Add New Salesperson</a>
+            <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">{{ _('Add New Salesperson') }}</a>
             {% if session.get('role') in ['admin', 'manager'] %}
-            <a href="{{ url_for('users.salespeople_list') }}" class="btn btn-secondary">View All Users</a>
+            <a href="{{ url_for('users.salespeople_list') }}" class="btn btn-secondary">{{ _('View All Users') }}</a>
             {% endif %}
         </div>
     </div>

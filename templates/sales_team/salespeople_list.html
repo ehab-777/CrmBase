@@ -365,25 +365,25 @@
             {% endif %}
         {% endwith %}
         <div class="header">
-            <h1 class="page-title">Sales Team</h1>
+            <h1 class="page-title">{{ _('Sales Team') }}</h1>
             <div class="action-buttons">
                 <div class="button-group">
                     <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">
-                        Add New Salesperson
+                        {{ _('Add New Salesperson') }}
                     </a>
                     {% if session['role'] in ['admin', 'manager'] %}
                     <a href="{{ url_for('users.salespeople_list') }}" class="btn btn-secondary">
-                        View All Users
+                        {{ _('View All Users') }}
                     </a>
                     {% endif %}
                 </div>
                 {% if session['role'] in ['admin', 'manager'] %}
                 <a href="{{ url_for('dashboard.manager_dashboard') }}" class="btn btn-secondary">
-                    Back to Dashboard
+                    {{ _('Back to Dashboard') }}
                 </a>
                 {% else %}
                 <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
-                    Back to Dashboard
+                    {{ _('Back to Dashboard') }}
                 </a>
                 {% endif %}
             </div>
@@ -416,19 +416,19 @@
                 </div>
                 <div class="salesperson-details">
                     <div class="detail-row">
-                        <span class="detail-label">Email:</span>
+                        <span class="detail-label">{{ _('Email:') }}</span>
                         <span class="detail-value">{{ salesperson.work_email }}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Phone:</span>
-                        <span class="detail-value">{{ salesperson.phone_number or 'Not provided' }}</span>
+                        <span class="detail-label">{{ _('Phone:') }}</span>
+                        <span class="detail-value">{{ salesperson.phone_number or _('Not provided') }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">ID:</span>
                         <span class="detail-value">#{{ salesperson.salesperson_id }}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Tenant:</span>
+                        <span class="detail-label">{{ _('Tenant:') }}</span>
                         <span class="detail-value">{{ salesperson.tenant_name }}</span>
                     </div>
                 </div>
@@ -438,10 +438,10 @@
         {% else %}
         <div class="empty-state">
             <div class="empty-state-icon">👥</div>
-            <h2>No Sales Team Members</h2>
-            <p class="empty-state-text">Get started by adding your first sales team member.</p>
+            <h2>{{ _('No Sales Team Members') }}</h2>
+            <p class="empty-state-text">{{ _('Get started by adding your first sales team member.') }}</p>
             <a href="{{ url_for('users.add_salesperson') }}" class="btn btn-primary">
-                Add New Salesperson
+                {{ _('Add New Salesperson') }}
             </a>
         </div>
         {% endif %}
@@ -451,45 +451,45 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
-            <h3 class="modal-title">Edit Salesperson Profile</h3>
+            <h3 class="modal-title">{{ _('Edit Salesperson Profile') }}</h3>
             <form id="editForm" method="POST" action="{{ url_for('users.edit_salesperson') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="salesperson_id" id="editSalespersonId">
                 <div class="form-group">
-                    <label class="form-label" for="editFirstName">First Name</label>
+                    <label class="form-label" for="editFirstName">{{ _('First Name') }}</label>
                     <input type="text" id="editFirstName" name="first_name" class="form-input" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="editLastName">Last Name</label>
+                    <label class="form-label" for="editLastName">{{ _('Last Name') }}</label>
                     <input type="text" id="editLastName" name="last_name" class="form-input">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="editUsername">Username</label>
+                    <label class="form-label" for="editUsername">{{ _('Username') }}</label>
                     <input type="text" id="editUsername" name="salesperson_name" class="form-input" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="editEmail">Work Email</label>
+                    <label class="form-label" for="editEmail">{{ _('Work Email') }}</label>
                     <input type="email" id="editEmail" name="work_email" class="form-input" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="editPhone">Phone Number</label>
+                    <label class="form-label" for="editPhone">{{ _('Phone Number') }}</label>
                     <input type="tel" id="editPhone" name="phone_number" class="form-input">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="editRole">Role</label>
+                    <label class="form-label" for="editRole">{{ _('Role') }}</label>
                     <select id="editRole" name="role" class="form-input">
-                        <option value="salesperson">Salesperson</option>
+                        <option value="salesperson">{{ _('Salesperson') }}</option>
                         {% if session['role'] == 'admin' %}
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
+                        <option value="manager">{{ _('Manager') }}</option>
+                        <option value="admin">{{ _('Admin') }}</option>
                         {% elif session['role'] == 'manager' %}
-                        <option value="salesperson">Salesperson</option>
+                        <option value="salesperson">{{ _('Salesperson') }}</option>
                         {% endif %}
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
                 </div>
             </form>
         </div>
@@ -499,17 +499,17 @@
     <div id="passwordModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
-            <h3 class="modal-title">Change Password</h3>
+            <h3 class="modal-title">{{ _('Change Password') }}</h3>
             <form id="passwordForm" method="POST" action="{{ url_for('users.change_password') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="salesperson_id" id="passwordSalespersonId">
                 <div class="form-group">
-                    <label class="form-label" for="newPassword">New Password</label>
+                    <label class="form-label" for="newPassword">{{ _('New Password') }}</label>
                     <input type="password" id="newPassword" name="new_password" class="form-input" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Change Password</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('passwordModal')">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Change Password') }}</button>
                 </div>
             </form>
         </div>

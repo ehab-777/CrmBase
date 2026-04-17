@@ -280,10 +280,10 @@
 {% block content %}
 <div class="container">
     <div class="welcome-header">
-        <h1>Customer Details</h1>
+        <h1>{{ _('Customer Details') }}</h1>
         <div class="header-nav">
             <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary">
-                <span>←</span> Back to List
+                <span>←</span> {{ _('Back to List') }}
             </a>
         </div>
     </div>
@@ -303,33 +303,33 @@
         </div>
         <div class="info-grid">
             <div class="info-group">
-                <span class="info-label">Contact Person</span>
-                <span class="info-value">{{ customer.contact_person or 'N/A' }}</span>
+                <span class="info-label">{{ _('Contact Person') }}</span>
+                <span class="info-value">{{ customer.contact_person or _('N/A') }}</span>
             </div>
             <div class="info-group">
-                <span class="info-label">Phone Number</span>
-                <span class="info-value">{{ customer.phone_number or 'N/A' }}</span>
+                <span class="info-label">{{ _('Phone Number') }}</span>
+                <span class="info-value">{{ customer.phone_number or _('N/A') }}</span>
             </div>
             <div class="info-group">
-                <span class="info-label">Industry</span>
-                <span class="info-value">{{ customer.company_industry or 'N/A' }}</span>
+                <span class="info-label">{{ _('Industry') }}</span>
+                <span class="info-value">{{ customer.company_industry or _('N/A') }}</span>
             </div>
             <div class="info-group">
                 <span class="info-label">{{ _('Assigned Salesperson') }}</span>
                 <span class="info-value">{{ customer.salesperson_name or _('N/A') }}</span>
             </div>
             <div class="info-group">
-                <span class="info-label">Initial Interest</span>
-                <span class="info-value">{{ customer.initial_interest or 'N/A' }}</span>
+                <span class="info-label">{{ _('Initial Interest') }}</span>
+                <span class="info-value">{{ customer.initial_interest or _('N/A') }}</span>
             </div>
             <div class="info-group">
-                <span class="info-label">Status</span>
+                <span class="info-label">{{ _('Status') }}</span>
                 <span class="status-badge status-{{ customer.status|lower|replace(' ', '-') }}">{{ customer.status }}</span>
             </div>
         </div>
         <div class="section-footer" style="display:flex;gap:.75rem;flex-wrap:wrap;">
             <a href="{{ url_for('customers.edit_customer', customer_id=customer.customer_id) }}" class="btn btn-secondary">
-                Edit Customer
+                {{ _('Edit Customer') }}
             </a>
             <a href="{{ url_for('quotations.new_quotation', customer_id=customer.customer_id) }}"
                class="btn btn-primary">
@@ -351,41 +351,41 @@
             <div class="followup-card">
                 <div class="followup-header">
                     <div class="followup-dates">
-                        <span class="followup-date">Contact Date: {{ followup.last_contact_date }}</span>
+                        <span class="followup-date">{{ _('Contact Date:') }} {{ followup.last_contact_date }}</span>
                     </div>
                     <span class="stage-badge">{{ followup.current_sales_stage or 'N/A' }}</span>
                 </div>
                 <div class="followup-content">
                     <div class="followup-row">
-                        <span class="followup-label">Contact Method:</span>
-                        <span class="followup-value">{{ followup.last_contact_method or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Contact Method:') }}</span>
+                        <span class="followup-value">{{ followup.last_contact_method or _('N/A') }}</span>
                     </div>
                     <div class="followup-row">
-                        <span class="followup-label">Summary:</span>
-                        <span class="followup-value">{{ followup.summary_last_contact or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Summary:') }}</span>
+                        <span class="followup-value">{{ followup.summary_last_contact or _('N/A') }}</span>
                     </div>
                     <div class="followup-row">
-                        <span class="followup-label">Next Action:</span>
-                        <span class="followup-value">{{ followup.next_action or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Next Action:') }}</span>
+                        <span class="followup-value">{{ followup.next_action or _('N/A') }}</span>
                     </div>
                     <div class="followup-row">
-                        <span class="followup-label">Due Date:</span>
-                        <span class="followup-value">{{ followup.next_action_due_date or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Due Date:') }}</span>
+                        <span class="followup-value">{{ followup.next_action_due_date or _('N/A') }}</span>
                     </div>
                     <div class="followup-row">
-                        <span class="followup-label">Potential Value:</span>
-                        <span class="followup-value">{{ followup.potential_deal_value or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Potential Value:') }}</span>
+                        <span class="followup-value">{{ followup.potential_deal_value or _('N/A') }}</span>
                     </div>
                     <div class="followup-row">
-                        <span class="followup-label">Notes:</span>
-                        <span class="followup-value">{{ followup.notes or 'N/A' }}</span>
+                        <span class="followup-label">{{ _('Notes:') }}</span>
+                        <span class="followup-value">{{ followup.notes or _('N/A') }}</span>
                     </div>
                 </div>
                 <div class="followup-created">
                     <div style="text-align: right; font-size: 0.8em; color: var(--text-secondary); margin-bottom: 0.25rem;">
                         {{ _('Created by') }}: {{ followup.salesperson_name or _('N/A') }}
                     </div>
-                    Created: {{ followup.created_at }}
+                    {{ _('Created:') }} {{ followup.created_at }}
                 </div>
             </div>
             {% endfor %}
@@ -415,8 +415,8 @@
         {% else %}
             <div class="empty-state">
                 <div class="empty-state-icon">📋</div>
-                <h2>No follow-ups yet</h2>
-                <p>Add your first follow-up to get started</p>
+                <h2>{{ _('No follow-ups yet') }}</h2>
+                <p>{{ _('Add your first follow-up to get started') }}</p>
             </div>
         {% endif %}
     </div>

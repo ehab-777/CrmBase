@@ -292,7 +292,7 @@ msgstr "مسؤول المبيعات"
 #: templates/customers/customer_detail.html:319
 #: templates/customers/customer_detail.html:386
 msgid "N/A"
-msgstr ""
+msgstr "غير متاح"
 
 #: templates/customers/customer_detail.html:386
 #, fuzzy
@@ -548,7 +548,7 @@ msgstr "عرض"
 #: templates/products/product_list.html:315
 #: templates/quotations/quotation_list.html:128
 msgid "of"
-msgstr ""
+msgstr "من"
 
 #: templates/products/product_list.html:315
 msgid "products"
@@ -866,7 +866,7 @@ msgstr "ربط تيليجرام"
 
 #: templates/telegram/link.html:197
 msgid "Log follow-ups and get reminders via Telegram"
-msgstr ""
+msgstr "سجّل المتابعات واحصل على تذكيرات عبر تيليغرام"
 
 #: templates/telegram/link.html:201
 msgid "Telegram account connected"
@@ -1512,6 +1512,434 @@ msgstr ""
 #: venv/lib/python3.11/site-packages/wtforms/fields/numeric.py:197
 msgid "Not a valid float value."
 msgstr ""
+
+#: templates/customers/customer_detail.html
+msgid "Customer Details"
+msgstr "تفاصيل العميل"
+
+#: templates/customers/customer_detail.html
+msgid "Back to List"
+msgstr "العودة للقائمة"
+
+#: templates/customers/customer_detail.html
+msgid "Contact Person"
+msgstr "جهة الاتصال"
+
+#: templates/customers/customer_detail.html
+msgid "Phone Number"
+msgstr "رقم الهاتف"
+
+#: templates/customers/customer_detail.html
+msgid "Industry"
+msgstr "القطاع"
+
+#: templates/customers/customer_detail.html
+msgid "Initial Interest"
+msgstr "الاهتمام الأولي"
+
+#: templates/customers/customer_detail.html
+msgid "Status"
+msgstr "الحالة"
+
+#: templates/customers/customer_detail.html
+msgid "Edit Customer"
+msgstr "تعديل العميل"
+
+#: templates/customers/customer_detail.html
+msgid "Contact Date:"
+msgstr "تاريخ التواصل:"
+
+#: templates/customers/customer_detail.html
+msgid "Contact Method:"
+msgstr "طريقة التواصل:"
+
+#: templates/customers/customer_detail.html
+msgid "Summary:"
+msgstr "الملخص:"
+
+#: templates/customers/customer_detail.html
+msgid "Next Action:"
+msgstr "الإجراء التالي:"
+
+#: templates/customers/customer_detail.html
+msgid "Due Date:"
+msgstr "تاريخ الاستحقاق:"
+
+#: templates/customers/customer_detail.html
+msgid "Potential Value:"
+msgstr "القيمة المتوقعة:"
+
+#: templates/customers/customer_detail.html
+msgid "Notes:"
+msgstr "الملاحظات:"
+
+#: templates/customers/customer_detail.html
+msgid "Created:"
+msgstr "تاريخ الإنشاء:"
+
+#: templates/customers/customer_detail.html
+msgid "No follow-ups yet"
+msgstr "لا توجد متابعات بعد"
+
+#: templates/customers/customer_detail.html
+msgid "Add your first follow-up to get started"
+msgstr "أضف أول متابعة للبدء"
+
+#: templates/customers/add_customer.html
+msgid "Add New Customer"
+msgstr "إضافة عميل جديد"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Company Information"
+msgstr "معلومات الشركة"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Company Name"
+msgstr "اسم الشركة"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Company Address"
+msgstr "عنوان الشركة"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Contact Information"
+msgstr "معلومات التواصل"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Contact Position"
+msgstr "المسمى الوظيفي لجهة الاتصال"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Email Address"
+msgstr "البريد الإلكتروني"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Lead Information"
+msgstr "معلومات العميل المحتمل"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Lead Source"
+msgstr "مصدر العميل"
+
+#: templates/customers/add_customer.html templates/customers/edit_customer.html
+msgid "Initial Interest"
+msgstr "الاهتمام الأولي"
+
+#: templates/customers/add_customer.html
+msgid "Assign to Salesperson"
+msgstr "تعيين إلى مندوب مبيعات"
+
+#: templates/customers/edit_customer.html
+msgid "Update Customer"
+msgstr "تحديث العميل"
+
+#: templates/customers/edit_customer.html
+msgid "Back to Customer"
+msgstr "العودة للعميل"
+
+#: templates/customers/assign_customer.html
+msgid "Assign Salesperson"
+msgstr "تعيين مندوب مبيعات"
+
+#: templates/customers/assign_customer.html
+msgid "Select Salesperson"
+msgstr "اختر مندوب مبيعات"
+
+#: templates/customers/assign_customer.html
+msgid "-- Select --"
+msgstr "-- اختر --"
+
+#: templates/customers/assign_customer.html
+msgid "Assign"
+msgstr "تعيين"
+
+#: templates/customers/assign_customer.html
+msgid "Back to Customer Details"
+msgstr "العودة لتفاصيل العميل"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Salesperson"
+msgstr "مندوب المبيعات"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "All Salespeople"
+msgstr "جميع المندوبين"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Sales Stage"
+msgstr "مرحلة المبيعات"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "All Stages"
+msgstr "جميع المراحل"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Contact Person:"
+msgstr "جهة الاتصال:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Position:"
+msgstr "المنصب:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Phone:"
+msgstr "الهاتف:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Created:"
+msgstr "تاريخ الإنشاء:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Last Contact:"
+msgstr "آخر تواصل:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Next Follow-up:"
+msgstr "المتابعة التالية:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Create New Customer"
+msgstr "إنشاء عميل جديد"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Sales Stage Analysis"
+msgstr "تحليل مراحل المبيعات"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Stage"
+msgstr "المرحلة"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Count"
+msgstr "العدد"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Total Value"
+msgstr "إجمالي القيمة"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Percentage"
+msgstr "النسبة المئوية"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Total"
+msgstr "الإجمالي"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Sales Pipeline"
+msgstr "خط أنابيب المبيعات"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Salesperson:"
+msgstr "مندوب المبيعات:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Next Action:"
+msgstr "الإجراء التالي:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Due Date:"
+msgstr "تاريخ الاستحقاق:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Value:"
+msgstr "القيمة:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Summary:"
+msgstr "الملخص:"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Change Salesperson"
+msgstr "تغيير المندوب"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "Add New Salesperson"
+msgstr "إضافة مندوب جديد"
+
+#: templates/dashboard/manager_dashboard.html
+msgid "View All Users"
+msgstr "عرض جميع المستخدمين"
+
+#: templates/profile/profile.html
+msgid "Telegram linked"
+msgstr "تيليغرام مرتبط"
+
+#: templates/profile/profile.html
+msgid "Telegram not linked"
+msgstr "تيليغرام غير مرتبط"
+
+#: templates/profile/profile.html
+msgid "Edit Profile"
+msgstr "تعديل الملف الشخصي"
+
+#: templates/profile/profile.html
+msgid "First Name"
+msgstr "الاسم الأول"
+
+#: templates/profile/profile.html
+msgid "Last Name"
+msgstr "الاسم الأخير"
+
+#: templates/profile/profile.html
+msgid "Display Name"
+msgstr "الاسم المعروض"
+
+#: templates/profile/profile.html
+msgid "Work Email"
+msgstr "البريد الإلكتروني للعمل"
+
+#: templates/profile/profile.html
+msgid "Save Changes"
+msgstr "حفظ التغييرات"
+
+#: templates/profile/profile.html
+msgid "Change Password"
+msgstr "تغيير كلمة المرور"
+
+#: templates/profile/profile.html
+msgid "Current Password"
+msgstr "كلمة المرور الحالية"
+
+#: templates/profile/profile.html
+msgid "New Password"
+msgstr "كلمة المرور الجديدة"
+
+#: templates/profile/profile.html
+msgid "Confirm New Password"
+msgstr "تأكيد كلمة المرور الجديدة"
+
+#: templates/profile/profile.html
+msgid "Update Password"
+msgstr "تحديث كلمة المرور"
+
+#: templates/profile/profile.html
+msgid "Role Management"
+msgstr "إدارة الأدوار"
+
+#: templates/profile/profile.html
+msgid "(Admin only)"
+msgstr "(للمدير فقط)"
+
+#: templates/profile/profile.html
+msgid "Name"
+msgstr "الاسم"
+
+#: templates/profile/profile.html
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: templates/profile/profile.html
+msgid "Current Role"
+msgstr "الدور الحالي"
+
+#: templates/profile/profile.html
+msgid "Change Role"
+msgstr "تغيير الدور"
+
+#: templates/profile/profile.html
+msgid "Save"
+msgstr "حفظ"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Sales Team"
+msgstr "فريق المبيعات"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Email:"
+msgstr "البريد الإلكتروني:"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Tenant:"
+msgstr "المؤسسة:"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Not provided"
+msgstr "غير محدد"
+
+#: templates/sales_team/salespeople_list.html
+msgid "No Sales Team Members"
+msgstr "لا يوجد أعضاء في فريق المبيعات"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Get started by adding your first sales team member."
+msgstr "ابدأ بإضافة أول عضو في فريق المبيعات."
+
+#: templates/sales_team/salespeople_list.html
+msgid "Edit Salesperson Profile"
+msgstr "تعديل ملف المندوب"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Username"
+msgstr "اسم المستخدم"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Role"
+msgstr "الدور"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Salesperson"
+msgstr "مندوب المبيعات"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Manager"
+msgstr "مدير"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Admin"
+msgstr "مدير النظام"
+
+#: templates/sales_team/salespeople_list.html
+msgid "Cancel"
+msgstr "إلغاء"
+
+#: templates/errors/404.html
+msgid "Page Not Found"
+msgstr "الصفحة غير موجودة"
+
+#: templates/errors/404.html
+msgid "The page you are looking for does not exist."
+msgstr "الصفحة التي تبحث عنها غير موجودة."
+
+#: templates/errors/404.html templates/errors/500.html
+msgid "Go to Dashboard"
+msgstr "الذهاب إلى لوحة التحكم"
+
+#: templates/errors/500.html
+msgid "Server Error"
+msgstr "خطأ في الخادم"
+
+#: templates/errors/500.html
+msgid "Something went wrong on our end. Please try again later."
+msgstr "حدث خطأ من جانبنا. يرجى المحاولة مرة أخرى لاحقاً."
+
+#: templates/tenants/manage_tenants.html
+msgid "Manage Tenants"
+msgstr "إدارة المؤسسات"
+
+#: templates/tenants/manage_tenants.html
+msgid "Add New Tenant"
+msgstr "إضافة مؤسسة جديدة"
+
+#: templates/tenants/manage_tenants.html
+msgid "Database Key"
+msgstr "مفتاح قاعدة البيانات"
+
+#: templates/tenants/manage_tenants.html
+msgid "Actions"
+msgstr "الإجراءات"
+
+#: templates/tenants/manage_tenants.html
+msgid "Tenant Name"
+msgstr "اسم المؤسسة"
+
+#: templates/telegram/link.html
+msgid "Copied!"
+msgstr "تم النسخ!"
+
+#: templates/telegram/link.html
+msgid "Register Webhook"
+msgstr "تسجيل Webhook"
 
 #~ msgid ""
 #~ "Click will abort further execution "

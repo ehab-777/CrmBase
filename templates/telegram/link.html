@@ -219,7 +219,7 @@
         <p class="code-label">{{ _('Your link code') }}</p>
         <div class="code-value" onclick="copyCode('{{ link_token }}')" title="Click to copy">{{ link_token }}</div>
         <p class="code-hint">{{ _('Tap to copy · expires after use') }}</p>
-        <p class="copied-toast" id="copied-msg">✓ Copied!</p>
+        <p class="copied-toast" id="copied-msg">✓ {{ _('Copied!') }}</p>
     </div>
 
     <div class="steps">
@@ -262,7 +262,7 @@
     <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.5rem;">Admin: re-register webhook if bot stops responding</p>
     <form method="POST" action="{{ url_for('telegram.register_webhook') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn-secondary-outline">🔗 Register Webhook</button>
+        <button type="submit" class="btn-secondary-outline">🔗 {{ _('Register Webhook') }}</button>
     </form>
     {% endif %}
 

@@ -119,10 +119,10 @@
 
 {% block content %}
 <div class="header">
-    <h1 class="page-title">Manage Tenants</h1>
+    <h1 class="page-title">{{ _('Manage Tenants') }}</h1>
     <div class="actions">
-        <a href="{{ url_for('dashboard.manager_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-        <button class="btn btn-primary" onclick="openAddTenantModal()">Add New Tenant</button>
+        <a href="{{ url_for('dashboard.manager_dashboard') }}" class="btn btn-secondary">{{ _('Back to Dashboard') }}</a>
+        <button class="btn btn-primary" onclick="openAddTenantModal()">{{ _('Add New Tenant') }}</button>
     </div>
 </div>
 
@@ -137,9 +137,9 @@
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Database Key</th>
-                    <th>Actions</th>
+                    <th>{{ _('Name') }}</th>
+                    <th>{{ _('Database Key') }}</th>
+                    <th>{{ _('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -148,8 +148,8 @@
                     <td>{{ tenant.name }}</td>
                     <td>{{ tenant.db_key }}</td>
                     <td class="actions">
-                        <button class="btn btn-secondary" onclick="openEditTenantModal({{ tenant.id }}, '{{ tenant.name }}', '{{ tenant.db_key }}')">Edit</button>
-                        <button class="btn btn-error" onclick="confirmDelete({{ tenant.id }})">Delete</button>
+                        <button class="btn btn-secondary" onclick="openEditTenantModal({{ tenant.id }}, '{{ tenant.name }}', '{{ tenant.db_key }}')">{{ _('Edit') }}</button>
+                        <button class="btn btn-error" onclick="confirmDelete({{ tenant.id }})">{{ _('Delete') }}</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -162,21 +162,21 @@
 <div id="tenantModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="modalTitle">Add New Tenant</h2>
+            <h2 id="modalTitle">{{ _('Add New Tenant') }}</h2>
             <span class="close" onclick="closeModal()">&times;</span>
         </div>
         <form id="tenantForm" method="POST">
             <input type="hidden" id="tenantId" name="tenant_id">
             <div class="form-group">
-                <label for="name">Tenant Name</label>
+                <label for="name">{{ _('Tenant Name') }}</label>
                 <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
-                <label for="db_key">Database Key</label>
+                <label for="db_key">{{ _('Database Key') }}</label>
                 <input type="text" id="db_key" name="db_key" required>
             </div>
             <div class="form-group">
-                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
             </div>
         </form>
     </div>

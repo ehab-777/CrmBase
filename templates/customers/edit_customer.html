@@ -215,21 +215,21 @@
 {% block content %}
 <div class="container">
     <div class="header">
-        <h1 class="page-title">Edit Customer</h1>
+        <h1 class="page-title">{{ _('Edit Customer') }}</h1>
         <div class="action-buttons">
             <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-secondary">
-                Back to Customer
+                {{ _('Back to Customer') }}
             </a>
             <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary">
-                Back to List
+                {{ _('Back to List') }}
             </a>
             {% if session['role'] in ['admin', 'manager'] %}
             <a href="{{ url_for('dashboard.manager_dashboard') }}" class="btn btn-secondary">
-                Back to Dashboard
+                {{ _('Back to Dashboard') }}
             </a>
             {% else %}
             <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
-                Back to Dashboard
+                {{ _('Back to Dashboard') }}
             </a>
             {% endif %}
         </div>
@@ -238,17 +238,17 @@
     <div class="form-container">
         <form method="POST">
             <div class="form-grid">
-                <h3 class="section-title">Company Information</h3>
-                
+                <h3 class="section-title">{{ _('Company Information') }}</h3>
+
                 <div class="form-group">
                     <label for="company_name" class="form-label">
-                        Company Name<span class="required-indicator">*</span>
+                        {{ _('Company Name') }}<span class="required-indicator">*</span>
                     </label>
                     <input type="text" id="company_name" name="company_name" class="form-input" value="{{ customer.company_name }}" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="company_industry" class="form-label">Industry</label>
+                    <label for="company_industry" class="form-label">{{ _('Industry') }}</label>
                     <select id="company_industry" name="company_industry" class="form-input form-select">
                         <option value="">-- اختر قطاع الشركة --</option>
                         <option value="تجارة / بيع بالتجزئة" {% if customer.company_industry == 'تجارة / بيع بالتجزئة' %}selected{% endif %}>تجارة / بيع بالتجزئة</option>
@@ -267,19 +267,19 @@
                 </div>
 
                 <div class="form-group full-width">
-                    <label for="company_address" class="form-label">Company Address</label>
+                    <label for="company_address" class="form-label">{{ _('Company Address') }}</label>
                     <textarea id="company_address" name="company_address" class="form-input" rows="3">{{ customer.company_address }}</textarea>
                 </div>
 
-                <h3 class="section-title">Contact Information</h3>
+                <h3 class="section-title">{{ _('Contact Information') }}</h3>
 
                 <div class="form-group">
-                    <label for="contact_person" class="form-label">Contact Person</label>
+                    <label for="contact_person" class="form-label">{{ _('Contact Person') }}</label>
                     <input type="text" id="contact_person" name="contact_person" class="form-input" value="{{ customer.contact_person }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="contact_person_position" class="form-label">Contact Position</label>
+                    <label for="contact_person_position" class="form-label">{{ _('Contact Position') }}</label>
                     <select id="contact_person_position" name="contact_person_position" class="form-input form-select">
                         <option value="">-- اختر منصب جهة الاتصال --</option>
                         <option value="مدير مشتريات" {% if customer.contact_person_position == 'مدير مشتريات' %}selected{% endif %}>مدير مشتريات</option>
@@ -296,20 +296,20 @@
 
                 <div class="form-group">
                     <label for="phone_number" class="form-label">
-                        Phone Number<span class="required-indicator">*</span>
+                        {{ _('Phone Number') }}<span class="required-indicator">*</span>
                     </label>
                     <input type="tel" id="phone_number" name="phone_number" class="form-input" value="{{ customer.phone_number }}" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="email_address" class="form-label">Email Address</label>
+                    <label for="email_address" class="form-label">{{ _('Email Address') }}</label>
                     <input type="email" id="email_address" name="email_address" class="form-input" value="{{ customer.email_address }}">
                 </div>
 
-                <h3 class="section-title">Lead Information</h3>
+                <h3 class="section-title">{{ _('Lead Information') }}</h3>
 
                 <div class="form-group">
-                    <label for="lead_source" class="form-label">Lead Source</label>
+                    <label for="lead_source" class="form-label">{{ _('Lead Source') }}</label>
                     <select id="lead_source" name="lead_source" class="form-input form-select">
                         <option value="">-- اختر مصدر العميل --</option>
                         <option value="زيارة مقر العميل" {% if customer.lead_source == 'زيارة مقر العميل' %}selected{% endif %}>زيارة مقر العميل</option>
@@ -323,7 +323,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="initial_interest" class="form-label">Initial Interest</label>
+                    <label for="initial_interest" class="form-label">{{ _('Initial Interest') }}</label>
                     <input type="text" id="initial_interest" name="initial_interest" class="form-input" value="{{ customer.initial_interest }}">
                 </div>
             </div>
@@ -332,7 +332,7 @@
             <div class="error-message">{{ error }}</div>
             {% endif %}
 
-            <button type="submit" class="submit-button">Update Customer</button>
+            <button type="submit" class="submit-button">{{ _('Update Customer') }}</button>
         </form>
     </div>
 </div>

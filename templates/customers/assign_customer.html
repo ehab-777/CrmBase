@@ -140,15 +140,15 @@
 {% block content %}
 <div class="container">
     <div class="header">
-        <h1 class="page-title">Assign Salesperson to {{ customer['company_name'] }}</h1>
+        <h1 class="page-title">{{ _('Assign Salesperson') }} — {{ customer['company_name'] }}</h1>
     </div>
 
     <div class="form-container">
         <form method="POST" action="{{ url_for('customers.assign_customer_submit', customer_id=customer['customer_id']) }}">
             <div class="form-group">
-                <label for="salesperson_id" class="form-label">Select Salesperson</label>
+                <label for="salesperson_id" class="form-label">{{ _('Select Salesperson') }}</label>
                 <select name="salesperson_id" id="salesperson_id" class="form-select">
-                    <option value="">-- Select --</option>
+                    <option value="">{{ _('-- Select --') }}</option>
                     {% for salesperson in salespeople %}
                         <option value="{{ salesperson['salesperson_id'] }}" {% if salesperson['salesperson_id'] == current_assigned_id %}selected{% endif %}>
                             {{ salesperson['salesperson_name'] }}
@@ -157,20 +157,20 @@
                 </select>
             </div>
 
-            <button type="submit" class="button button-primary">Assign</button>
+            <button type="submit" class="button button-primary">{{ _('Assign') }}</button>
         </form>
 
         <div class="button-group">
             <a href="{{ url_for('customers.customer_detail', customer_id=customer['customer_id']) }}" class="button button-secondary">
-                Back to Customer Details
+                {{ _('Back to Customer Details') }}
             </a>
             {% if session['role'] in ['admin', 'manager'] %}
             <a href="{{ url_for('dashboard.manager_dashboard') }}" class="button button-secondary">
-                Back to Dashboard
+                {{ _('Back to Dashboard') }}
             </a>
             {% else %}
             <a href="{{ url_for('dashboard.dashboard') }}" class="button button-secondary">
-                Back to Dashboard
+                {{ _('Back to Dashboard') }}
             </a>
             {% endif %}
         </div>

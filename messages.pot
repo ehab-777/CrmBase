@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-17 19:45+0300\n"
+"POT-Creation-Date: 2026-04-17 20:54+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -155,6 +155,7 @@ msgid "Deals"
 msgstr ""
 
 #: templates/components/sidebar.html:63
+#: templates/customers/customer_detail.html:343
 msgid "Follow-ups"
 msgstr ""
 
@@ -219,6 +220,7 @@ msgstr ""
 #: templates/customers/add_followup.html:3
 #: templates/customers/add_followup.html:191
 #: templates/customers/add_followup.html:274
+#: templates/customers/customer_detail.html:345
 #: templates/customers/customer_list.html:421
 msgid "Add Follow-up"
 msgstr ""
@@ -269,6 +271,19 @@ msgstr ""
 #: templates/dashboard/dashboard.html:340
 #: templates/quotations/quotation_builder.html:320
 msgid "Summary"
+msgstr ""
+
+#: templates/customers/customer_detail.html:318
+msgid "Assigned Salesperson"
+msgstr ""
+
+#: templates/customers/customer_detail.html:319
+#: templates/customers/customer_detail.html:386
+msgid "N/A"
+msgstr ""
+
+#: templates/customers/customer_detail.html:386
+msgid "Created by"
 msgstr ""
 
 #: templates/customers/customer_list.html:371
