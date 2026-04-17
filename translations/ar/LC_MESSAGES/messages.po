@@ -46,7 +46,6 @@ msgstr "تسجيل الدخول"
 
 #: templates/components/bottom_nav.html:8
 #: templates/components/bottom_nav.html:14
-#, fuzzy
 msgid "Home"
 msgstr "الهاتف"
 
@@ -80,7 +79,6 @@ msgid "Add Customer"
 msgstr "إضافة عميل"
 
 #: templates/components/fab.html:31
-#, fuzzy
 msgid "Full Customer Form"
 msgstr "بيانات العميل"
 
@@ -89,7 +87,6 @@ msgstr "بيانات العميل"
 #: templates/quotations/quotation_builder.html:172
 #: templates/quotations/quotation_list.html:104
 #: templates/quotations/quotation_list.html:208
-#, fuzzy
 msgid "New Quotation"
 msgstr "عرض سعر جديد"
 
@@ -98,12 +95,10 @@ msgid "Quick actions"
 msgstr "إجراء سريع"
 
 #: templates/components/fab.html:57
-#, fuzzy
 msgid "Quick Add Customer"
 msgstr "إضافة عميل"
 
 #: templates/components/fab.html:58
-#, fuzzy
 msgid "Close"
 msgstr "صفقات مكتملة"
 
@@ -116,7 +111,6 @@ msgid "Phone number"
 msgstr "رقم الهاتف"
 
 #: templates/components/fab.html:68 templates/components/fab.html:69
-#, fuzzy
 msgid "Save Customer"
 msgstr "حفظ العميل"
 
@@ -151,9 +145,8 @@ msgid "Pin sidebar"
 msgstr "تثبيت القائمة"
 
 #: templates/components/sidebar.html:42
-#, fuzzy
 msgid "Sales"
-msgstr "فريق المبيعات"
+msgstr "المبيعات"
 
 #: templates/components/sidebar.html:48
 msgid "Leads"
@@ -165,7 +158,6 @@ msgstr "الصفقات"
 
 #: templates/components/sidebar.html:63
 #: templates/customers/customer_detail.html:343
-#, fuzzy
 msgid "Follow-ups"
 msgstr "المتابعات"
 
@@ -212,12 +204,10 @@ msgid "Lead Sources"
 msgstr "مصدر الفرص"
 
 #: templates/components/sidebar.html:160
-#, fuzzy
 msgid "Activities"
 msgstr "نشط"
 
 #: templates/components/sidebar.html:165
-#, fuzzy
 msgid "Cities"
 msgstr "نشط"
 
@@ -295,7 +285,6 @@ msgid "N/A"
 msgstr "غير متاح"
 
 #: templates/customers/customer_detail.html:386
-#, fuzzy
 msgid "Created by"
 msgstr "منشأ بواسطة"
 
@@ -405,14 +394,12 @@ msgid "No upcoming follow-ups."
 msgstr "لا توجد متابعات قادمة."
 
 #: templates/dashboard/manager_dashboard.html:757
-#, fuzzy
 msgid "Pipeline Value"
 msgstr "القيمة المتوقعة"
 
 #: templates/dashboard/manager_dashboard.html:761
-#, fuzzy
 msgid "Active Stages"
-msgstr "كل المراحل"
+msgstr "المراحل النشطة"
 
 #: templates/dashboard/manager_dashboard.html:765
 msgid "Team Size"
@@ -434,7 +421,6 @@ msgid "Add New Product"
 msgstr "أضافة منتج جديد"
 
 #: templates/products/product_form.html:154
-#, fuzzy
 msgid "Back to Products"
 msgstr "العودة للمنتجات"
 
@@ -452,7 +438,6 @@ msgstr "مثال: عقد صيانة سنوي"
 
 #: templates/products/product_form.html:172
 #: templates/products/product_list.html:325
-#, fuzzy
 msgid "Category"
 msgstr "التصنيف"
 
@@ -525,7 +510,6 @@ msgid "Search name, description, category…"
 msgstr "بحث بالاسم أو الوصف أو التصنيف"
 
 #: templates/products/product_list.html:302
-#, fuzzy
 msgid "All Categories"
 msgstr "كل المراحل"
 
@@ -536,7 +520,6 @@ msgstr "بحث"
 
 #: templates/products/product_list.html:309
 #: templates/quotations/quotation_list.html:122
-#, fuzzy
 msgid "Clear"
 msgstr "حذف"
 
@@ -577,7 +560,6 @@ msgstr "التكلفة"
 
 #: templates/products/product_list.html:331
 #: templates/quotations/quotation_list.html:142
-#, fuzzy
 msgid "Actions"
 msgstr "الإجراء التالي"
 
@@ -596,7 +578,6 @@ msgid "Delete"
 msgstr "حذف"
 
 #: templates/products/product_list.html:397
-#, fuzzy
 msgid "No products found"
 msgstr "لا يوجد منتجات"
 
@@ -605,7 +586,6 @@ msgid "Try clearing your search filters."
 msgstr "حاول مسح التصفية"
 
 #: templates/products/product_list.html:401
-#, fuzzy
 msgid "Add your first product or service to get started."
 msgstr "أضف منتجك الأول للبدء"
 
@@ -615,7 +595,6 @@ msgstr "أضف منتجك الأول"
 
 #: templates/quotations/quotation_builder.html:2
 #: templates/quotations/quotation_builder.html:171
-#, fuzzy
 msgid "Edit Quotation"
 msgstr "تعديل العرض"
 
@@ -626,18 +605,15 @@ msgstr "العودة"
 
 #: templates/quotations/quotation_builder.html:189
 #: templates/quotations/quotation_detail.html:127
-#, fuzzy
 msgid "Quotation Details"
 msgstr "عرض التفاصيل"
 
 #: templates/quotations/quotation_builder.html:192
 #: templates/quotations/quotation_list.html:137
-#, fuzzy
 msgid "Customer"
 msgstr "العملاء"
 
 #: templates/quotations/quotation_builder.html:194
-#, fuzzy
 msgid "Select customer"
 msgstr "اختر المرحلة"
 
@@ -659,7 +635,6 @@ msgid "Currency"
 msgstr "العملة"
 
 #: templates/quotations/quotation_builder.html:226
-#, fuzzy
 msgid "Line Items"
 msgstr "المنتجات"
 
@@ -688,7 +663,6 @@ msgstr "الخصم"
 #: templates/quotations/quotation_builder.html:249
 #: templates/quotations/quotation_detail.html:147
 #: templates/quotations/quotation_list.html:141
-#, fuzzy
 msgid "Total"
 msgstr "الأجمالي"
 
@@ -719,17 +693,14 @@ msgid "e.g. Payment due within 30 days"
 msgstr "السداد خلال 30 يوم"
 
 #: templates/quotations/quotation_builder.html:284
-#, fuzzy
 msgid "Discount & Tax"
 msgstr "الخصم والضريبة"
 
 #: templates/quotations/quotation_builder.html:287
-#, fuzzy
 msgid "Discount Type"
 msgstr "نوع الخصم"
 
 #: templates/quotations/quotation_builder.html:290
-#, fuzzy
 msgid "None"
 msgstr "لايوجد"
 
@@ -739,7 +710,6 @@ msgid "Fixed"
 msgstr "ثابت"
 
 #: templates/quotations/quotation_builder.html:302
-#, fuzzy
 msgid "Discount Value"
 msgstr "قيمة الخصم"
 
@@ -764,7 +734,6 @@ msgstr "الضريبة"
 
 #: templates/quotations/quotation_builder.html:334
 #: templates/quotations/quotation_detail.html:194
-#, fuzzy
 msgid "TOTAL"
 msgstr "الأجمالي"
 
@@ -829,7 +798,6 @@ msgid "Search number or customer…"
 msgstr "بحث بالرقم أو العميل"
 
 #: templates/quotations/quotation_list.html:113
-#, fuzzy
 msgid "All Statuses"
 msgstr "كل المراحل"
 
@@ -842,7 +810,6 @@ msgid "Number"
 msgstr "الرقم"
 
 #: templates/quotations/quotation_list.html:138
-#, fuzzy
 msgid "Status"
 msgstr "الحالة"
 
@@ -851,12 +818,10 @@ msgid "View"
 msgstr "عرض"
 
 #: templates/quotations/quotation_list.html:205
-#, fuzzy
 msgid "No quotations found"
 msgstr "لا يوجد عروض"
 
 #: templates/quotations/quotation_list.html:206
-#, fuzzy
 msgid "Create your first quotation to get started."
 msgstr "أضف عرضك الأول للبدء"
 
@@ -881,7 +846,6 @@ msgid "Disconnect Telegram"
 msgstr "فك ربط تيليجرام"
 
 #: templates/telegram/link.html:214
-#, fuzzy
 msgid "Not connected"
 msgstr "تم ربط حساب تيليجرام"
 
@@ -906,7 +870,6 @@ msgid "Or send"
 msgstr "أو أرسل"
 
 #: templates/telegram/link.html:234
-#, fuzzy
 msgid "Open bot in Telegram"
 msgstr "ربط تيليجرام"
 
@@ -919,7 +882,6 @@ msgid "Click the button below to generate a link code"
 msgstr "اضغط على الزر أدناه لتوليد رمز الربط"
 
 #: templates/telegram/link.html:247
-#, fuzzy
 msgid "Send the code to the bot on Telegram"
 msgstr "أرسل هذا الرمز للبوت"
 
@@ -928,7 +890,6 @@ msgid "Done — start logging follow-ups by voice or text"
 msgstr "تم الربط - ابدأ تسجيل المتابعات بالصوت أو النص"
 
 #: templates/telegram/link.html:254
-#, fuzzy
 msgid "Generate link code"
 msgstr "توليد رمز جديد"
 
