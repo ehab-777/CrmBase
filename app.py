@@ -98,7 +98,7 @@ def _ensure_telegram_columns():
     try:
         from tenant_utils import get_db
         conn = get_db()
-        for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT']:
+        for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT', 'preferred_lang TEXT DEFAULT "en"']:
             try:
                 conn.execute(f'ALTER TABLE sales_team ADD COLUMN {col}')
             except Exception:
@@ -155,6 +155,17 @@ def login_redirect():
 def change_lang(lang):
     if lang in ['en', 'ar']:
         session['lang'] = lang
+        if 'salesperson_id' in session:
+            try:
+                conn = get_db()
+                conn.execute(
+                    "UPDATE sales_team SET preferred_lang = ? WHERE salesperson_id = ?",
+                    (lang, session['salesperson_id'])
+                )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
     return redirect(request.referrer or '/')
 
 # Add ProxyFix middleware

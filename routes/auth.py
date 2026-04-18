@@ -32,8 +32,8 @@ def login():
 
             # Check sales_team table for user
             cursor.execute("""
-                SELECT salesperson_id, username, first_name, role, tenant_id, password 
-                FROM sales_team 
+                SELECT salesperson_id, username, first_name, role, tenant_id, password, preferred_lang
+                FROM sales_team
                 WHERE username = ? AND tenant_id = ?
             """, (username, tenant['id']))
 
@@ -54,6 +54,7 @@ def login():
             session['salesperson_name'] = user['first_name']
             session['role'] = user['role']
             session['tenant_id'] = user['tenant_id']
+            session['lang'] = user['preferred_lang'] or 'en'
 
             # Redirect based on role
             if user['role'] in ['admin', 'manager']:
