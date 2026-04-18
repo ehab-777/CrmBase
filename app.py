@@ -28,6 +28,8 @@ from routes.products import products_bp
 from routes.quotations import quotations_bp
 from routes.profile import profile_bp
 from routes.superadmin import superadmin_bp
+from routes.companies import companies_bp
+from routes.projects import projects_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -94,6 +96,8 @@ app.register_blueprint(products_bp)
 app.register_blueprint(quotations_bp)
 app.register_blueprint(profile_bp)
 app.register_blueprint(superadmin_bp)
+app.register_blueprint(companies_bp)
+app.register_blueprint(projects_bp)
 
 def _ensure_schema():
     """Safe migration: create/alter all missing tables and columns."""
@@ -156,6 +160,52 @@ def _ensure_schema():
                 created_at DATETIME DEFAULT (datetime('now'))
             )
         """)
+
+        # companies table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS companies (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL,
+                industry   TEXT,
+                phone      TEXT,
+                email      TEXT,
+                address    TEXT,
+                website    TEXT,
+                tenant_id  INTEGER NOT NULL REFERENCES tenants(id),
+                created_at DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # projects table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS projects (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL,
+                company_id  INTEGER REFERENCES companies(id),
+                status      TEXT    NOT NULL DEFAULT 'new',
+                value       REAL    DEFAULT 0,
+                description TEXT,
+                start_date  DATE,
+                end_date    DATE,
+                tenant_id   INTEGER NOT NULL REFERENCES tenants(id),
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # project_contacts linking table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_contacts (
+                project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                customer_id INTEGER NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
+                PRIMARY KEY (project_id, customer_id)
+            )
+        """)
+
+        # add company_id to customers if missing
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN company_id INTEGER REFERENCES companies(id)")
+        except Exception:
+            pass
 
         # Seed default superadmin if none exists
         existing = conn.execute("SELECT COUNT(*) FROM superadmins").fetchone()[0]
