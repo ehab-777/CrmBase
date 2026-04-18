@@ -1956,3 +1956,7 @@ msgstr "الشركات"
 
 msgid "Projects"
 msgstr "المشاريع"
+
+msgid "Sales Analytics"
+msgstr "تحليلات المبيعات"
+
