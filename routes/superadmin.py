@@ -124,6 +124,62 @@ def tenants():
     return render_template('superadmin/tenants.html', tenants=rows, plans=plans)
 
 
+@superadmin_bp.route('/tenants/save', methods=['POST'])
+@require_superadmin
+def save_tenant():
+    tenant_id    = request.form.get('tenant_id')
+    name         = request.form.get('name', '').strip()
+    db_key       = request.form.get('db_key', '').strip()
+    account_type = request.form.get('account_type', 'company')
+
+    if not name or not db_key:
+        return redirect(url_for('superadmin.tenants'))
+    if account_type not in ('individual', 'company'):
+        account_type = 'company'
+
+    conn = get_db()
+    try:
+        if tenant_id:
+            conn.execute(
+                "UPDATE tenants SET name=?, db_key=?, account_type=? WHERE id=?",
+                (name, db_key, account_type, tenant_id)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO tenants (name, db_key, account_type) VALUES (?, ?, ?)",
+                (name, db_key, account_type)
+            )
+        conn.commit()
+    except sqlite3.Error as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+    return redirect(url_for('superadmin.tenants'))
+
+
+@superadmin_bp.route('/tenants/<int:tenant_id>/delete', methods=['POST'])
+@require_superadmin
+def delete_tenant(tenant_id):
+    conn = get_db()
+    try:
+        user_count = conn.execute(
+            "SELECT COUNT(*) FROM sales_team WHERE tenant_id = ?", (tenant_id,)
+        ).fetchone()[0]
+        if user_count > 0:
+            return jsonify({'success': False, 'message': f'Cannot delete: tenant has {user_count} user(s)'}), 400
+        conn.execute("DELETE FROM subscriptions WHERE tenant_id = ?", (tenant_id,))
+        conn.execute("DELETE FROM tenants WHERE id = ?", (tenant_id,))
+        conn.commit()
+        return jsonify({'success': True})
+    except sqlite3.Error as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
 @superadmin_bp.route('/tenants/<int:tenant_id>/subscription', methods=['POST'])
 @require_superadmin
 def update_subscription(tenant_id):

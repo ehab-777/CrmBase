@@ -7,6 +7,10 @@
   <p>Manage all tenants and their subscriptions</p>
 </div>
 
+<div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+  <button class="btn btn-primary" onclick="openTenantModal()">+ Add Tenant</button>
+</div>
+
 <div class="sa-card">
   <table>
     <thead>
@@ -44,11 +48,19 @@
         </td>
         <td style="color:#64748b; font-size:0.85rem;">{{ t.end_date or '—' }}</td>
         <td>
-          <button class="btn btn-secondary btn-sm" onclick="openSubscriptionModal(
-            {{ t.id }}, '{{ t.name }}', {{ t.plan_id or 'null' }},
-            '{{ t.sub_status or 'trial' }}', '{{ t.end_date or '' }}')">
-            Manage
-          </button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary btn-sm"
+              onclick="openTenantModal({{ t.id }}, '{{ t.name|replace("'", "\\'") }}', '{{ t.db_key }}', '{{ t.account_type or 'company' }}')">
+              Edit
+            </button>
+            <button class="btn btn-secondary btn-sm"
+              onclick="openSubscriptionModal({{ t.id }}, '{{ t.name|replace("'", "\\'") }}', {{ t.plan_id or 'null' }}, '{{ t.sub_status or 'trial' }}', '{{ t.end_date or '' }}')">
+              Subscription
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTenant({{ t.id }}, '{{ t.name|replace("'", "\\'") }}')">
+              Delete
+            </button>
+          </div>
         </td>
       </tr>
       {% else %}
@@ -58,12 +70,45 @@
   </table>
 </div>
 
+<!-- Tenant Add/Edit Modal -->
+<div class="modal-backdrop" id="tenantModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="tenantModalTitle">Add Tenant</h3>
+      <button class="modal-close" onclick="closeTenantModal()">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('superadmin.save_tenant') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="t_id" name="tenant_id">
+      <div class="form-group">
+        <label>Tenant Name</label>
+        <input type="text" id="t_name" name="name" placeholder="e.g. Acme Corp" required>
+      </div>
+      <div class="form-group">
+        <label>Database Key <span style="color:#475569;">(unique, no spaces)</span></label>
+        <input type="text" id="t_dbkey" name="db_key" placeholder="e.g. acme_corp" required pattern="[a-zA-Z0-9_]+">
+      </div>
+      <div class="form-group">
+        <label>Account Type</label>
+        <select id="t_type" name="account_type">
+          <option value="individual">Individual</option>
+          <option value="company">Company</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeTenantModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Tenant</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Subscription Modal -->
 <div class="modal-backdrop" id="subModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>Manage Subscription — <span id="tenantNameLabel"></span></h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h3>Subscription — <span id="tenantNameLabel"></span></h3>
+      <button class="modal-close" onclick="closeSubModal()">&times;</button>
     </div>
     <form id="subForm" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -90,7 +135,7 @@
         <input type="date" name="end_date" id="f_end_date">
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="closeSubModal()">Cancel</button>
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
@@ -100,6 +145,20 @@
 
 {% block scripts %}
 <script>
+/* ── Tenant modal ── */
+function openTenantModal(id, name, dbKey, accountType) {
+  document.getElementById('tenantModalTitle').textContent = id ? 'Edit Tenant' : 'Add Tenant';
+  document.getElementById('t_id').value = id || '';
+  document.getElementById('t_name').value = name || '';
+  document.getElementById('t_dbkey').value = dbKey || '';
+  document.getElementById('t_type').value = accountType || 'individual';
+  document.getElementById('tenantModal').classList.add('open');
+}
+function closeTenantModal() {
+  document.getElementById('tenantModal').classList.remove('open');
+}
+
+/* ── Subscription modal ── */
 function openSubscriptionModal(tenantId, tenantName, planId, status, endDate) {
   document.getElementById('tenantNameLabel').textContent = tenantName;
   document.getElementById('subForm').action = `/superadmin/tenants/${tenantId}/subscription`;
@@ -108,11 +167,27 @@ function openSubscriptionModal(tenantId, tenantName, planId, status, endDate) {
   document.getElementById('f_end_date').value = endDate || '';
   document.getElementById('subModal').classList.add('open');
 }
-function closeModal() {
+function closeSubModal() {
   document.getElementById('subModal').classList.remove('open');
 }
-document.getElementById('subModal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+
+/* ── Delete ── */
+function deleteTenant(id, name) {
+  if (!confirm(`Delete tenant "${name}"?\n\nThis cannot be undone.`)) return;
+  fetch(`/superadmin/tenants/${id}/delete`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert(d.message);
+  });
+}
+
+/* close on backdrop click */
+['tenantModal','subModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
 });
 </script>
 {% endblock %}
