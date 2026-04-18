@@ -157,6 +157,16 @@ def _ensure_schema():
             )
         """)
 
+        # Seed default superadmin if none exists
+        existing = conn.execute("SELECT COUNT(*) FROM superadmins").fetchone()[0]
+        if existing == 0:
+            from flask_bcrypt import Bcrypt as _Bcrypt
+            _pw = _Bcrypt().generate_password_hash("pass123").decode('utf-8')
+            conn.execute(
+                "INSERT INTO superadmins (name, username, email, password) VALUES (?, ?, ?, ?)",
+                ("Ehab", "superadmin@crmbase.com", "superadmin@crmbase.com", _pw)
+            )
+
         conn.commit()
         conn.close()
     except Exception:
