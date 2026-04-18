@@ -132,27 +132,76 @@ def save_tenant():
     db_key       = request.form.get('db_key', '').strip()
     account_type = request.form.get('account_type', 'company')
 
+    # Admin user fields (only used on create)
+    admin_first  = request.form.get('admin_first', '').strip()
+    admin_last   = request.form.get('admin_last', '').strip()
+    admin_user   = request.form.get('admin_username', '').strip()
+    admin_email  = request.form.get('admin_email', '').strip()
+    admin_pass   = request.form.get('admin_password', '').strip()
+
+    # Subscription fields
+    plan_id      = request.form.get('plan_id') or None
+    sub_status   = request.form.get('sub_status', 'trial')
+    end_date     = request.form.get('end_date') or None
+
     if not name or not db_key:
         return redirect(url_for('superadmin.tenants'))
     if account_type not in ('individual', 'company'):
         account_type = 'company'
+    if sub_status not in ('trial', 'active', 'expired', 'suspended'):
+        sub_status = 'trial'
 
     conn = get_db()
     try:
         if tenant_id:
+            # Edit: update tenant info only
             conn.execute(
                 "UPDATE tenants SET name=?, db_key=?, account_type=? WHERE id=?",
-                (name, db_key, account_type, tenant_id)
+                (name, db_key, account_type, int(tenant_id))
             )
+            # Update subscription if plan provided
+            if plan_id or sub_status:
+                existing_sub = conn.execute(
+                    "SELECT id FROM subscriptions WHERE tenant_id=?", (int(tenant_id),)
+                ).fetchone()
+                if existing_sub:
+                    conn.execute(
+                        "UPDATE subscriptions SET plan_id=?, status=?, end_date=? WHERE tenant_id=?",
+                        (plan_id, sub_status, end_date, int(tenant_id))
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO subscriptions (tenant_id, plan_id, status, start_date, end_date) VALUES (?,?,?,DATE('now'),?)",
+                        (int(tenant_id), plan_id, sub_status, end_date)
+                    )
         else:
-            conn.execute(
+            # Create tenant
+            cur = conn.execute(
                 "INSERT INTO tenants (name, db_key, account_type) VALUES (?, ?, ?)",
                 (name, db_key, account_type)
             )
+            new_tenant_id = cur.lastrowid
+
+            # Create admin user if details provided
+            if admin_user and admin_pass:
+                hashed = bcrypt.generate_password_hash(admin_pass).decode('utf-8')
+                full_name = f"{admin_first} {admin_last}".strip() or admin_user
+                conn.execute("""
+                    INSERT INTO sales_team
+                        (username, first_name, last_name, salesperson_name, work_email, password, role, tenant_id)
+                    VALUES (?, ?, ?, ?, ?, ?, 'admin', ?)
+                """, (admin_user, admin_first or admin_user, admin_last or '', full_name, admin_email, hashed, new_tenant_id))
+
+            # Create subscription
+            conn.execute(
+                "INSERT INTO subscriptions (tenant_id, plan_id, status, start_date, end_date) VALUES (?,?,?,DATE('now'),?)",
+                (new_tenant_id, plan_id, sub_status, end_date)
+            )
+
         conn.commit()
     except sqlite3.Error as e:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return redirect(url_for('superadmin.tenants') + f'?error={e}')
     finally:
         conn.close()
 

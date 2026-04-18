@@ -50,12 +50,8 @@
         <td>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-secondary btn-sm"
-              onclick="openTenantModal({{ t.id }}, '{{ t.name|replace("'", "\\'") }}', '{{ t.db_key }}', '{{ t.account_type or 'company' }}')">
+              onclick="openTenantModal({{ t.id }}, '{{ t.name|replace("'", "\\'") }}', '{{ t.db_key }}', '{{ t.account_type or 'company' }}', '{{ t.plan_id or '' }}', '{{ t.sub_status or 'trial' }}', '{{ t.end_date or '' }}')">
               Edit
-            </button>
-            <button class="btn btn-secondary btn-sm"
-              onclick="openSubscriptionModal({{ t.id }}, '{{ t.name|replace("'", "\\'") }}', {{ t.plan_id or 'null' }}, '{{ t.sub_status or 'trial' }}', '{{ t.end_date or '' }}')">
-              Subscription
             </button>
             <button class="btn btn-danger btn-sm" onclick="deleteTenant({{ t.id }}, '{{ t.name|replace("'", "\\'") }}')">
               Delete
@@ -72,7 +68,7 @@
 
 <!-- Tenant Add/Edit Modal -->
 <div class="modal-backdrop" id="tenantModal">
-  <div class="modal">
+  <div class="modal" style="max-width:580px; max-height:90vh; overflow-y:auto;">
     <div class="modal-header">
       <h3 id="tenantModalTitle">Add Tenant</h3>
       <button class="modal-close" onclick="closeTenantModal()">&times;</button>
@@ -80,63 +76,86 @@
     <form method="POST" action="{{ url_for('superadmin.save_tenant') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" id="t_id" name="tenant_id">
+
+      <!-- Section 1: Tenant Info -->
+      <div class="section-label">Tenant Info</div>
       <div class="form-group">
         <label>Tenant Name</label>
         <input type="text" id="t_name" name="name" placeholder="e.g. Acme Corp" required>
       </div>
-      <div class="form-group">
-        <label>Database Key <span style="color:#475569;">(unique, no spaces)</span></label>
-        <input type="text" id="t_dbkey" name="db_key" placeholder="e.g. acme_corp" required pattern="[a-zA-Z0-9_]+">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Database Key <span style="color:#475569;">(unique, no spaces)</span></label>
+          <input type="text" id="t_dbkey" name="db_key" placeholder="e.g. acme_corp" required pattern="[a-zA-Z0-9_]+">
+        </div>
+        <div class="form-group">
+          <label>Account Type</label>
+          <select id="t_type" name="account_type">
+            <option value="individual">Individual</option>
+            <option value="company">Company</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Account Type</label>
-        <select id="t_type" name="account_type">
-          <option value="individual">Individual</option>
-          <option value="company">Company</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeTenantModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Tenant</button>
-      </div>
-    </form>
-  </div>
-</div>
 
-<!-- Subscription Modal -->
-<div class="modal-backdrop" id="subModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Subscription — <span id="tenantNameLabel"></span></h3>
-      <button class="modal-close" onclick="closeSubModal()">&times;</button>
-    </div>
-    <form id="subForm" method="POST">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="form-group">
-        <label>Plan</label>
-        <select name="plan_id" id="f_plan">
-          <option value="">— No plan —</option>
-          {% for p in plans %}
-          <option value="{{ p.id }}">{{ p.name }}</option>
-          {% endfor %}
-        </select>
+      <!-- Section 2: Admin User (hidden on edit) -->
+      <div id="adminSection">
+        <div class="section-label">Admin User</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" name="admin_first" placeholder="Ahmed">
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" name="admin_last" placeholder="Ali">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="t_admin_user" name="admin_username" placeholder="ahmed.ali">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="admin_email" placeholder="ahmed@company.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="t_admin_pass" name="admin_password" placeholder="••••••••">
+        </div>
       </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select name="status" id="f_status">
-          <option value="trial">Trial</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-          <option value="suspended">Suspended</option>
-        </select>
+
+      <!-- Section 3: Subscription -->
+      <div class="section-label">Subscription</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="t_plan" name="plan_id">
+            <option value="">— No plan —</option>
+            {% for p in plans %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="t_sub_status" name="sub_status">
+            <option value="trial">Trial</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>Expiry Date <span style="color:#475569;">(leave blank for no expiry)</span></label>
-        <input type="date" name="end_date" id="f_end_date">
+        <input type="date" id="t_end_date" name="end_date">
       </div>
+
       <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeSubModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeTenantModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Tenant</button>
       </div>
     </form>
   </div>
@@ -145,30 +164,24 @@
 
 {% block scripts %}
 <script>
-/* ── Tenant modal ── */
-function openTenantModal(id, name, dbKey, accountType) {
-  document.getElementById('tenantModalTitle').textContent = id ? 'Edit Tenant' : 'Add Tenant';
+function openTenantModal(id, name, dbKey, accountType, planId, subStatus, endDate) {
+  const isEdit = !!id;
+  document.getElementById('tenantModalTitle').textContent = isEdit ? 'Edit Tenant' : 'Add Tenant';
   document.getElementById('t_id').value = id || '';
   document.getElementById('t_name').value = name || '';
   document.getElementById('t_dbkey').value = dbKey || '';
   document.getElementById('t_type').value = accountType || 'individual';
+  document.getElementById('t_plan').value = planId || '';
+  document.getElementById('t_sub_status').value = subStatus || 'trial';
+  document.getElementById('t_end_date').value = endDate || '';
+  // hide admin section on edit (user already exists)
+  document.getElementById('adminSection').style.display = isEdit ? 'none' : 'block';
+  document.getElementById('t_admin_user').required = !isEdit;
+  document.getElementById('t_admin_pass').required = !isEdit;
   document.getElementById('tenantModal').classList.add('open');
 }
 function closeTenantModal() {
   document.getElementById('tenantModal').classList.remove('open');
-}
-
-/* ── Subscription modal ── */
-function openSubscriptionModal(tenantId, tenantName, planId, status, endDate) {
-  document.getElementById('tenantNameLabel').textContent = tenantName;
-  document.getElementById('subForm').action = `/superadmin/tenants/${tenantId}/subscription`;
-  document.getElementById('f_plan').value = planId || '';
-  document.getElementById('f_status').value = status || 'trial';
-  document.getElementById('f_end_date').value = endDate || '';
-  document.getElementById('subModal').classList.add('open');
-}
-function closeSubModal() {
-  document.getElementById('subModal').classList.remove('open');
 }
 
 /* ── Delete ── */
@@ -184,10 +197,8 @@ function deleteTenant(id, name) {
 }
 
 /* close on backdrop click */
-['tenantModal','subModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open');
-  });
+document.getElementById('tenantModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTenantModal();
 });
 </script>
 {% endblock %}
