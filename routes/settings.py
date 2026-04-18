@@ -8,6 +8,8 @@ settings_bp = Blueprint('settings', __name__)
 @settings_bp.route('/settings/tenants', methods=['GET', 'POST'])
 @require_tenant
 def manage_tenants():
+    from flask import abort
+    abort(403)
     if 'salesperson_id' in session and session.get('role') == 'admin':
         conn = get_db()
         cursor = conn.cursor()
