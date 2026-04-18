@@ -28,8 +28,8 @@ def login():
         conn = get_db()
         try:
             row = conn.execute(
-                "SELECT id, username, password FROM superadmins WHERE username = ?",
-                (username,)
+                "SELECT id, name, username, email, password FROM superadmins WHERE username = ? OR email = ?",
+                (username, username)
             ).fetchone()
             if not row:
                 error = 'Invalid credentials'
@@ -39,7 +39,7 @@ def login():
                 session.clear()
                 session['is_superadmin'] = True
                 session['superadmin_id'] = row['id']
-                session['superadmin_name'] = row['username']
+                session['superadmin_name'] = row['name'] or row['username']
                 return redirect(url_for('superadmin.dashboard'))
         except sqlite3.Error:
             error = 'Database error'
