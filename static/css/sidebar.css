@@ -259,6 +259,11 @@
   font-size: 0.82rem;
 }
 
+/* Collapsed: remove indent so icons align with top-level items */
+.sidebar:not(:hover):not(.sb-expanded) .sb-group-items .sb-item {
+  padding-inline-start: 20px;
+}
+
 /* Soon badge */
 .sb-soon {
   opacity: 0.55;       /* was 0.4 — more readable */
