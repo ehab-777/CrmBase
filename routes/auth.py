@@ -24,7 +24,7 @@ def login():
 
         try:
             # Get tenant by db_key
-            cursor.execute("SELECT id, name FROM tenants WHERE db_key = ?", (db_key,))
+            cursor.execute("SELECT id, name, account_type FROM tenants WHERE db_key = ?", (db_key,))
             tenant = cursor.fetchone()
 
             if not tenant:
@@ -55,6 +55,7 @@ def login():
             session['role'] = user['role']
             session['tenant_id'] = user['tenant_id']
             session['lang'] = user['preferred_lang'] or 'en'
+            session['account_type'] = tenant['account_type'] or 'company'
 
             # Redirect based on role
             if user['role'] in ['admin', 'manager']:
