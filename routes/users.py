@@ -1,17 +1,26 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, abort
 import sqlite3
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
 from security import bcrypt, csrf
 from flask_wtf.csrf import CSRFError
+from functools import wraps
 
-# Create a Blueprint for user management routes
 users_bp = Blueprint('users', __name__)
+
+def require_company_account(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('account_type') == 'individual':
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
 
 @users_bp.errorhandler(CSRFError)
 def handle_csrf_error(e):
     return render_template('sales_team/add_salesperson.html', error="CSRF token validation failed. Please try again."), 400
 
 @users_bp.route('/salespeople/add', methods=['GET', 'POST'])
+@require_company_account
 @require_tenant
 def add_salesperson():
     if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
@@ -68,6 +77,7 @@ def add_salesperson():
     return redirect(url_for('auth.login'))
 
 @users_bp.route('/salespeople')
+@require_company_account
 @require_tenant
 def salespeople_list():
     if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
@@ -100,6 +110,7 @@ def salespeople_list():
     return redirect(url_for('auth.login'))
 
 @users_bp.route('/salespeople/<int:salesperson_id>/data')
+@require_company_account
 @require_tenant
 def get_salesperson_data(salesperson_id):
     if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
@@ -132,6 +143,7 @@ def get_salesperson_data(salesperson_id):
     return {'error': 'Unauthorized'}, 401
 
 @users_bp.route('/salespeople/edit', methods=['POST'])
+@require_company_account
 @require_tenant
 def edit_salesperson():
     if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager
@@ -174,6 +186,7 @@ def edit_salesperson():
     return redirect(url_for('auth.login'))
 
 @users_bp.route('/salespeople/change-password', methods=['POST'])
+@require_company_account
 @require_tenant
 def change_password():
     if 'salesperson_id' in session and session.get('role') in ['admin', 'manager']: # Allow both admin and manager

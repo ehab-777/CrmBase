@@ -94,7 +94,7 @@ app.register_blueprint(quotations_bp)
 app.register_blueprint(profile_bp)
 
 def _ensure_telegram_columns():
-    """Safe migration: add Telegram columns to sales_team if missing."""
+    """Safe migration: add missing columns to sales_team and tenants."""
     try:
         from tenant_utils import get_db
         conn = get_db()
@@ -103,6 +103,10 @@ def _ensure_telegram_columns():
                 conn.execute(f'ALTER TABLE sales_team ADD COLUMN {col}')
             except Exception:
                 pass
+        try:
+            conn.execute("ALTER TABLE tenants ADD COLUMN account_type TEXT DEFAULT 'company'")
+        except Exception:
+            pass
         conn.commit()
         conn.close()
     except Exception:
