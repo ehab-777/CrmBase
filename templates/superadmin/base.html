@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Superadmin{% endblock %} — CRM Base</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: 'Cairo', sans-serif; background: #0f172a; color: #e2e8f0; display: flex; }
+
+    /* ── Sidebar ── */
+    .sa-sidebar {
+      width: 220px; flex-shrink: 0;
+      background: #1e293b; border-right: 1px solid #334155;
+      display: flex; flex-direction: column;
+      height: 100vh; position: sticky; top: 0;
+    }
+    .sa-brand {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid #334155;
+    }
+    .sa-brand .badge {
+      display: inline-block;
+      background: #7c3aed22; color: #a78bfa;
+      border: 1px solid #7c3aed55;
+      border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+      padding: 3px 10px; letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .sa-brand h2 { margin: 0; font-size: 1rem; color: #f1f5f9; font-weight: 700; }
+    .sa-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .sa-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px;
+      color: #94a3b8; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sa-item:hover { background: #334155; color: #f1f5f9; }
+    .sa-item.active { background: #7c3aed22; color: #a78bfa; }
+    .sa-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .sa-footer { padding: 16px 12px; border-top: 1px solid #334155; }
+    .sa-logout {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px;
+      color: #f87171; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      transition: background 0.15s;
+    }
+    .sa-logout:hover { background: #450a0a22; }
+    .sa-logout svg { width: 17px; height: 17px; }
+
+    /* ── Main ── */
+    .sa-main { flex: 1; overflow-y: auto; padding: 32px; }
+    .sa-header { margin-bottom: 28px; }
+    .sa-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
+    .sa-header p { margin: 4px 0 0; color: #64748b; font-size: 0.9rem; }
+
+    /* ── Cards & Tables ── */
+    .sa-card {
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 12px; padding: 24px;
+    }
+    .sa-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .sa-stat { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .sa-stat .val { font-size: 2rem; font-weight: 700; color: #f1f5f9; line-height: 1; }
+    .sa-stat .lbl { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 10px 14px; color: #64748b; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #334155; }
+    td { padding: 12px 14px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #ffffff08; }
+
+    /* ── Badges ── */
+    .status-badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .status-active   { background: #14532d33; color: #4ade80; border: 1px solid #14532d; }
+    .status-trial    { background: #1e3a5f33; color: #60a5fa; border: 1px solid #1e3a5f; }
+    .status-expired  { background: #4a1d1d33; color: #f87171; border: 1px solid #4a1d1d; }
+    .status-suspended{ background: #44403c33; color: #d97706; border: 1px solid #44403c; }
+    .type-individual { background: #1e3a5f33; color: #60a5fa; border: 1px solid #1e3a5f; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .type-company    { background: #14532d33; color: #4ade80; border: 1px solid #14532d; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #7c3aed; color: #fff; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; }
+    .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+
+    /* ── Modal ── */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: #00000088; z-index: 100; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 28px; width: 90%; max-width: 480px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: #f1f5f9; }
+    .modal-close { background: none; border: none; color: #64748b; font-size: 1.4rem; cursor: pointer; padding: 0; line-height: 1; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; color: #94a3b8; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 12px;
+      background: #0f172a; border: 1.5px solid #334155;
+      border-radius: 8px; color: #f1f5f9; font-size: 0.9rem; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #7c3aed; }
+    .form-group select option { background: #1e293b; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+  </style>
+  {% block extra_styles %}{% endblock %}
+</head>
+<body>
+  <aside class="sa-sidebar">
+    <div class="sa-brand">
+      <div class="badge">SUPERADMIN</div>
+      <h2>CRM Base</h2>
+    </div>
+    <nav class="sa-nav">
+      <a href="{{ url_for('superadmin.dashboard') }}" class="sa-item {% if request.endpoint == 'superadmin.dashboard' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="{{ url_for('superadmin.tenants') }}" class="sa-item {% if request.endpoint == 'superadmin.tenants' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Tenants
+      </a>
+      <a href="{{ url_for('superadmin.plans') }}" class="sa-item {% if request.endpoint == 'superadmin.plans' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        Plans & Pricing
+      </a>
+    </nav>
+    <div class="sa-footer">
+      <div style="padding: 0 12px 10px; font-size:0.78rem; color:#475569;">
+        Signed in as <strong style="color:#94a3b8;">{{ session.get('superadmin_name') }}</strong>
+      </div>
+      <a href="{{ url_for('superadmin.logout') }}" class="sa-logout">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <main class="sa-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

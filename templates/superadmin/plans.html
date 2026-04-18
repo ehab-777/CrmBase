@@ -1,0 +1,136 @@
+{% extends "superadmin/base.html" %}
+{% block title %}Plans & Pricing{% endblock %}
+
+{% block content %}
+<div class="sa-header">
+  <h1>Plans & Pricing</h1>
+  <p>Manage subscription plans available to tenants</p>
+</div>
+
+<div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+  <button class="btn btn-primary" onclick="openModal()">+ New Plan</button>
+</div>
+
+<div class="sa-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price / mo</th>
+        <th>Max Users</th>
+        <th>Max Customers</th>
+        <th>Active Tenants</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in plans %}
+      <tr>
+        <td style="color:#f1f5f9; font-weight:600;">{{ p.name }}</td>
+        <td>${{ '%.2f'|format(p.price_monthly) }}</td>
+        <td>{{ p.max_users if p.max_users != -1 else '∞' }}</td>
+        <td>{{ p.max_customers if p.max_customers != -1 else '∞' }}</td>
+        <td><span style="color:#a78bfa; font-weight:600;">{{ p.active_count }}</span></td>
+        <td>
+          {% if p.is_active %}
+            <span class="status-badge status-active">Active</span>
+          {% else %}
+            <span class="status-badge status-expired">Inactive</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm"
+              onclick="openModal({{ p.id }}, '{{ p.name }}', {{ p.price_monthly }}, {{ p.max_users }}, {{ p.max_customers }}, {{ p.is_active }})">
+              Edit
+            </button>
+            {% if p.active_count == 0 %}
+            <button class="btn btn-danger btn-sm" onclick="deletePlan({{ p.id }})">Delete</button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="color:#475569; text-align:center; padding:32px;">No plans yet — create one above</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Plan Modal -->
+<div class="modal-backdrop" id="planModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">New Plan</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('superadmin.save_plan') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="plan_id" name="plan_id">
+      <div class="form-group">
+        <label>Plan Name</label>
+        <input type="text" id="f_name" name="name" placeholder="e.g. Pro, Enterprise" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price / month ($)</label>
+          <input type="number" id="f_price" name="price_monthly" min="0" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="f_active" name="is_active">
+            <option value="1">Active</option>
+            <option value="">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Max Users <span style="color:#475569;">(-1 = unlimited)</span></label>
+          <input type="number" id="f_users" name="max_users" value="-1">
+        </div>
+        <div class="form-group">
+          <label>Max Customers <span style="color:#475569;">(-1 = unlimited)</span></label>
+          <input type="number" id="f_customers" name="max_customers" value="-1">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Plan</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id, name, price, maxUsers, maxCustomers, isActive) {
+  document.getElementById('modalTitle').textContent = id ? 'Edit Plan' : 'New Plan';
+  document.getElementById('plan_id').value = id || '';
+  document.getElementById('f_name').value = name || '';
+  document.getElementById('f_price').value = price ?? 0;
+  document.getElementById('f_users').value = maxUsers ?? -1;
+  document.getElementById('f_customers').value = maxCustomers ?? -1;
+  document.getElementById('f_active').value = (isActive === 1 || isActive === undefined) ? '1' : '';
+  document.getElementById('planModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('planModal').classList.remove('open');
+}
+function deletePlan(id) {
+  if (!confirm('Delete this plan?')) return;
+  fetch(`/superadmin/plans/${id}/delete`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert(d.message);
+  });
+}
+document.getElementById('planModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

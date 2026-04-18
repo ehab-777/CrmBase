@@ -27,6 +27,7 @@ from routes.telegram import telegram_bp
 from routes.products import products_bp
 from routes.quotations import quotations_bp
 from routes.profile import profile_bp
+from routes.superadmin import superadmin_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -92,28 +93,70 @@ app.register_blueprint(telegram_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(quotations_bp)
 app.register_blueprint(profile_bp)
+app.register_blueprint(superadmin_bp)
 
-def _ensure_telegram_columns():
-    """Safe migration: add missing columns to sales_team and tenants."""
+def _ensure_schema():
+    """Safe migration: create/alter all missing tables and columns."""
     try:
         from tenant_utils import get_db
         conn = get_db()
+
+        # sales_team columns
         for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT', 'preferred_lang TEXT DEFAULT "en"']:
             try:
                 conn.execute(f'ALTER TABLE sales_team ADD COLUMN {col}')
             except Exception:
                 pass
+
+        # tenants columns
         try:
             conn.execute("ALTER TABLE tenants ADD COLUMN account_type TEXT DEFAULT 'company'")
         except Exception:
             pass
+
+        # superadmins table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS superadmins (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT    UNIQUE NOT NULL,
+                password TEXT    NOT NULL,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # plans table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS plans (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                name           TEXT    NOT NULL,
+                price_monthly  REAL    NOT NULL DEFAULT 0,
+                max_users      INTEGER NOT NULL DEFAULT -1,
+                max_customers  INTEGER NOT NULL DEFAULT -1,
+                is_active      INTEGER NOT NULL DEFAULT 1,
+                created_at     DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # subscriptions table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id  INTEGER NOT NULL UNIQUE REFERENCES tenants(id),
+                plan_id    INTEGER REFERENCES plans(id),
+                status     TEXT    NOT NULL DEFAULT 'trial',
+                start_date DATE,
+                end_date   DATE,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
         conn.commit()
         conn.close()
     except Exception:
         pass
 
 with app.app_context():
-    _ensure_telegram_columns()
+    _ensure_schema()
     # Bootstrap quotation tables once at startup
     from routes.quotations import ensure_tables
     ensure_tables()

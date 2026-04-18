@@ -1,0 +1,118 @@
+{% extends "superadmin/base.html" %}
+{% block title %}Tenants{% endblock %}
+
+{% block content %}
+<div class="sa-header">
+  <h1>Tenants</h1>
+  <p>Manage all tenants and their subscriptions</p>
+</div>
+
+<div class="sa-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>DB Key</th>
+        <th>Type</th>
+        <th>Users</th>
+        <th>Plan</th>
+        <th>Status</th>
+        <th>Expires</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tenants %}
+      <tr>
+        <td style="color:#f1f5f9; font-weight:600;">{{ t.name }}</td>
+        <td style="font-family:monospace; color:#94a3b8; font-size:0.82rem;">{{ t.db_key }}</td>
+        <td>
+          {% if t.account_type == 'individual' %}
+            <span class="type-individual">Individual</span>
+          {% else %}
+            <span class="type-company">Company</span>
+          {% endif %}
+        </td>
+        <td>{{ t.user_count }}</td>
+        <td>{{ t.plan_name or '—' }}</td>
+        <td>
+          {% if t.sub_status %}
+            <span class="status-badge status-{{ t.sub_status }}">{{ t.sub_status|capitalize }}</span>
+          {% else %}
+            <span style="color:#475569; font-size:0.82rem;">No subscription</span>
+          {% endif %}
+        </td>
+        <td style="color:#64748b; font-size:0.85rem;">{{ t.end_date or '—' }}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openSubscriptionModal(
+            {{ t.id }}, '{{ t.name }}', {{ t.plan_id or 'null' }},
+            '{{ t.sub_status or 'trial' }}', '{{ t.end_date or '' }}')">
+            Manage
+          </button>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:#475569; text-align:center; padding:32px;">No tenants found</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Subscription Modal -->
+<div class="modal-backdrop" id="subModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Manage Subscription — <span id="tenantNameLabel"></span></h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form id="subForm" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label>Plan</label>
+        <select name="plan_id" id="f_plan">
+          <option value="">— No plan —</option>
+          {% for p in plans %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status" id="f_status">
+          <option value="trial">Trial</option>
+          <option value="active">Active</option>
+          <option value="expired">Expired</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Expiry Date <span style="color:#475569;">(leave blank for no expiry)</span></label>
+        <input type="date" name="end_date" id="f_end_date">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openSubscriptionModal(tenantId, tenantName, planId, status, endDate) {
+  document.getElementById('tenantNameLabel').textContent = tenantName;
+  document.getElementById('subForm').action = `/superadmin/tenants/${tenantId}/subscription`;
+  document.getElementById('f_plan').value = planId || '';
+  document.getElementById('f_status').value = status || 'trial';
+  document.getElementById('f_end_date').value = endDate || '';
+  document.getElementById('subModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('subModal').classList.remove('open');
+}
+document.getElementById('subModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

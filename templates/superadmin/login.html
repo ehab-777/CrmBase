@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superadmin — CRM Base</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #0f172a;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%; max-width: 420px;
+    }
+    .badge {
+      display: inline-block;
+      background: #7c3aed22;
+      color: #a78bfa;
+      border: 1px solid #7c3aed55;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+    h1 { color: #f1f5f9; font-size: 1.6rem; margin: 0 0 4px; }
+    p.sub { color: #64748b; font-size: 0.9rem; margin: 0 0 32px; }
+    label { display: block; color: #94a3b8; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 12px 14px;
+      background: #0f172a; border: 1.5px solid #334155;
+      border-radius: 10px; color: #f1f5f9; font-size: 1rem; font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: #7c3aed; }
+    .form-group { margin-bottom: 20px; }
+    .btn {
+      width: 100%; padding: 14px;
+      background: #7c3aed; color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #6d28d9; }
+    .error {
+      background: #450a0a; border: 1px solid #7f1d1d;
+      color: #fca5a5; border-radius: 8px;
+      padding: 10px 14px; font-size: 0.85rem; margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">SUPERADMIN</div>
+    <h1>Admin Portal</h1>
+    <p class="sub">CRM Base — Platform Management</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+  </div>
+</body>
+</html>

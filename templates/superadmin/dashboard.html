@@ -1,0 +1,79 @@
+{% extends "superadmin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="sa-header">
+  <h1>Dashboard</h1>
+  <p>Platform overview</p>
+</div>
+
+<div class="sa-stats">
+  <div class="sa-stat">
+    <div class="val">{{ stats.total_tenants }}</div>
+    <div class="lbl">Total Tenants</div>
+  </div>
+  <div class="sa-stat">
+    <div class="val" style="color:#4ade80;">{{ stats.active_subs }}</div>
+    <div class="lbl">Active</div>
+  </div>
+  <div class="sa-stat">
+    <div class="val" style="color:#60a5fa;">{{ stats.trial_subs }}</div>
+    <div class="lbl">Trial</div>
+  </div>
+  <div class="sa-stat">
+    <div class="val" style="color:#f87171;">{{ stats.expired_subs }}</div>
+    <div class="lbl">Expired</div>
+  </div>
+  <div class="sa-stat">
+    <div class="val">{{ stats.total_users }}</div>
+    <div class="lbl">Total Users</div>
+  </div>
+  <div class="sa-stat">
+    <div class="val" style="color:#a78bfa;">{{ stats.total_plans }}</div>
+    <div class="lbl">Active Plans</div>
+  </div>
+</div>
+
+<div class="sa-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h3 style="margin:0; font-size:1rem; color:#f1f5f9;">Recent Tenants</h3>
+    <a href="{{ url_for('superadmin.tenants') }}" class="btn btn-secondary btn-sm">View all</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Plan</th>
+        <th>Status</th>
+        <th>Expires</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in recent_tenants %}
+      <tr>
+        <td style="color:#f1f5f9; font-weight:600;">{{ t.name }}</td>
+        <td>
+          {% if t.account_type == 'individual' %}
+            <span class="type-individual">Individual</span>
+          {% else %}
+            <span class="type-company">Company</span>
+          {% endif %}
+        </td>
+        <td>{{ t.plan_name or '—' }}</td>
+        <td>
+          {% if t.sub_status %}
+            <span class="status-badge status-{{ t.sub_status }}">{{ t.sub_status|capitalize }}</span>
+          {% else %}
+            <span style="color:#475569;">No subscription</span>
+          {% endif %}
+        </td>
+        <td style="color:#64748b;">{{ t.end_date or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:#475569; text-align:center; padding:24px;">No tenants yet</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
