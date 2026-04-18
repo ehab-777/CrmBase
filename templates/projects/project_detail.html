@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .header-title { flex: 1; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .header-actions { display: flex; gap: 0.6rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.875rem;
+    font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: #fff; color: var(--text-primary); border: 1.5px solid var(--border-color); }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .btn-danger { background: #fff; color: #ef4444; border: 1.5px solid #fecaca; }
+  .btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+  .detail-layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
+
+  .info-card { background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+  .info-card-head {
+    padding: 1.5rem; text-align: center;
+    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .project-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, #16a34a, #059669);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.75rem;
+  }
+  .project-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; margin-top: 6px; }
+  .badge-new { background: #eff6ff; color: #2563eb; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+  .badge-done { background: #f1f5f9; color: #64748b; }
+  .badge-hold { background: #fef9c3; color: #a16207; }
+
+  .info-body { padding: 1rem 1.25rem; }
+  .info-row {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.65rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row svg { flex-shrink: 0; color: var(--text-secondary); margin-top: 1px; }
+  .info-row-label { font-size: 0.75rem; color: var(--text-secondary); }
+  .info-row-val { color: var(--text-primary); font-weight: 500; }
+
+  .section-card { background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+  }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; text-align: start; background: #f8fafc; }
+  td { padding: 0.8rem 1rem; font-size: 0.875rem; color: var(--text-primary); border-top: 1px solid var(--border-color); vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  td a { color: var(--primary-color); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+  .empty-row td { text-align: center; color: var(--text-secondary); padding: 2rem; }
+
+  .desc-box {
+    background: #f8fafc; border-radius: 10px; padding: 1rem 1.25rem;
+    font-size: 0.875rem; color: var(--text-primary); line-height: 1.6;
+    white-space: pre-wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('projects.project_list') }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Projects') }}
+  </a>
+  <div class="header-title">
+    <h1 class="page-title">{{ project.name }}</h1>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-outline">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      {{ _('Edit') }}
+    </a>
+    <button class="btn btn-danger" onclick="deleteProject({{ project.id }}, '{{ project.name|e }}')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      {{ _('Delete') }}
+    </button>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <!-- LEFT -->
+  <div>
+    <div class="info-card">
+      <div class="info-card-head">
+        <div class="project-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <div class="project-name">{{ project.name }}</div>
+        <span class="badge badge-{{ project.status }}">{{ project.status|title }}</span>
+      </div>
+      <div class="info-body">
+        {% if project.company_name %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <div>
+            <div class="info-row-label">{{ _('Company') }}</div>
+            <div class="info-row-val">
+              <a href="{{ url_for('companies.company_detail', company_id=project.company_id) }}" style="color:var(--primary-color);text-decoration:none">{{ project.company_name }}</a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% if project.value %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div><div class="info-row-label">{{ _('Value') }}</div><div class="info-row-val">{{ project.value }}</div></div>
+        </div>
+        {% endif %}
+        {% if project.start_date %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="info-row-label">{{ _('Start Date') }}</div><div class="info-row-val">{{ project.start_date }}</div></div>
+        </div>
+        {% endif %}
+        {% if project.end_date %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="info-row-label">{{ _('End Date') }}</div><div class="info-row-val">{{ project.end_date }}</div></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if project.description %}
+    <div style="margin-top:1rem">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.5rem">{{ _('Description') }}</div>
+      <div class="desc-box">{{ project.description }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: Contacts -->
+  <div>
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">{{ _('Linked Contacts') }} ({{ contacts|length }})</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>{{ _('Name') }}</th>
+            <th>{{ _('Phone') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ct in contacts %}
+          <tr>
+            <td><a href="{{ url_for('customers.customer_detail', customer_id=ct.customer_id) }}">{{ ct.first_name }} {{ ct.last_name or '' }}</a></td>
+            <td>{{ ct.phone or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="2">{{ _('No contacts linked to this project.') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function deleteProject(id, name) {
+  if (!confirm('Delete "' + name + '"?')) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  fetch('/projects/' + id + '/delete', {
+    method: 'POST', headers: { 'X-CSRFToken': csrf }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) location.href = '{{ url_for("projects.project_list") }}';
+    else alert(data.message || 'Error');
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Edit Project') if project else _('Add Project') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+
+  .form-card {
+    background: #fff; border: 1.5px solid var(--border-color);
+    border-radius: 14px; padding: 2rem; max-width: 640px;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 0.65rem 0.9rem; border: 1.5px solid var(--border-color);
+    border-radius: 8px; font-size: 0.9rem; font-family: inherit;
+    background: #fafafa; transition: border-color .2s, box-shadow .2s; width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
+  .form-actions {
+    display: flex; gap: 0.75rem; margin-top: 1.75rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--border-color);
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.65rem 1.25rem; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: #fff; color: var(--text-primary); border: 1.5px solid var(--border-color); }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .form-card { padding: 1.25rem; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('projects.project_detail', project_id=project.id) if project else url_for('projects.project_list') }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Back') }}
+  </a>
+  <h1 class="page-title">{{ _('Edit Project') if project else _('Add Project') }}</h1>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label>{{ _('Project Name') }} *</label>
+        <input type="text" name="name" value="{{ project.name if project else '' }}" required>
+      </div>
+      <div class="form-group form-full">
+        <label>{{ _('Company') }}</label>
+        <select name="company_id">
+          <option value="">— {{ _('No Company') }} —</option>
+          {% for c in companies %}
+          <option value="{{ c.id }}"
+            {% if project and project.company_id == c.id %}selected
+            {% elif prefill_company and prefill_company|int == c.id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{ _('Status') }}</label>
+        <select name="status">
+          <option value="new" {% if not project or project.status == 'new' %}selected{% endif %}>{{ _('New') }}</option>
+          <option value="active" {% if project and project.status == 'active' %}selected{% endif %}>{{ _('Active') }}</option>
+          <option value="hold" {% if project and project.status == 'hold' %}selected{% endif %}>{{ _('On Hold') }}</option>
+          <option value="done" {% if project and project.status == 'done' %}selected{% endif %}>{{ _('Done') }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{ _('Value') }}</label>
+        <input type="number" name="value" step="0.01" min="0" value="{{ project.value if project and project.value else '' }}">
+      </div>
+      <div class="form-group">
+        <label>{{ _('Start Date') }}</label>
+        <input type="date" name="start_date" value="{{ project.start_date if project else '' }}">
+      </div>
+      <div class="form-group">
+        <label>{{ _('End Date') }}</label>
+        <input type="date" name="end_date" value="{{ project.end_date if project else '' }}">
+      </div>
+      <div class="form-group form-full">
+        <label>{{ _('Description') }}</label>
+        <textarea name="description">{{ project.description if project else '' }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ _('Save') }}
+      </button>
+      <a href="{{ url_for('projects.project_detail', project_id=project.id) if project else url_for('projects.project_list') }}" class="btn btn-outline">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

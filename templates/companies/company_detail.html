@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .page-header {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; flex-wrap: wrap;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .header-title { flex: 1; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px; }
+  .header-actions { display: flex; gap: 0.6rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.55rem 1rem; border-radius: 8px;
+    font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline {
+    background: #fff; color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+  }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .btn-danger { background: #fff; color: #ef4444; border: 1.5px solid #fecaca; }
+  .btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+  /* Layout */
+  .detail-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
+
+  /* Info card */
+  .info-card {
+    background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden;
+  }
+  .info-card-head {
+    padding: 1.5rem; text-align: center;
+    background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .company-avatar {
+    width: 64px; height: 64px; border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; font-weight: 700; color: #fff;
+    margin: 0 auto 0.75rem;
+  }
+  .company-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+  .company-industry { font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px; }
+  .info-body { padding: 1rem 1.25rem; }
+  .info-row {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.65rem 0; border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row svg { flex-shrink: 0; color: var(--text-secondary); margin-top: 1px; }
+  .info-row-label { font-size: 0.75rem; color: var(--text-secondary); }
+  .info-row-val { color: var(--text-primary); font-weight: 500; word-break: break-word; }
+
+  /* Stats chips */
+  .stats-row {
+    display: flex; gap: 0.75rem; padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+  }
+  .stat-chip {
+    flex: 1; text-align: center; background: #f8fafc;
+    border-radius: 10px; padding: 0.65rem 0.5rem;
+  }
+  .stat-chip .num { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); }
+  .stat-chip .lbl { font-size: 0.73rem; color: var(--text-secondary); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 1.25rem; }
+  .tab-btn {
+    padding: 0.65rem 1.1rem; font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border: none; background: none; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s;
+  }
+  .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* Contact / Project tables */
+  .section-card { background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+  }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; text-align: start; background: #f8fafc; }
+  td { padding: 0.8rem 1rem; font-size: 0.875rem; color: var(--text-primary); border-top: 1px solid var(--border-color); vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  td a { color: var(--primary-color); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+  .badge-new { background: #eff6ff; color: #2563eb; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+  .badge-done { background: #f1f5f9; color: #64748b; }
+  .badge-hold { background: #fef9c3; color: #a16207; }
+
+  .empty-row td { text-align: center; color: var(--text-secondary); padding: 2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('companies.company_list') }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Companies') }}
+  </a>
+  <div class="header-title">
+    <h1 class="page-title">{{ company.name }}</h1>
+    {% if company.industry %}<p class="page-subtitle">{{ company.industry }}</p>{% endif %}
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('companies.edit_company', company_id=company.id) }}" class="btn btn-outline">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      {{ _('Edit') }}
+    </a>
+    <button class="btn btn-danger" onclick="deleteCompany({{ company.id }}, '{{ company.name|e }}')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      {{ _('Delete') }}
+    </button>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <!-- LEFT: Info card -->
+  <div>
+    <div class="info-card">
+      <div class="info-card-head">
+        <div class="company-avatar">{{ company.name[0]|upper }}</div>
+        <div class="company-name">{{ company.name }}</div>
+        {% if company.industry %}<div class="company-industry">{{ company.industry }}</div>{% endif %}
+      </div>
+      <div class="info-body">
+        {% if company.phone %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 12 18.92 19.5 19.5 0 0 1 4.36 12 19.79 19.79 0 0 1 1.27 3.18 2 2 0 0 1 3.27 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.62-.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <div><div class="info-row-label">{{ _('Phone') }}</div><div class="info-row-val">{{ company.phone }}</div></div>
+        </div>
+        {% endif %}
+        {% if company.email %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div><div class="info-row-label">{{ _('Email') }}</div><div class="info-row-val">{{ company.email }}</div></div>
+        </div>
+        {% endif %}
+        {% if company.website %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <div><div class="info-row-label">{{ _('Website') }}</div><div class="info-row-val"><a href="{{ company.website }}" target="_blank" rel="noopener">{{ company.website }}</a></div></div>
+        </div>
+        {% endif %}
+        {% if company.address %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div><div class="info-row-label">{{ _('Address') }}</div><div class="info-row-val">{{ company.address }}</div></div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip">
+          <div class="num">{{ contacts|length }}</div>
+          <div class="lbl">{{ _('Contacts') }}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="num">{{ projects|length }}</div>
+          <div class="lbl">{{ _('Projects') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Tabs -->
+  <div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('contacts', this)">{{ _('Contacts') }} ({{ contacts|length }})</button>
+      <button class="tab-btn" onclick="switchTab('projects', this)">{{ _('Projects') }} ({{ projects|length }})</button>
+    </div>
+
+    <!-- Contacts tab -->
+    <div id="tab-contacts" class="tab-pane active">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">{{ _('Contacts') }}</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ _('Name') }}</th>
+              <th>{{ _('Phone') }}</th>
+              <th>{{ _('Stage') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ct in contacts %}
+            <tr>
+              <td><a href="{{ url_for('customers.customer_detail', customer_id=ct.customer_id) }}">{{ ct.first_name }} {{ ct.last_name or '' }}</a></td>
+              <td>{{ ct.phone or '—' }}</td>
+              <td>{{ ct.stage or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="3">{{ _('No contacts linked to this company.') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Projects tab -->
+    <div id="tab-projects" class="tab-pane">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">{{ _('Projects') }}</span>
+          <a href="{{ url_for('projects.add_project') }}?company_id={{ company.id }}" class="btn btn-primary btn-sm">+ {{ _('Add Project') }}</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ _('Project') }}</th>
+              <th>{{ _('Status') }}</th>
+              <th>{{ _('Value') }}</th>
+              <th>{{ _('Start') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in projects %}
+            <tr>
+              <td><a href="{{ url_for('projects.project_detail', project_id=p.id) }}">{{ p.name }}</a></td>
+              <td>
+                <span class="badge badge-{{ p.status }}">{{ p.status|title }}</span>
+              </td>
+              <td>{{ p.value or '—' }}</td>
+              <td>{{ p.start_date or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="4">{{ _('No projects yet.') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function deleteCompany(id, name) {
+  if (!confirm('Delete "' + name + '"?')) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  fetch('/companies/' + id + '/delete', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrf }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) location.href = '{{ url_for("companies.company_list") }}';
+    else alert(data.message || 'Error');
+  });
+}
+</script>
+{% endblock %}
