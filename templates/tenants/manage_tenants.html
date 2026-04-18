@@ -114,6 +114,32 @@
         outline: none;
         border-color: var(--primary-color);
     }
+
+    select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        background-color: var(--card-background);
+        color: var(--text-primary);
+        transition: border-color 0.2s;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .badge-individual {
+        background: #dbeafe; color: #1d4ed8;
+        padding: 2px 10px; border-radius: 12px; font-size: 0.8rem;
+    }
+
+    .badge-company {
+        background: #dcfce7; color: #15803d;
+        padding: 2px 10px; border-radius: 12px; font-size: 0.8rem;
+    }
 </style>
 {% endblock %}
 
@@ -139,6 +165,7 @@
                 <tr>
                     <th>{{ _('Name') }}</th>
                     <th>{{ _('Database Key') }}</th>
+                    <th>{{ _('Account Type') }}</th>
                     <th>{{ _('Actions') }}</th>
                 </tr>
             </thead>
@@ -147,8 +174,15 @@
                 <tr>
                     <td>{{ tenant.name }}</td>
                     <td>{{ tenant.db_key }}</td>
+                    <td>
+                        {% if tenant.account_type == 'individual' %}
+                        <span class="badge-individual">{{ _('Individual') }}</span>
+                        {% else %}
+                        <span class="badge-company">{{ _('Company') }}</span>
+                        {% endif %}
+                    </td>
                     <td class="actions">
-                        <button class="btn btn-secondary" onclick="openEditTenantModal({{ tenant.id }}, '{{ tenant.name }}', '{{ tenant.db_key }}')">{{ _('Edit') }}</button>
+                        <button class="btn btn-secondary" onclick="openEditTenantModal({{ tenant.id }}, '{{ tenant.name }}', '{{ tenant.db_key }}', '{{ tenant.account_type or 'company' }}')">{{ _('Edit') }}</button>
                         <button class="btn btn-error" onclick="confirmDelete({{ tenant.id }})">{{ _('Delete') }}</button>
                     </td>
                 </tr>
@@ -176,6 +210,13 @@
                 <input type="text" id="db_key" name="db_key" required>
             </div>
             <div class="form-group">
+                <label for="account_type">{{ _('Account Type') }}</label>
+                <select id="account_type" name="account_type">
+                    <option value="individual">{{ _('Individual') }}</option>
+                    <option value="company">{{ _('Company') }}</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
             </div>
         </form>
@@ -190,14 +231,16 @@ function openAddTenantModal() {
     document.getElementById('tenantId').value = '';
     document.getElementById('name').value = '';
     document.getElementById('db_key').value = '';
+    document.getElementById('account_type').value = 'individual';
     document.getElementById('tenantModal').style.display = 'block';
 }
 
-function openEditTenantModal(id, name, dbKey) {
+function openEditTenantModal(id, name, dbKey, accountType) {
     document.getElementById('modalTitle').textContent = 'Edit Tenant';
     document.getElementById('tenantId').value = id;
     document.getElementById('name').value = name;
     document.getElementById('db_key').value = dbKey;
+    document.getElementById('account_type').value = accountType || 'company';
     document.getElementById('tenantModal').style.display = 'block';
 }
 

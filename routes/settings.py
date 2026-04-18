@@ -17,18 +17,21 @@ def manage_tenants():
                 tenant_id = request.form.get('tenant_id')
                 name = request.form['name']
                 db_key = request.form['db_key']
-                
+                account_type = request.form.get('account_type', 'company')
+                if account_type not in ('individual', 'company'):
+                    account_type = 'company'
+
                 if tenant_id:  # Update existing tenant
                     cursor.execute("""
-                        UPDATE tenants 
-                        SET name = ?, db_key = ?
+                        UPDATE tenants
+                        SET name = ?, db_key = ?, account_type = ?
                         WHERE id = ?
-                    """, (name, db_key, tenant_id))
+                    """, (name, db_key, account_type, tenant_id))
                 else:  # Create new tenant
                     cursor.execute("""
-                        INSERT INTO tenants (name, db_key)
-                        VALUES (?, ?)
-                    """, (name, db_key))
+                        INSERT INTO tenants (name, db_key, account_type)
+                        VALUES (?, ?, ?)
+                    """, (name, db_key, account_type))
                 
                 conn.commit()
                 return redirect(url_for('settings.manage_tenants'))
@@ -41,7 +44,7 @@ def manage_tenants():
         
         # GET request - show tenants list
         try:
-            cursor.execute("SELECT id, name, db_key FROM tenants")
+            cursor.execute("SELECT id, name, db_key, account_type FROM tenants")
             tenants = cursor.fetchall()
             return render_template('tenants/manage_tenants.html', tenants=tenants)
         except sqlite3.Error as e:
