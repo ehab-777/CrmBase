@@ -209,6 +209,12 @@ def _ensure_schema():
         except Exception:
             pass
 
+        # add city to companies if missing
+        try:
+            conn.execute("ALTER TABLE companies ADD COLUMN city TEXT")
+        except Exception:
+            pass
+
         # config_options table — tenant-scoped dropdown values
         conn.execute("""
             CREATE TABLE IF NOT EXISTS config_options (
@@ -235,6 +241,7 @@ def _ensure_schema():
             'sales_stage':    [('New', 'جديد'), ('Contacted', 'تم التواصل'), ('Interested', 'مهتم'), ('Proposal', 'عرض سعر'), ('Negotiation', 'تفاوض'), ('Won', 'تم البيع'), ('Lost', 'خسرنا')],
             'next_action':    [('Call Back', 'معاودة الاتصال'), ('Send Proposal', 'إرسال عرض'), ('Schedule Visit', 'جدولة زيارة'), ('Follow Up', 'متابعة'), ('Close Deal', 'إغلاق الصفقة')],
             'activity_type':  [('Call', 'اتصال'), ('Meeting', 'اجتماع'), ('Email', 'بريد'), ('Demo', 'عرض تجريبي'), ('Other', 'أخرى')],
+            'project_status': [('New', 'جديد'), ('Active', 'نشط'), ('On Hold', 'متوقف'), ('Done', 'منتهي'), ('Cancelled', 'ملغي')],
         }
 
         tenants_list = conn.execute("SELECT id FROM tenants").fetchall()

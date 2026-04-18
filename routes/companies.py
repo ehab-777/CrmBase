@@ -80,11 +80,12 @@ def add_company():
         conn = get_db()
         try:
             conn.execute("""
-                INSERT INTO companies (name, industry, phone, email, address, website, tenant_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO companies (name, industry, city, phone, email, address, website, tenant_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 request.form.get('name', '').strip(),
                 request.form.get('industry', '').strip(),
+                request.form.get('city', '').strip(),
                 request.form.get('phone', '').strip(),
                 request.form.get('email', '').strip(),
                 request.form.get('address', '').strip(),
@@ -160,11 +161,12 @@ def edit_company(company_id):
 
         if request.method == 'POST':
             conn.execute("""
-                UPDATE companies SET name=?, industry=?, phone=?, email=?, address=?, website=?
+                UPDATE companies SET name=?, industry=?, city=?, phone=?, email=?, address=?, website=?
                 WHERE id = ? AND tenant_id = ?
             """, (
                 request.form.get('name', '').strip(),
                 request.form.get('industry', '').strip(),
+                request.form.get('city', '').strip(),
                 request.form.get('phone', '').strip(),
                 request.form.get('email', '').strip(),
                 request.form.get('address', '').strip(),

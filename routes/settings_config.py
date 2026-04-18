@@ -14,6 +14,7 @@ CATEGORIES = [
     {'key': 'sales_stage',    'name_en': 'Sales Stages',      'name_ar': 'مراحل البيع',       'icon': 'trending',  'module': 'follow_up'},
     {'key': 'next_action',    'name_en': 'Next Actions',      'name_ar': 'الإجراءات التالية', 'icon': 'zap',       'module': 'follow_up'},
     {'key': 'activity_type',  'name_en': 'Activity Types',    'name_ar': 'أنواع الأنشطة',     'icon': 'activity',  'module': 'follow_up'},
+    {'key': 'project_status', 'name_en': 'Project Statuses',  'name_ar': 'حالات المشاريع',    'icon': 'briefcase', 'module': 'projects'},
 ]
 
 CATEGORY_KEYS = {c['key'] for c in CATEGORIES}

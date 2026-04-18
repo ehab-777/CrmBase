@@ -95,6 +95,17 @@
         </select>
       </div>
       <div class="form-group">
+        <label>{{ _('City') }}</label>
+        <select name="city">
+          <option value="">-- {{ _('Select') }} --</option>
+          {% for opt in config.city %}
+          <option value="{{ opt.value }}" {% if company and company.city == opt.value %}selected{% endif %}>
+            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
         <label>{{ _('Phone') }}</label>
         <input type="tel" name="phone" value="{{ company.phone if company else '' }}">
       </div>

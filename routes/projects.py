@@ -5,6 +5,18 @@ from tenant_utils import get_db, get_current_tenant_id, require_tenant
 projects_bp = Blueprint('projects', __name__, url_prefix='/projects')
 
 
+def _get_config(conn, tenant_id, categories):
+    result = {}
+    for cat in categories:
+        rows = conn.execute("""
+            SELECT value, label_ar FROM config_options
+            WHERE tenant_id = ? AND category = ? AND is_active = 1
+            ORDER BY display_order, value
+        """, (tenant_id, cat)).fetchall()
+        result[cat] = rows
+    return result
+
+
 def _require_login():
     return 'salesperson_id' in session
 
@@ -97,8 +109,10 @@ def add_project():
         conn.close()
 
     prefill_company = request.args.get('company_id')
+    config = _get_config(conn, tenant_id, ['project_status'])
     return render_template('projects/project_form.html', project=None,
-                           companies=companies, prefill_company=prefill_company)
+                           companies=companies, prefill_company=prefill_company,
+                           config=config)
 
 
 @projects_bp.route('/<int:project_id>')
@@ -175,8 +189,10 @@ def edit_project(project_id):
     finally:
         conn.close()
 
+    config = _get_config(conn, tenant_id, ['project_status'])
     return render_template('projects/project_form.html', project=project,
-                           companies=companies, prefill_company=None)
+                           companies=companies, prefill_company=None,
+                           config=config)
 
 
 @projects_bp.route('/<int:project_id>/delete', methods=['POST'])
