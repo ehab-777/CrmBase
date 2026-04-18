@@ -206,7 +206,8 @@ def manifest():
 @app.route('/')
 def index():
     if 'salesperson_id' in session:
-        if session.get('role') in ['admin', 'manager']:
+        is_individual = session.get('account_type') == 'individual'
+        if session.get('role') in ['admin', 'manager'] and not is_individual:
             return redirect(url_for('dashboard.manager_dashboard'))
         return redirect(url_for('dashboard.dashboard'))
     return redirect(url_for('auth.login'))
