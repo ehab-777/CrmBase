@@ -57,8 +57,9 @@ def login():
             session['lang'] = user['preferred_lang'] or 'en'
             session['account_type'] = tenant['account_type'] or 'company'
 
-            # Redirect based on role
-            if user['role'] in ['admin', 'manager']:
+            # Redirect based on role and account type
+            is_individual = (tenant['account_type'] or 'company') == 'individual'
+            if user['role'] in ['admin', 'manager'] and not is_individual:
                 return redirect(url_for('dashboard.manager_dashboard'))
             return redirect(url_for('dashboard.dashboard'))
 
