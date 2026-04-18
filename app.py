@@ -117,12 +117,19 @@ def _ensure_schema():
         # superadmins table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS superadmins (
-                id       INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT    UNIQUE NOT NULL,
-                password TEXT    NOT NULL,
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL,
+                username   TEXT    UNIQUE NOT NULL,
+                email      TEXT    UNIQUE NOT NULL,
+                password   TEXT    NOT NULL,
                 created_at DATETIME DEFAULT (datetime('now'))
             )
         """)
+        for col in ['name TEXT', 'email TEXT']:
+            try:
+                conn.execute(f'ALTER TABLE superadmins ADD COLUMN {col}')
+            except Exception:
+                pass
 
         # plans table
         conn.execute("""
