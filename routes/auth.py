@@ -30,12 +30,12 @@ def login():
             if not tenant:
                 return render_template('auth/login.html', error="Invalid database key")
 
-            # Check sales_team table for user
+            # Check sales_team table for user (by username or email)
             cursor.execute("""
                 SELECT salesperson_id, username, first_name, role, tenant_id, password, preferred_lang
                 FROM sales_team
-                WHERE username = ? AND tenant_id = ?
-            """, (username, tenant['id']))
+                WHERE (username = ? OR work_email = ?) AND tenant_id = ?
+            """, (username, username, tenant['id']))
 
             user = cursor.fetchone()
 
