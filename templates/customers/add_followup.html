@@ -220,12 +220,12 @@
                 <div class="form-group">
                     <label for="last_contact_method" class="form-label">{{ _('Contact Method') }}</label>
                     <select id="last_contact_method" name="last_contact_method" class="form-input form-select">
-                        <option value="">-- اختر وسيلة الاتصال --</option>
-                        <option value="مكالمة هاتفية">مكالمة هاتفية</option>
-                        <option value="رسالة واتساب">رسالة واتساب</option>
-                        <option value="زياره موقع العميل">زياره موقع العميل</option>
-                        <option value="زيارة العميل للمعرض">زيارة العميل للمعرض</option>
-                        <option value="بريد الكتروني">بريد الكتروني</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.contact_method %}
+                        <option value="{{ opt.value }}">
+                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -233,12 +233,11 @@
                     <label for="current_sales_stage" class="form-label">{{ _('Current Sales Stage') }}</label>
                     <select id="current_sales_stage" name="current_sales_stage" class="form-input form-select">
                         <option value="">-- {{ _('Select stage') }} --</option>
-                        <option value="عميل محتمل">عميل محتمل</option>
-                        <option value="جاري التواصل">جاري التواصل</option>
-                        <option value="تقديم عرض السعر">تقديم عرض السعر</option>
-                        <option value="جاري التفاوض">جاري التفاوض</option>
-                        <option value="تم التسليم">تم التسليم</option>
-                        <option value="لم يتم البيع">لم يتم البيع</option>
+                        {% for opt in config.sales_stage %}
+                        <option value="{{ opt.value }}">
+                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -246,12 +245,11 @@
                     <label for="next_action" class="form-label">{{ _('Next Action') }}</label>
                     <select id="next_action" name="next_action" class="form-input form-select">
                         <option value="">-- {{ _('Select next action') }} --</option>
-                        <option value="متابعة اتصال" {% if followup and followup.next_action == 'متابعة اتصال' %}selected{% endif %}>متابعة اتصال</option>
-                        <option value="انتظار رد العميل" {% if followup and followup.next_action == 'انتظار رد العميل' %}selected{% endif %}>انتظار رد العميل</option>
-                        <option value="دعوة لزيارة المعرض" {% if followup and followup.next_action == 'دعوة لزيارة المعرض' %}selected{% endif %}>دعوة لزيارة المعرض</option>
-                        <option value="إرسال عرض سعر" {% if followup and followup.next_action == 'إرسال عرض سعر' %}selected{% endif %}>إرسال عرض سعر</option>
-                        <option value="متابعة التمويل / الدفع" {% if followup and followup.next_action == 'متابعة التمويل / الدفع' %}selected{% endif %}>متابعة التمويل / الدفع</option>
-                        <option value="إغلاق البيع" {% if followup and followup.next_action == 'إغلاق البيع' %}selected{% endif %}>إغلاق البيع</option>
+                        {% for opt in config.next_action %}
+                        <option value="{{ opt.value }}" {% if followup and followup.next_action == opt.value %}selected{% endif %}>
+                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 

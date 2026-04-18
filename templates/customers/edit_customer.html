@@ -250,19 +250,12 @@
                 <div class="form-group">
                     <label for="company_industry" class="form-label">{{ _('Industry') }}</label>
                     <select id="company_industry" name="company_industry" class="form-input form-select">
-                        <option value="">-- اختر قطاع الشركة --</option>
-                        <option value="تجارة / بيع بالتجزئة" {% if customer.company_industry == 'تجارة / بيع بالتجزئة' %}selected{% endif %}>تجارة / بيع بالتجزئة</option>
-                        <option value="تأجير سيارات / أساطيل / نقل" {% if customer.company_industry == 'تأجير سيارات / أساطيل / نقل' %}selected{% endif %}>تأجير سيارات / أساطيل / نقل</option>
-                        <option value="الخدمات اللوجستية" {% if customer.company_industry == 'الخدمات اللوجستية' %}selected{% endif %}>الخدمات اللوجستية</option>
-                        <option value="القطاع الحكومي / العام / منظمات" {% if customer.company_industry == 'القطاع الحكومي / العام / منظمات' %}selected{% endif %}>القطاع الحكومي / العام / منظمات</option>
-                        <option value="القطاع المالي (بنوك / تمويل / تأمين)" {% if customer.company_industry == 'القطاع المالي (بنوك / تمويل / تأمين)' %}selected{% endif %}>القطاع المالي (بنوك / تمويل / تأمين)</option>
-                        <option value="الصناعة والتصنيع" {% if customer.company_industry == 'الصناعة والتصنيع' %}selected{% endif %}>الصناعة والتصنيع</option>
-                        <option value="الإنشاءات / المقاولات" {% if customer.company_industry == 'الإنشاءات / المقاولات' %}selected{% endif %}>الإنشاءات / المقاولات</option>
-                        <option value="النفط والطاقة / البترول" {% if customer.company_industry == 'النفط والطاقة / البترول' %}selected{% endif %}>النفط والطاقة / البترول</option>
-                        <option value="الرعاية الصحية / المستشفيات / الصيدلة" {% if customer.company_industry == 'الرعاية الصحية / المستشفيات / الصيدلة' %}selected{% endif %}>الرعاية الصحية / المستشفيات / الصيدلة</option>
-                        <option value="قطاع السياحة" {% if customer.company_industry == 'قطاع السياحة' %}selected{% endif %}>قطاع السياحة</option>
-                        <option value="قطاع الزراعة" {% if customer.company_industry == 'قطاع الزراعة' %}selected{% endif %}>قطاع الزراعة</option>
-                        <option value="Other" {% if customer.company_industry == 'Other' %}selected{% endif %}>أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.industry %}
+                        <option value="{{ opt.value }}" {% if customer.company_industry == opt.value %}selected{% endif %}>
+                            {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -281,16 +274,12 @@
                 <div class="form-group">
                     <label for="contact_person_position" class="form-label">{{ _('Contact Position') }}</label>
                     <select id="contact_person_position" name="contact_person_position" class="form-input form-select">
-                        <option value="">-- اختر منصب جهة الاتصال --</option>
-                        <option value="مدير مشتريات" {% if customer.contact_person_position == 'مدير مشتريات' %}selected{% endif %}>مدير مشتريات</option>
-                        <option value="مدير تشغيل" {% if customer.contact_person_position == 'مدير تشغيل' %}selected{% endif %}>مدير تشغيل</option>
-                        <option value="مدير عمليات" {% if customer.contact_person_position == 'مدير عمليات' %}selected{% endif %}>مدير عمليات</option>
-                        <option value="مدير صيانة" {% if customer.contact_person_position == 'مدير صيانة' %}selected{% endif %}>مدير صيانة</option>
-                        <option value="مدير تطوير" {% if customer.contact_person_position == 'مدير تطوير' %}selected{% endif %}>مدير تطوير</option>
-                        <option value="مندوب مشتريات" {% if customer.contact_person_position == 'مندوب مشتريات' %}selected{% endif %}>مندوب مشتريات</option>
-                        <option value="مدير أسطول" {% if customer.contact_person_position == 'مدير أسطول' %}selected{% endif %}>مدير أسطول</option>
-                        <option value="مدير عام" {% if customer.contact_person_position == 'مدير عام' %}selected{% endif %}>مدير عام</option>
-                        <option value="أخرى" {% if customer.contact_person_position == 'أخرى' %}selected{% endif %}>أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.job_title %}
+                        <option value="{{ opt.value }}" {% if customer.contact_person_position == opt.value %}selected{% endif %}>
+                            {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -311,14 +300,12 @@
                 <div class="form-group">
                     <label for="lead_source" class="form-label">{{ _('Lead Source') }}</label>
                     <select id="lead_source" name="lead_source" class="form-input form-select">
-                        <option value="">-- اختر مصدر العميل --</option>
-                        <option value="زيارة مقر العميل" {% if customer.lead_source == 'زيارة مقر العميل' %}selected{% endif %}>زيارة مقر العميل</option>
-                        <option value="مكالمة هاتفيه" {% if customer.lead_source == 'مكالمة هاتفيه' %}selected{% endif %}>مكالمة هاتفيه</option>
-                        <option value="توصية من عميل" {% if customer.lead_source == 'توصية من عميل' %}selected{% endif %}>توصية من عميل</option>
-                        <option value="الموقع الألكتروني" {% if customer.lead_source == 'الموقع الألكتروني' %}selected{% endif %}>الموقع الألكتروني</option>
-                        <option value="زيارة للفرع" {% if customer.lead_source == 'زيارة للفرع' %}selected{% endif %}>زيارة للفرع</option>
-                        <option value="حملات أعلانيه" {% if customer.lead_source == 'حملات أعلانيه' %}selected{% endif %}>حملات أعلانيه</option>
-                        <option value="Other" {% if customer.lead_source == 'Other' %}selected{% endif %}>أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.lead_source %}
+                        <option value="{{ opt.value }}" {% if customer.lead_source == opt.value %}selected{% endif %}>
+                            {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 

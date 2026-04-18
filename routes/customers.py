@@ -11,6 +11,18 @@ load_dotenv()
 # Create a Blueprint for customer routes
 customers_bp = Blueprint('customers', __name__, url_prefix='/customers')
 
+
+def _get_config(conn, tenant_id, categories):
+    result = {}
+    for cat in categories:
+        rows = conn.execute("""
+            SELECT value, label_ar FROM config_options
+            WHERE tenant_id = ? AND category = ? AND is_active = 1
+            ORDER BY display_order, value
+        """, (tenant_id, cat)).fetchall()
+        result[cat] = rows
+    return result
+
 @customers_bp.route('/list')
 @require_tenant
 def customer_list():
@@ -297,9 +309,13 @@ def add_customer():
                 conn.rollback()
                 error = f"Database error during add_customer: {e}"
                 print(error)
-                return render_template('customers/add_customer.html', error=error, salespeople=all_salespeople)
+                config = _get_config(conn, get_current_tenant_id(), ['industry', 'job_title', 'lead_source'])
+                return render_template('customers/add_customer.html', error=error,
+                                       salespeople=all_salespeople, config=config)
 
-        return render_template('customers/add_customer.html', error=error, salespeople=all_salespeople)
+        config = _get_config(conn, get_current_tenant_id(), ['industry', 'job_title', 'lead_source'])
+        return render_template('customers/add_customer.html', error=error,
+                               salespeople=all_salespeople, config=config)
     return redirect(url_for('auth.login'))
 
 @customers_bp.route('/<int:customer_id>')
@@ -465,10 +481,11 @@ def edit_customer(customer_id):
         else:
             cursor.execute("SELECT * FROM customers WHERE customer_id = ?", (customer_id,))
             customer = cursor.fetchone()
+            config = _get_config(conn, get_current_tenant_id(), ['industry', 'job_title', 'lead_source'])
             conn.close()
             if customer:
-                return render_template('customers/edit_customer.html', customer=customer)
-            return render_template('customers/edit_customer.html', customer=None)
+                return render_template('customers/edit_customer.html', customer=customer, config=config)
+            return render_template('customers/edit_customer.html', customer=None, config=config)
     return redirect(url_for('auth.login'))
 
 @customers_bp.route('/assign/<int:customer_id>', methods=['GET', 'POST'])

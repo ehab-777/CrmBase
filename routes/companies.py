@@ -5,6 +5,18 @@ from tenant_utils import get_db, get_current_tenant_id, require_tenant
 companies_bp = Blueprint('companies', __name__, url_prefix='/companies')
 
 
+def _get_config(conn, tenant_id, categories):
+    result = {}
+    for cat in categories:
+        rows = conn.execute("""
+            SELECT value, label_ar FROM config_options
+            WHERE tenant_id = ? AND category = ? AND is_active = 1
+            ORDER BY display_order, value
+        """, (tenant_id, cat)).fetchall()
+        result[cat] = rows
+    return result
+
+
 def _require_login():
     return 'salesperson_id' in session
 
@@ -84,7 +96,12 @@ def add_company():
             conn.close()
         return redirect(url_for('companies.company_list'))
 
-    return render_template('companies/company_form.html', company=None)
+    conn2 = get_db()
+    try:
+        config = _get_config(conn2, get_current_tenant_id(), ['industry', 'city'])
+    finally:
+        conn2.close()
+    return render_template('companies/company_form.html', company=None, config=config)
 
 
 @companies_bp.route('/<int:company_id>')
@@ -160,7 +177,8 @@ def edit_company(company_id):
     finally:
         conn.close()
 
-    return render_template('companies/company_form.html', company=company)
+    config = _get_config(conn, get_current_tenant_id(), ['industry', 'city'])
+    return render_template('companies/company_form.html', company=company, config=config)
 
 
 @companies_bp.route('/<int:company_id>/delete', methods=['POST'])
