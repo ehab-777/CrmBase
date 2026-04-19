@@ -157,7 +157,7 @@ def project_detail(project_id):
             return redirect(url_for('projects.project_list'))
 
         contacts = conn.execute("""
-            SELECT cu.customer_id, cu.first_name, cu.last_name, cu.phone, cu.company_name
+            SELECT cu.customer_id, cu.contact_person, cu.phone_number, cu.company_name
             FROM project_contacts pc
             JOIN customers cu ON cu.customer_id = pc.customer_id
             WHERE pc.project_id = ?
@@ -167,11 +167,11 @@ def project_detail(project_id):
         linked_ids = [c['customer_id'] for c in contacts]
         placeholder = ','.join('?' * len(linked_ids)) if linked_ids else 'NULL'
         all_contacts_q = f"""
-            SELECT customer_id, first_name, last_name, company_name, phone
+            SELECT customer_id, contact_person, company_name, phone_number
             FROM customers
             WHERE tenant_id = ?
             {'AND customer_id NOT IN (' + placeholder + ')' if linked_ids else ''}
-            ORDER BY first_name
+            ORDER BY contact_person
         """
         all_contacts = conn.execute(
             all_contacts_q, [tenant_id] + linked_ids
@@ -254,7 +254,7 @@ def add_contact(project_id):
             return jsonify({'error': 'Not found'}), 404
         # verify customer belongs to tenant
         cu = conn.execute(
-            "SELECT customer_id, first_name, last_name, company_name, phone FROM customers WHERE customer_id=? AND tenant_id=?",
+            "SELECT customer_id, contact_person, company_name, phone_number FROM customers WHERE customer_id=? AND tenant_id=?",
             (customer_id, tenant_id)
         ).fetchone()
         if not cu:
@@ -262,7 +262,7 @@ def add_contact(project_id):
         conn.execute("INSERT OR IGNORE INTO project_contacts (project_id, customer_id) VALUES (?,?)",
                      (project_id, customer_id))
         log_activity(conn, tenant_id, 'project', project_id, 'contact_linked',
-                     f'{cu["first_name"]} {cu["last_name"] or ""} linked to project')
+                     f'{cu["contact_person"]} linked to project')
         conn.commit()
         return jsonify({'success': True, 'contact': dict(cu)})
     except sqlite3.Error as e:
