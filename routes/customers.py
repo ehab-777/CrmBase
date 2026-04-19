@@ -246,12 +246,13 @@ def customer_list():
             sales_stages.append('N/A')
 
         conn.close()
-        return render_template('customers/customer_list.html', 
-                             customers=customers, 
+        return render_template('customers/customer_list.html',
+                             customers=customers,
+                             total=total_customers,
                              search_term=search_term,
-                             sort_by=sort_by, 
-                             order=order, 
-                             page=page, 
+                             sort_by=sort_by,
+                             order=order,
+                             page=page,
                              total_pages=total_pages,
                              sales_stages=sales_stages,
                              current_stage=request.args.get('stage', ''))
@@ -290,21 +291,40 @@ def add_customer():
                 assigned_salesperson_id = request.form.get('assigned_salesperson_id', salesperson_id)
 
             try:
+                # Auto-create or find matching company ─────────────────
+                tid = get_current_tenant_id()
+                auto_company_id = None
+                if company_name:
+                    existing_co = conn.execute(
+                        "SELECT id FROM companies WHERE LOWER(name) = LOWER(?) AND tenant_id = ?",
+                        (company_name, tid)
+                    ).fetchone()
+                    if existing_co:
+                        auto_company_id = existing_co['id']
+                    else:
+                        cur_co = conn.execute(
+                            "INSERT INTO companies (name, industry, phone, tenant_id) VALUES (?,?,?,?)",
+                            (company_name, company_industry, phone_number, tid)
+                        )
+                        auto_company_id = cur_co.lastrowid
+                        log_activity(conn, tid, 'company', auto_company_id, 'created',
+                                     f'Auto-created from customer "{company_name}"')
+                # ─────────────────────────────────────────────────────────
                 cursor.execute('''
                     INSERT INTO customers (
                         company_name, company_industry, contact_person,
                         contact_person_position, phone_number, email_address,
                         company_address, lead_source, initial_interest,
-                        date_added, assigned_salesperson_id, tenant_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        date_added, assigned_salesperson_id, tenant_id, company_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     company_name, company_industry, contact_person,
                     contact_person_position, phone_number, email_address,
                     company_address, lead_source, initial_interest,
-                    date_added, assigned_salesperson_id, get_current_tenant_id()
+                    date_added, assigned_salesperson_id, tid, auto_company_id
                 ))
                 customer_id = cursor.lastrowid
-                log_activity(conn, get_current_tenant_id(), 'customer', customer_id, 'created',
+                log_activity(conn, tid, 'customer', customer_id, 'created',
                              f'Customer "{company_name}" added')
                 conn.commit()
                 return redirect(url_for('customers.customer_detail', customer_id=customer_id))
@@ -476,12 +496,34 @@ def edit_customer(customer_id):
             cursor.execute("SELECT assigned_salesperson_id FROM customers WHERE customer_id = ?", (customer_id,))
             assigned_salesperson_id = cursor.fetchone()['assigned_salesperson_id']
 
+            # Auto-create or find matching company ─────────────────
+            tid = get_current_tenant_id()
+            auto_company_id = None
+            if company_name:
+                existing_co = conn.execute(
+                    "SELECT id FROM companies WHERE LOWER(name) = LOWER(?) AND tenant_id = ?",
+                    (company_name, tid)
+                ).fetchone()
+                if existing_co:
+                    auto_company_id = existing_co['id']
+                else:
+                    cur_co = conn.execute(
+                        "INSERT INTO companies (name, industry, phone, tenant_id) VALUES (?,?,?,?)",
+                        (company_name, company_industry, phone_number, tid)
+                    )
+                    auto_company_id = cur_co.lastrowid
+                    log_activity(conn, tid, 'company', auto_company_id, 'created',
+                                 f'Auto-created from customer "{company_name}"')
+            # ─────────────────────────────────────────────────────────
             cursor.execute('''
                 UPDATE customers SET company_name=?, contact_person=?, phone_number=?, email_address=?,
-                company_address=?, lead_source=?, initial_interest=?, company_industry=?, contact_person_position=?, assigned_salesperson_id=?
+                company_address=?, lead_source=?, initial_interest=?, company_industry=?,
+                contact_person_position=?, assigned_salesperson_id=?, company_id=?
                 WHERE customer_id=?
-            ''', (company_name, contact_person, phone_number, email_address, company_address, lead_source, initial_interest, company_industry, contact_person_position, assigned_salesperson_id, customer_id))
-            log_activity(conn, get_current_tenant_id(), 'customer', customer_id, 'updated',
+            ''', (company_name, contact_person, phone_number, email_address, company_address,
+                  lead_source, initial_interest, company_industry, contact_person_position,
+                  assigned_salesperson_id, auto_company_id, customer_id))
+            log_activity(conn, tid, 'customer', customer_id, 'updated',
                          f'Customer "{company_name}" updated')
             conn.commit()
             conn.close()
@@ -598,5 +640,35 @@ def quick_add():
     except Exception as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@customers_bp.route('/<int:customer_id>/delete', methods=['POST'])
+@require_tenant
+def delete_customer(customer_id):
+    """AJAX delete — removes follow-ups, project links, then the customer row."""
+    if 'salesperson_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 403
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        # verify ownership
+        row = conn.execute(
+            "SELECT customer_id FROM customers WHERE customer_id = ? AND tenant_id = ?",
+            (customer_id, tenant_id)
+        ).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        conn.execute("DELETE FROM sales_followup   WHERE customer_id = ? AND tenant_id = ?",
+                     (customer_id, tenant_id))
+        conn.execute("DELETE FROM project_contacts WHERE customer_id = ?", (customer_id,))
+        conn.execute("DELETE FROM customers         WHERE customer_id = ? AND tenant_id = ?",
+                     (customer_id, tenant_id))
+        conn.commit()
+        return jsonify({'success': True})
+    except sqlite3.Error as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()

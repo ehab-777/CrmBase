@@ -94,8 +94,17 @@ def add_company():
                 request.form.get('website', '').strip(),
                 tenant_id
             ))
-            log_activity(conn, tenant_id, 'company', cur.lastrowid, 'created',
+            new_company_id = cur.lastrowid
+            log_activity(conn, tenant_id, 'company', new_company_id, 'created',
                          f'Company "{name}" created')
+            # Auto-link any existing customers whose company_name matches
+            conn.execute(
+                """UPDATE customers
+                   SET company_id = ?
+                   WHERE LOWER(company_name) = LOWER(?) AND tenant_id = ?
+                     AND (company_id IS NULL OR company_id = 0)""",
+                (new_company_id, name, tenant_id)
+            )
             conn.commit()
         finally:
             conn.close()
