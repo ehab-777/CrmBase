@@ -126,11 +126,12 @@ def add_project():
                          f'Project "{name}" created')
             conn.commit()
             return redirect(url_for('projects.project_list'))
+
+        prefill_company = request.args.get('company_id')
+        config = _get_config(conn, tenant_id, ['project_status'])
     finally:
         conn.close()
 
-    prefill_company = request.args.get('company_id')
-    config = _get_config(conn, tenant_id, ['project_status'])
     return render_template('projects/project_form.html', project=None,
                            companies=companies, prefill_company=prefill_company,
                            config=config)
@@ -227,10 +228,10 @@ def edit_project(project_id):
             conn.commit()
             return redirect(url_for('projects.project_detail', project_id=project_id))
 
+        config = _get_config(conn, tenant_id, ['project_status'])
     finally:
         conn.close()
 
-    config = _get_config(conn, tenant_id, ['project_status'])
     return render_template('projects/project_form.html', project=project,
                            companies=companies, prefill_company=None,
                            config=config)
