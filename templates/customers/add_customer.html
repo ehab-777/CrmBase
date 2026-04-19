@@ -206,19 +206,10 @@
                 <div class="form-group">
                     <label for="company_industry" class="form-label">{{ _('Industry') }}</label>
                     <select id="company_industry" name="company_industry" class="form-select">
-                        <option value="">-- اختر قطاع الشركة --</option>
-                        <option value="تجارة / بيع بالتجزئة">تجارة / بيع بالتجزئة</option>
-                        <option value="تأجير سيارات / أساطيل / نقل">تأجير سيارات / أساطيل / نقل</option>
-                        <option value="الخدمات اللوجستية">الخدمات اللوجستية</option>
-                        <option value="القطاع الحكومي / العام / منظمات">القطاع الحكومي / العام / منظمات</option>
-                        <option value="القطاع المالي (بنوك / تمويل / تأمين)">القطاع المالي (بنوك / تمويل / تأمين)</option>
-                        <option value="الصناعة والتصنيع">الصناعة والتصنيع</option>
-                        <option value="الإنشاءات / المقاولات">الإنشاءات / المقاولات</option>
-                        <option value="النفط والطاقة / البترول">النفط والطاقة / البترول</option>
-                        <option value="الرعاية الصحية / المستشفيات / الصيدلة">الرعاية الصحية / المستشفيات / الصيدلة</option>
-                        <option value="قطاع السياحة">قطاع السياحة</option>
-                        <option value="قطاع الزراعة">قطاع الزراعة</option>
-                        <option value="Other">أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.industry %}
+                        <option value="{{ opt.value }}">{% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -237,16 +228,10 @@
                 <div class="form-group">
                     <label for="contact_person_position" class="form-label">{{ _('Contact Position') }}</label>
                     <select id="contact_person_position" name="contact_person_position" class="form-select">
-                        <option value="">-- اختر منصب جهة الاتصال --</option>
-                        <option value="مدير مشتريات">مدير مشتريات</option>
-                        <option value="مدير تشغيل">مدير تشغيل</option>
-                        <option value="مدير عمليات">مدير عمليات</option>
-                        <option value="مدير صيانة">مدير صيانة</option>
-                        <option value="مدير تطوير">مدير تطوير</option>
-                        <option value="مندوب مشتريات">مندوب مشتريات</option>
-                        <option value="مدير أسطول">مدير أسطول</option>
-                        <option value="مدير عام">مدير عام</option>
-                        <option value="أخرى">أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.job_title %}
+                        <option value="{{ opt.value }}">{% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -267,14 +252,10 @@
                 <div class="form-group">
                     <label for="lead_source" class="form-label">{{ _('Lead Source') }}</label>
                     <select id="lead_source" name="lead_source" class="form-select">
-                        <option value="">-- اختر مصدر العميل --</option>
-                        <option value="زيارة مقر العميل">زيارة مقر العميل</option>
-                        <option value="مكالمة هاتفيه">مكالمة هاتفيه</option>
-                        <option value="توصية من عميل">توصية من عميل</option>
-                        <option value="الموقع الألكتروني">الموقع الألكتروني</option>
-                        <option value="زيارة للفرع">زيارة للفرع</option>
-                        <option value="حملات أعلانيه">حملات أعلانيه</option>
-                        <option value="Other">أخرى</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        {% for opt in config.lead_source %}
+                        <option value="{{ opt.value }}">{% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}</option>
+                        {% endfor %}
                     </select>
                 </div>
 

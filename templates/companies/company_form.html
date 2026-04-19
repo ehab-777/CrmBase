@@ -85,7 +85,25 @@
       </div>
       <div class="form-group">
         <label>{{ _('Industry') }}</label>
-        <input type="text" name="industry" value="{{ company.industry if company else '' }}" placeholder="e.g. Technology, Healthcare">
+        <select name="industry">
+          <option value="">-- {{ _('Select') }} --</option>
+          {% for opt in config.industry %}
+          <option value="{{ opt.value }}" {% if company and company.industry == opt.value %}selected{% endif %}>
+            {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{ _('City') }}</label>
+        <select name="city">
+          <option value="">-- {{ _('Select') }} --</option>
+          {% for opt in config.city %}
+          <option value="{{ opt.value }}" {% if company and company.city == opt.value %}selected{% endif %}>
+            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label>{{ _('Phone') }}</label>

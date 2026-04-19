@@ -2,6 +2,19 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 import sqlite3
 from datetime import datetime
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
+from activity_logger import log_activity
+
+
+def _get_config(conn, tenant_id, categories):
+    result = {}
+    for cat in categories:
+        rows = conn.execute("""
+            SELECT value, label_ar FROM config_options
+            WHERE tenant_id = ? AND category = ? AND is_active = 1
+            ORDER BY display_order, value
+        """, (tenant_id, cat)).fetchall()
+        result[cat] = rows
+    return result
 
 # Create a Blueprint for follow-up routes
 follow_up_bp = Blueprint('follow_up', __name__)
@@ -49,10 +62,15 @@ def add_followup(customer_id):
                     next_action_due_date, current_sales_stage, potential_deal_value,
                     notes, tenant_id, session['salesperson_id']
                 ))
+                log_activity(conn, tenant_id, 'customer', customer_id, 'follow_up_added',
+                             f'Follow-up added — Stage: {current_sales_stage or "—"}')
                 conn.commit()
                 return redirect(url_for('customers.customer_detail', customer_id=customer_id))
                     
-            return render_template('customers/add_followup.html', customer=customer)
+            config = _get_config(conn, tenant_id,
+                               ['contact_method', 'sales_stage', 'next_action'])
+            return render_template('customers/add_followup.html',
+                                   customer=customer, config=config)
             
         except Exception as e:
             print(f"Error: {e}")

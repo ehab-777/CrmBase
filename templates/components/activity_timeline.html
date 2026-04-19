@@ -1,0 +1,90 @@
+{#
+  Activity Timeline partial — include this template wherever you need a timeline card.
+  Expects `activities` to be a list of dicts:
+    { action, actor_name, details, ts }
+  The calling template should NOT commit DB while rendering.
+#}
+<style>
+  .tl-card { background:#fff; border:1.5px solid var(--border-color); border-radius:14px; overflow:hidden; margin-top:1.5rem; }
+  .tl-head { display:flex; align-items:center; gap:.6rem; padding:.9rem 1.25rem; border-bottom:1px solid var(--border-color); }
+  .tl-head-title { font-size:.9rem; font-weight:700; color:var(--text-primary); }
+  .tl-wrap { padding:1.1rem 1.25rem; }
+  .tl-item { display:flex; gap:.85rem; position:relative; padding-bottom:1.25rem; }
+  .tl-item:last-child { padding-bottom:0; }
+  .tl-item:not(:last-child)::before {
+    content:''; position:absolute;
+    left:11px; top:24px; bottom:0;
+    width:2px; background:#f1f5f9;
+  }
+  [dir="rtl"] .tl-item:not(:last-child)::before { left:auto; right:11px; }
+  .tl-dot {
+    width:24px; height:24px; border-radius:50%;
+    flex-shrink:0; margin-top:1px;
+  }
+  .tl-dot-green   { background:#16a34a; }
+  .tl-dot-blue    { background:#2563eb; }
+  .tl-dot-amber   { background:#d97706; }
+  .tl-dot-teal    { background:#0d9488; }
+  .tl-dot-purple  { background:#7c3aed; }
+  .tl-dot-red     { background:#ef4444; }
+  .tl-dot-gray    { background:#94a3b8; }
+  .tl-body { flex:1; min-width:0; padding-top:2px; }
+  .tl-badge {
+    display:inline-block; padding:1px 8px; border-radius:10px;
+    font-size:.72rem; font-weight:600; margin-bottom:3px;
+  }
+  .tl-badge-green  { background:#dcfce7; color:#15803d; }
+  .tl-badge-blue   { background:#eff6ff; color:#1d4ed8; }
+  .tl-badge-amber  { background:#fef9c3; color:#92400e; }
+  .tl-badge-teal   { background:#ccfbf1; color:#0f766e; }
+  .tl-badge-purple { background:#ede9fe; color:#5b21b6; }
+  .tl-badge-red    { background:#fee2e2; color:#991b1b; }
+  .tl-badge-gray   { background:#f1f5f9; color:#475569; }
+  .tl-text { font-size:.85rem; color:var(--text-primary); line-height:1.4; }
+  .tl-meta { font-size:.72rem; color:var(--text-secondary); margin-top:3px; }
+  .tl-empty { text-align:center; padding:2.5rem 1rem; color:var(--text-secondary); font-size:.85rem; }
+</style>
+
+<div class="tl-card">
+  <div class="tl-head">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-secondary)">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+    <span class="tl-head-title">{{ _('Activity Timeline') }}</span>
+  </div>
+
+  {%- set _acts = activities | default([]) -%}
+  {% if _acts %}
+  <div class="tl-wrap">
+    {% for act in _acts %}
+    {%- if act.action == 'created' -%}
+      {%- set dot_cls = 'tl-dot-green' -%}{%- set badge_cls = 'tl-badge-green' -%}{%- set label = _('Created') -%}
+    {%- elif act.action == 'updated' -%}
+      {%- set dot_cls = 'tl-dot-blue' -%}{%- set badge_cls = 'tl-badge-blue' -%}{%- set label = _('Updated') -%}
+    {%- elif act.action == 'status_changed' -%}
+      {%- set dot_cls = 'tl-dot-amber' -%}{%- set badge_cls = 'tl-badge-amber' -%}{%- set label = _('Status Changed') -%}
+    {%- elif act.action == 'follow_up_added' -%}
+      {%- set dot_cls = 'tl-dot-teal' -%}{%- set badge_cls = 'tl-badge-teal' -%}{%- set label = _('Follow-up') -%}
+    {%- elif act.action == 'contact_linked' -%}
+      {%- set dot_cls = 'tl-dot-purple' -%}{%- set badge_cls = 'tl-badge-purple' -%}{%- set label = _('Contact Added') -%}
+    {%- elif act.action == 'contact_unlinked' -%}
+      {%- set dot_cls = 'tl-dot-red' -%}{%- set badge_cls = 'tl-badge-red' -%}{%- set label = _('Contact Removed') -%}
+    {%- else -%}
+      {%- set dot_cls = 'tl-dot-gray' -%}{%- set badge_cls = 'tl-badge-gray' -%}{%- set label = act.action -%}
+    {%- endif -%}
+    <div class="tl-item">
+      <div class="tl-dot {{ dot_cls }}"></div>
+      <div class="tl-body">
+        <span class="tl-badge {{ badge_cls }}">{{ label }}</span>
+        {% if act.details %}
+        <div class="tl-text">{{ act.details }}</div>
+        {% endif %}
+        <div class="tl-meta">{{ act.actor_name or '—' }} · {{ act.ts }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="tl-empty">{{ _('No activity recorded yet.') }}</div>
+  {%- endif -%}
+</div>

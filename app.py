@@ -30,6 +30,8 @@ from routes.profile import profile_bp
 from routes.superadmin import superadmin_bp
 from routes.companies import companies_bp
 from routes.projects import projects_bp
+from routes.settings_config import settings_config_bp
+from routes.activities import activities_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -98,6 +100,8 @@ app.register_blueprint(profile_bp)
 app.register_blueprint(superadmin_bp)
 app.register_blueprint(companies_bp)
 app.register_blueprint(projects_bp)
+app.register_blueprint(settings_config_bp)
+app.register_blueprint(activities_bp)
 
 def _ensure_schema():
     """Safe migration: create/alter all missing tables and columns."""
@@ -206,6 +210,80 @@ def _ensure_schema():
             conn.execute("ALTER TABLE customers ADD COLUMN company_id INTEGER REFERENCES companies(id)")
         except Exception:
             pass
+
+        # add city to companies if missing
+        try:
+            conn.execute("ALTER TABLE companies ADD COLUMN city TEXT")
+        except Exception:
+            pass
+
+        # activities table — append-only audit / timeline feed
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS activities (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id   INTEGER NOT NULL,
+                entity_type TEXT    NOT NULL,
+                entity_id   INTEGER NOT NULL,
+                action      TEXT    NOT NULL,
+                actor_name  TEXT,
+                details     TEXT,
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+        try:
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activities_entity "
+                "ON activities(tenant_id, entity_type, entity_id)"
+            )
+        except Exception:
+            pass
+
+        # config_options table — tenant-scoped dropdown values
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS config_options (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id     INTEGER NOT NULL REFERENCES tenants(id),
+                category      TEXT    NOT NULL,
+                value         TEXT    NOT NULL,
+                label_ar      TEXT,
+                display_order INTEGER DEFAULT 0,
+                is_active     INTEGER DEFAULT 1,
+                is_system     INTEGER DEFAULT 0,
+                created_at    DATETIME DEFAULT (datetime('now')),
+                UNIQUE(tenant_id, category, value)
+            )
+        """)
+
+        # Seed default config options for every tenant that has none yet
+        _DEFAULT_CONFIG = {
+            'lead_source':    [('Facebook', 'فيسبوك'), ('Instagram', 'إنستجرام'), ('Referral', 'توصية'), ('Website', 'الموقع'), ('Walk-in', 'زيارة مباشرة'), ('Other', 'أخرى')],
+            'city':           [('Cairo', 'القاهرة'), ('Alexandria', 'الإسكندرية'), ('Giza', 'الجيزة'), ('Other', 'أخرى')],
+            'job_title':      [('Manager', 'مدير'), ('Engineer', 'مهندس'), ('Director', 'مدير تنفيذي'), ('Owner', 'صاحب العمل'), ('Other', 'أخرى')],
+            'industry':       [('Technology', 'تكنولوجيا'), ('Healthcare', 'رعاية صحية'), ('Real Estate', 'عقارات'), ('Retail', 'بيع بالتجزئة'), ('Education', 'تعليم'), ('Other', 'أخرى')],
+            'contact_method': [('Call', 'اتصال'), ('WhatsApp', 'واتساب'), ('Visit', 'زيارة'), ('Email', 'بريد إلكتروني'), ('Meeting', 'اجتماع')],
+            'sales_stage':    [('New', 'جديد'), ('Contacted', 'تم التواصل'), ('Interested', 'مهتم'), ('Proposal', 'عرض سعر'), ('Negotiation', 'تفاوض'), ('Won', 'تم البيع'), ('Lost', 'خسرنا')],
+            'next_action':    [('Call Back', 'معاودة الاتصال'), ('Send Proposal', 'إرسال عرض'), ('Schedule Visit', 'جدولة زيارة'), ('Follow Up', 'متابعة'), ('Close Deal', 'إغلاق الصفقة')],
+            'activity_type':  [('Call', 'اتصال'), ('Meeting', 'اجتماع'), ('Email', 'بريد'), ('Demo', 'عرض تجريبي'), ('Other', 'أخرى')],
+            'project_status': [('New', 'جديد'), ('Active', 'نشط'), ('On Hold', 'متوقف'), ('Done', 'منتهي'), ('Cancelled', 'ملغي')],
+        }
+
+        tenants_list = conn.execute("SELECT id FROM tenants").fetchall()
+        for t in tenants_list:
+            tid = t['id']
+            for category, options in _DEFAULT_CONFIG.items():
+                existing_count = conn.execute(
+                    "SELECT COUNT(*) FROM config_options WHERE tenant_id = ? AND category = ?",
+                    (tid, category)
+                ).fetchone()[0]
+                if existing_count == 0:
+                    for idx, (val, ar) in enumerate(options):
+                        try:
+                            conn.execute(
+                                "INSERT INTO config_options (tenant_id, category, value, label_ar, display_order, is_system) VALUES (?, ?, ?, ?, ?, 1)",
+                                (tid, category, val, ar, idx)
+                            )
+                        except Exception:
+                            pass
 
         # Seed default superadmin if none exists
         existing = conn.execute("SELECT COUNT(*) FROM superadmins").fetchone()[0]

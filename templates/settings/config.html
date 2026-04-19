@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Field Settings') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  /* ── Layout ─────────────────────────────────────────────── */
+  .config-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .config-layout { grid-template-columns: 1fr; } }
+
+  .page-title { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; }
+
+  /* ── Category Sidebar ───────────────────────────────────── */
+  .cat-sidebar {
+    background: #fff;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .cat-sidebar-header {
+    padding: 0.85rem 1rem;
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--text-secondary); text-transform: uppercase; letter-spacing: .06em;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .cat-item {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none; color: var(--text-primary);
+    font-size: 0.875rem; font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .15s;
+  }
+  .cat-item:last-child { border-bottom: none; }
+  .cat-item:hover { background: #f8fafc; }
+  .cat-item.active { background: #eff6ff; color: var(--primary-color); font-weight: 600; }
+  .cat-item .cat-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f1f5f9; flex-shrink: 0;
+  }
+  .cat-item.active .cat-icon { background: #dbeafe; }
+  .cat-badge {
+    margin-inline-start: auto;
+    font-size: 0.72rem; background: #e2e8f0; color: #64748b;
+    padding: 1px 7px; border-radius: 20px;
+  }
+  .cat-item.active .cat-badge { background: #bfdbfe; color: #2563eb; }
+
+  /* ── Main panel ─────────────────────────────────────────── */
+  .main-panel {}
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  .panel-title {
+    font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+  }
+  .panel-subtitle { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Add form */
+  .add-form {
+    background: #fff; border: 1.5px solid var(--border-color); border-radius: 12px;
+    padding: 1.25rem; margin-bottom: 1.25rem;
+  }
+  .add-form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+  @media (max-width: 600px) { .add-form-grid { grid-template-columns: 1fr; } }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+  .form-group label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .form-group input {
+    padding: 0.6rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: 8px;
+    font-size: 0.875rem; font-family: inherit; background: #fafafa; transition: border-color .2s;
+  }
+  .form-group input:focus { outline: none; border-color: var(--primary-color); background: #fff; }
+
+  /* Options list */
+  .options-card {
+    background: #fff; border: 1.5px solid var(--border-color); border-radius: 12px; overflow: hidden;
+  }
+  .option-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.85rem 1rem; border-bottom: 1px solid #f1f5f9;
+    transition: background .15s;
+  }
+  .option-row:last-child { border-bottom: none; }
+  .option-row:hover { background: #fafafa; }
+  .option-row.inactive { opacity: 0.5; }
+
+  .drag-handle {
+    cursor: grab; color: #cbd5e1; flex-shrink: 0; touch-action: none;
+  }
+  .drag-handle:active { cursor: grabbing; }
+
+  .option-num {
+    width: 22px; height: 22px; border-radius: 50%; background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); flex-shrink: 0;
+  }
+
+  .option-names { flex: 1; min-width: 0; }
+  .option-value { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+  .option-ar { font-size: 0.8rem; color: var(--text-secondary); direction: rtl; }
+
+  .system-chip {
+    font-size: 0.7rem; background: #fef9c3; color: #a16207;
+    padding: 1px 7px; border-radius: 20px; flex-shrink: 0;
+  }
+
+  .option-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.875rem;
+    font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: all .2s; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: #fff; color: var(--text-primary); border: 1.5px solid var(--border-color); }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); padding: 0.35rem 0.5rem; border-radius: 6px; border: none; }
+  .btn-ghost:hover { background: #f1f5f9; color: var(--text-primary); }
+  .btn-ghost-danger:hover { background: #fef2f2; color: #ef4444; }
+  .btn-toggle-on  { background: #dcfce7; color: #16a34a; border: none; border-radius: 6px; padding: 0.3rem 0.55rem; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
+  .btn-toggle-off { background: #f1f5f9; color: #94a3b8; border: none; border-radius: 6px; padding: 0.3rem 0.55rem; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+  /* Inline edit */
+  .inline-edit { display: none; padding: 0.75rem 1rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  .inline-edit.open { display: block; }
+  .inline-edit-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.6rem; align-items: end; }
+  @media (max-width: 600px) { .inline-edit-grid { grid-template-columns: 1fr; } }
+
+  /* Empty */
+  .empty-list { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+
+  /* Dragging */
+  .option-row.dragging { opacity: 0.4; background: #eff6ff; }
+  .option-row.drag-over { border-top: 2px solid var(--primary-color); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">{{ _('Field Settings') }}</h1>
+
+<div class="config-layout">
+
+  <!-- LEFT: category nav -->
+  <div class="cat-sidebar">
+    <div class="cat-sidebar-header">{{ _('Categories') }}</div>
+    {% for cat in categories %}
+    <a href="{{ url_for('settings_config.config_category', category=cat.key) }}"
+       class="cat-item {% if cat.key == active_cat.key %}active{% endif %}">
+      <div class="cat-icon">
+        {% if cat.icon == 'target' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        {% elif cat.icon == 'map-pin' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        {% elif cat.icon == 'briefcase' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        {% elif cat.icon == 'building' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        {% elif cat.icon == 'phone' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 12 18.92 19.5 19.5 0 0 1 4.36 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.27 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.62-.62a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        {% elif cat.icon == 'trending' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        {% elif cat.icon == 'zap' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        {% else %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        {% endif %}
+      </div>
+      <span>{{ _(cat.name_en) }}</span>
+      <span class="cat-badge">{{ options|length if cat.key == active_cat.key else '' }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- RIGHT: options panel -->
+  <div class="main-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">{{ _(active_cat.name_en) }}</div>
+        <div class="panel-subtitle">{{ active_cat.name_ar }}</div>
+      </div>
+    </div>
+
+    <!-- Add new option -->
+    <div class="add-form">
+      <form method="POST" action="{{ url_for('settings_config.add_option', category=active_cat.key) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="add-form-grid">
+          <div class="form-group">
+            <label>{{ _('Value (English)') }}</label>
+            <input type="text" name="value" placeholder="e.g. Facebook" required>
+          </div>
+          <div class="form-group">
+            <label>{{ _('Arabic Label') }}</label>
+            <input type="text" name="label_ar" placeholder="مثال: فيسبوك" dir="auto">
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {{ _('Add') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Options list -->
+    <div class="options-card" id="optionsList">
+      {% for opt in options %}
+      <div class="option-row {% if not opt.is_active %}inactive{% endif %}"
+           data-id="{{ opt.id }}" draggable="true">
+        <div class="drag-handle" title="{{ _('Drag to reorder') }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </div>
+        <div class="option-num">{{ loop.index }}</div>
+        <div class="option-names">
+          <div class="option-value">{{ opt.value }}</div>
+          {% if opt.label_ar %}<div class="option-ar">{{ opt.label_ar }}</div>{% endif %}
+        </div>
+        {% if opt.is_system %}<span class="system-chip">{{ _('default') }}</span>{% endif %}
+        <div class="option-actions">
+          <button class="btn-toggle-{{ 'on' if opt.is_active else 'off' }}"
+                  onclick="toggleOption({{ opt.id }}, this)"
+                  title="{{ _('Toggle active') }}">
+            {{ _('ON') if opt.is_active else _('OFF') }}
+          </button>
+          {% if not opt.is_system %}
+          <button class="btn btn-ghost btn-sm" onclick="openEdit({{ opt.id }})" title="{{ _('Edit') }}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-ghost-danger btn-sm" onclick="deleteOption({{ opt.id }}, '{{ opt.value|e }}')" title="{{ _('Delete') }}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      <!-- Inline edit form -->
+      <div class="inline-edit" id="edit-{{ opt.id }}">
+        <form method="POST" action="{{ url_for('settings_config.edit_option', category=active_cat.key, option_id=opt.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="inline-edit-grid">
+            <div class="form-group">
+              <label>{{ _('Value (English)') }}</label>
+              <input type="text" name="value" value="{{ opt.value }}" required>
+            </div>
+            <div class="form-group">
+              <label>{{ _('Arabic Label') }}</label>
+              <input type="text" name="label_ar" value="{{ opt.label_ar or '' }}" dir="auto">
+            </div>
+            <div style="display:flex;gap:.4rem">
+              <button type="submit" class="btn btn-primary btn-sm">{{ _('Save') }}</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="closeEdit({{ opt.id }})">{{ _('Cancel') }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {% else %}
+      <div class="empty-list">{{ _('No options yet. Add one above.') }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+const CATEGORY = '{{ active_cat.key }}';
+
+function openEdit(id)  { closeAllEdits(); document.getElementById('edit-' + id).classList.add('open'); }
+function closeEdit(id) { document.getElementById('edit-' + id).classList.remove('open'); }
+function closeAllEdits() { document.querySelectorAll('.inline-edit.open').forEach(el => el.classList.remove('open')); }
+
+function toggleOption(id, btn) {
+  fetch(`/settings/config/${CATEGORY}/${id}/toggle`, {
+    method: 'POST', headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const row = btn.closest('.option-row');
+      row.classList.toggle('inactive', !data.is_active);
+      btn.className = data.is_active ? 'btn-toggle-on' : 'btn-toggle-off';
+      btn.textContent = data.is_active ? 'ON' : 'OFF';
+    }
+  });
+}
+
+function deleteOption(id, name) {
+  if (!confirm('Delete "' + name + '"?')) return;
+  fetch(`/settings/config/${CATEGORY}/${id}/delete`, {
+    method: 'POST', headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(r => r.json())
+  .then(data => { if (data.success) location.reload(); else alert(data.message || 'Error'); });
+}
+
+// ── Drag-to-reorder ─────────────────────────────────────
+let dragEl = null;
+
+document.querySelectorAll('.option-row[draggable]').forEach(row => {
+  row.addEventListener('dragstart', e => {
+    dragEl = row;
+    setTimeout(() => row.classList.add('dragging'), 0);
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    document.querySelectorAll('.option-row').forEach(r => r.classList.remove('drag-over'));
+    saveOrder();
+  });
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (dragEl && dragEl !== row) {
+      document.querySelectorAll('.option-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+      const list = document.getElementById('optionsList');
+      const rows = [...list.querySelectorAll('.option-row')];
+      const idx = rows.indexOf(row);
+      const dragIdx = rows.indexOf(dragEl);
+      if (dragIdx < idx) {
+        row.after(dragEl);
+      } else {
+        row.before(dragEl);
+      }
+      // also move the associated inline-edit
+      const editEl = document.getElementById('edit-' + dragEl.dataset.id);
+      if (editEl) dragEl.after(editEl);
+    }
+  });
+});
+
+function saveOrder() {
+  const ids = [...document.querySelectorAll('#optionsList .option-row')].map(r => parseInt(r.dataset.id));
+  fetch(`/settings/config/${CATEGORY}/reorder`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+    body: JSON.stringify(ids)
+  });
+}
+</script>
+{% endblock %}

@@ -85,10 +85,12 @@
       <div class="form-group">
         <label>{{ _('Status') }}</label>
         <select name="status">
-          <option value="new" {% if not project or project.status == 'new' %}selected{% endif %}>{{ _('New') }}</option>
-          <option value="active" {% if project and project.status == 'active' %}selected{% endif %}>{{ _('Active') }}</option>
-          <option value="hold" {% if project and project.status == 'hold' %}selected{% endif %}>{{ _('On Hold') }}</option>
-          <option value="done" {% if project and project.status == 'done' %}selected{% endif %}>{{ _('Done') }}</option>
+          <option value="">-- {{ _('Select') }} --</option>
+          {% for opt in config.project_status %}
+          <option value="{{ opt.value }}" {% if project and project.status == opt.value %}selected{% elif not project and opt.value == 'New' %}selected{% endif %}>
+            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+          </option>
+          {% endfor %}
         </select>
       </div>
       <div class="form-group">
