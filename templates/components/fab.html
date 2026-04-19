@@ -16,58 +16,348 @@
 
 {# Floating Action Button — mobile only #}
 <div class="fab-container" id="fabContainer">
-
-  {# Speed-dial actions (shown above FAB when open) #}
   <div class="fab-actions">
-
-    <button class="fab-action" onclick="openQuickAdd()">
-      <span class="fab-action-label">{{ _('Add Customer') }}</span>
+    <button class="fab-action" onclick="openQuickCreate('contact')">
+      <span class="fab-action-label">{{ _('Add Contact') }}</span>
       <div class="fab-action-btn color-blue">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
       </div>
     </button>
-
-    <a href="{{ url_for('customers.add_customer') }}" class="fab-action">
-      <span class="fab-action-label">{{ _('Full Customer Form') }}</span>
+    <button class="fab-action" onclick="openQuickCreate('company')">
+      <span class="fab-action-label">{{ _('Add Company') }}</span>
       <div class="fab-action-btn color-green">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
-    </a>
-
+    </button>
+    <button class="fab-action" onclick="openQuickCreate('project')">
+      <span class="fab-action-label">{{ _('Add Project') }}</span>
+      <div class="fab-action-btn color-purple">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
+    </button>
     <a href="/quotations/new" class="fab-action">
       <span class="fab-action-label">{{ _('New Quotation') }}</span>
-      <div class="fab-action-btn color-purple">
+      <div class="fab-action-btn" style="background:#f59e0b">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
       </div>
     </a>
-
   </div>
-
-  {# Main FAB button #}
   <button class="fab-main" id="fabMain" aria-label="{{ _('Quick actions') }}">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
-
 </div>
 
-{# Quick-add customer modal #}
-<div class="quick-modal-overlay" id="quickAddOverlay">
-  <div class="quick-modal" role="dialog" aria-modal="true" aria-label="{{ _('Add Customer') }}">
-    <div class="quick-modal-title">
-      <span>⚡ {{ _('Quick Add Customer') }}</span>
-      <button class="quick-modal-close" id="quickAddClose" aria-label="{{ _('Close') }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+{# ── Quick Create Drawer ── #}
+<style>
+.qc-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 900; backdrop-filter: blur(2px);
+}
+.qc-overlay.open { display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) {
+  .qc-overlay.open { align-items: center; justify-content: flex-end; }
+}
+
+.qc-drawer {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,.18);
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+@media (min-width: 640px) {
+  .qc-drawer {
+    border-radius: 16px 0 0 16px;
+    width: 400px; max-width: 95vw;
+    max-height: 100vh;
+    transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+  }
+}
+.qc-overlay.open .qc-drawer { transform: none; }
+
+.qc-handle {
+  width: 40px; height: 4px; background: #e2e8f0; border-radius: 99px;
+  margin: 12px auto 0;
+}
+@media (min-width:640px) { .qc-handle { display: none; } }
+
+.qc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem 0;
+}
+.qc-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+.qc-close {
+  background: #f1f5f9; border: none; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: #64748b;
+  transition: background .15s;
+}
+.qc-close:hover { background: #e2e8f0; }
+
+.qc-tabs {
+  display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;
+  margin: 0.85rem 1.25rem 0; padding-bottom: 0;
+}
+.qc-tab {
+  flex: 1; padding: 0.6rem 0; border: none; background: none;
+  font-size: 0.82rem; font-weight: 500; color: #64748b; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .15s; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+}
+.qc-tab.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+
+.qc-body { padding: 1.25rem; flex: 1; }
+.qc-pane { display: none; }
+.qc-pane.active { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.qc-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.qc-label {
+  font-size: 0.78rem; font-weight: 600; color: #64748b;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.qc-input, .qc-select {
+  padding: 0.65rem 0.85rem; border: 1.5px solid #e2e8f0; border-radius: 9px;
+  font-size: 0.9rem; font-family: inherit; background: #fafafa;
+  transition: border-color .2s, box-shadow .2s; width: 100%;
+}
+.qc-input:focus, .qc-select:focus {
+  outline: none; border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
+}
+
+.qc-submit {
+  padding: 0.75rem; background: #2563eb; color: #fff;
+  border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background .15s;
+  width: 100%; margin-top: 0.25rem;
+}
+.qc-submit:hover { background: #1d4ed8; }
+.qc-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+.qc-success {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: center; padding: 2rem; gap: 0.75rem; text-align: center;
+}
+.qc-success-icon {
+  width: 56px; height: 56px; border-radius: 50%; background: #dcfce7;
+  display: flex; align-items: center; justify-content: center;
+}
+.qc-success-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+.qc-success-sub { font-size: 0.875rem; color: #64748b; }
+.qc-success-link { color: #2563eb; text-decoration: none; font-size: 0.875rem; }
+.qc-success-link:hover { text-decoration: underline; }
+
+.qc-err {
+  background: #fef2f2; color: #dc2626; border-radius: 8px;
+  padding: 0.6rem 0.85rem; font-size: 0.85rem; display: none;
+}
+</style>
+
+<div class="qc-overlay" id="qcOverlay" onclick="closeQC(event)">
+  <div class="qc-drawer" id="qcDrawer">
+    <div class="qc-handle"></div>
+    <div class="qc-header">
+      <span class="qc-title">⚡ {{ _('Quick Create') }}</span>
+      <button class="qc-close" onclick="closeQuickCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form id="quickAddForm" novalidate>
-      <input class="qm-input" id="qaName"  type="text"  name="name"
-             placeholder="{{ _('Company / Customer name *') }}" required autocomplete="off">
-      <input class="qm-input" id="qaPhone" type="tel"   name="phone"
-             placeholder="{{ _('Phone number') }}" autocomplete="tel">
-      <button class="qm-submit" id="quickAddSubmit" type="submit"
-              data-label="{{ _('Save Customer') }}">
-        {{ _('Save Customer') }}
+
+    <div class="qc-tabs">
+      <button class="qc-tab" id="tab-contact" onclick="switchQCTab('contact')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        {{ _('Contact') }}
       </button>
-    </form>
+      <button class="qc-tab" id="tab-company" onclick="switchQCTab('company')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        {{ _('Company') }}
+      </button>
+      <button class="qc-tab" id="tab-project" onclick="switchQCTab('project')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        {{ _('Project') }}
+      </button>
+    </div>
+
+    <div class="qc-body">
+
+      {# ── Contact pane ── #}
+      <div class="qc-pane" id="pane-contact">
+        <div id="qc-err-contact" class="qc-err"></div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Name') }} *</label>
+          <input class="qc-input" id="qc-c-name" type="text" placeholder="e.g. Ahmed Hassan" autocomplete="off">
+        </div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Phone') }}</label>
+          <input class="qc-input" id="qc-c-phone" type="tel" placeholder="+20 100 000 0000">
+        </div>
+        <button class="qc-submit" onclick="submitQC('contact')">{{ _('Save Contact') }}</button>
+        <div class="qc-success" id="qc-ok-contact">
+          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qc-success-title">{{ _('Contact saved!') }}</div>
+          <div class="qc-success-sub" id="qc-ok-contact-name"></div>
+          <a href="#" class="qc-success-link" id="qc-ok-contact-link">{{ _('View contact →') }}</a>
+        </div>
+      </div>
+
+      {# ── Company pane ── #}
+      <div class="qc-pane" id="pane-company">
+        <div id="qc-err-company" class="qc-err"></div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Company Name') }} *</label>
+          <input class="qc-input" id="qc-co-name" type="text" placeholder="e.g. TechCorp Ltd" autocomplete="off">
+        </div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Phone') }}</label>
+          <input class="qc-input" id="qc-co-phone" type="tel" placeholder="+20 100 000 0000">
+        </div>
+        <button class="qc-submit" onclick="submitQC('company')">{{ _('Save Company') }}</button>
+        <div class="qc-success" id="qc-ok-company">
+          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qc-success-title">{{ _('Company saved!') }}</div>
+          <div class="qc-success-sub" id="qc-ok-company-name"></div>
+          <a href="#" class="qc-success-link" id="qc-ok-company-link">{{ _('View company →') }}</a>
+        </div>
+      </div>
+
+      {# ── Project pane ── #}
+      <div class="qc-pane" id="pane-project">
+        <div id="qc-err-project" class="qc-err"></div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Project Name') }} *</label>
+          <input class="qc-input" id="qc-p-name" type="text" placeholder="e.g. Website Redesign" autocomplete="off">
+        </div>
+        <div class="qc-field">
+          <label class="qc-label">{{ _('Status') }}</label>
+          <select class="qc-select" id="qc-p-status">
+            <option value="New">{{ _('New') }}</option>
+            <option value="Active">{{ _('Active') }}</option>
+            <option value="On Hold">{{ _('On Hold') }}</option>
+          </select>
+        </div>
+        <button class="qc-submit" onclick="submitQC('project')">{{ _('Save Project') }}</button>
+        <div class="qc-success" id="qc-ok-project">
+          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qc-success-title">{{ _('Project saved!') }}</div>
+          <div class="qc-success-sub" id="qc-ok-project-name"></div>
+          <a href="#" class="qc-success-link" id="qc-ok-project-link">{{ _('View project →') }}</a>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
+
+{# Keep old modal overlay for backward compat (used by sidebar JS openQuickAdd) #}
+<div class="quick-modal-overlay" id="quickAddOverlay" style="display:none"></div>
+
+<script>
+const _QC_CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+let _qcActiveTab = 'contact';
+
+function openQuickCreate(tab) {
+  tab = tab || 'contact';
+  document.getElementById('qcOverlay').classList.add('open');
+  switchQCTab(tab);
+  // close FAB
+  document.getElementById('fabContainer')?.classList.remove('open');
+}
+// Keep legacy name working
+function openQuickAdd() { openQuickCreate('contact'); }
+
+function closeQuickCreate() {
+  document.getElementById('qcOverlay').classList.remove('open');
+}
+function closeQC(e) {
+  if (e.target === document.getElementById('qcOverlay')) closeQuickCreate();
+}
+
+function switchQCTab(tab) {
+  _qcActiveTab = tab;
+  document.querySelectorAll('.qc-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.qc-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  document.getElementById('pane-' + tab)?.classList.add('active');
+}
+
+function _showErr(tab, msg) {
+  const el = document.getElementById('qc-err-' + tab);
+  if (!el) return;
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+function _showSuccess(tab, name, link) {
+  document.getElementById('qc-ok-' + tab).style.display = 'flex';
+  document.getElementById('qc-ok-' + tab + '-name').textContent = name;
+  document.getElementById('qc-ok-' + tab + '-link').href = link;
+  setTimeout(() => {
+    document.getElementById('qc-ok-' + tab).style.display = 'none';
+  }, 5000);
+}
+function _clearForm(tab) {
+  document.querySelectorAll(`#pane-${tab} .qc-input`).forEach(i => i.value = '');
+}
+
+function submitQC(tab) {
+  let url, body, nameVal;
+  if (tab === 'contact') {
+    nameVal = document.getElementById('qc-c-name').value.trim();
+    const phone = document.getElementById('qc-c-phone').value.trim();
+    if (!nameVal) { _showErr(tab, '{{ _("Name is required") }}'); return; }
+    url  = '/customers/quick-add';
+    body = { name: nameVal, phone };
+  } else if (tab === 'company') {
+    nameVal = document.getElementById('qc-co-name').value.trim();
+    const phone = document.getElementById('qc-co-phone').value.trim();
+    if (!nameVal) { _showErr(tab, '{{ _("Company name is required") }}'); return; }
+    url  = '/companies/quick-add';
+    body = { name: nameVal, phone };
+  } else {
+    nameVal = document.getElementById('qc-p-name').value.trim();
+    const status = document.getElementById('qc-p-status').value;
+    if (!nameVal) { _showErr(tab, '{{ _("Project name is required") }}'); return; }
+    url  = '/projects/quick-add';
+    body = { name: nameVal, status };
+  }
+
+  const btn = document.querySelector(`#pane-${tab} .qc-submit`);
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': _QC_CSRF, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.textContent = btn.getAttribute('data-label') || btn.textContent.replace('...','Save');
+    if (data.error) { _showErr(tab, data.error); return; }
+    _clearForm(tab);
+    let link = '#';
+    if (tab === 'contact')  link = '/customers/' + data.customer_id;
+    if (tab === 'company')  link = '/companies/' + data.company_id;
+    if (tab === 'project')  link = '/projects/' + data.project_id;
+    _showSuccess(tab, nameVal, link);
+  })
+  .catch(() => {
+    btn.disabled = false;
+    _showErr(tab, '{{ _("Something went wrong") }}');
+  });
+}
+
+// Allow Enter key submission
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('qcOverlay').classList.contains('open')) {
+    const pane = document.getElementById('pane-' + _qcActiveTab);
+    if (pane && !e.target.classList.contains('qc-select')) submitQC(_qcActiveTab);
+  }
+});
+</script>

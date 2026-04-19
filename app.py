@@ -31,6 +31,7 @@ from routes.superadmin import superadmin_bp
 from routes.companies import companies_bp
 from routes.projects import projects_bp
 from routes.settings_config import settings_config_bp
+from routes.activities import activities_bp
 from security import init_security, bcrypt
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -100,6 +101,7 @@ app.register_blueprint(superadmin_bp)
 app.register_blueprint(companies_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(settings_config_bp)
+app.register_blueprint(activities_bp)
 
 def _ensure_schema():
     """Safe migration: create/alter all missing tables and columns."""
@@ -212,6 +214,27 @@ def _ensure_schema():
         # add city to companies if missing
         try:
             conn.execute("ALTER TABLE companies ADD COLUMN city TEXT")
+        except Exception:
+            pass
+
+        # activities table — append-only audit / timeline feed
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS activities (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id   INTEGER NOT NULL,
+                entity_type TEXT    NOT NULL,
+                entity_id   INTEGER NOT NULL,
+                action      TEXT    NOT NULL,
+                actor_name  TEXT,
+                details     TEXT,
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+        try:
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activities_entity "
+                "ON activities(tenant_id, entity_type, entity_id)"
+            )
         except Exception:
             pass
 

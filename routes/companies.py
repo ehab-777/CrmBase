@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
+from activity_logger import log_activity, get_activities
 
 companies_bp = Blueprint('companies', __name__, url_prefix='/companies')
 
@@ -79,11 +80,12 @@ def add_company():
         tenant_id = get_current_tenant_id()
         conn = get_db()
         try:
-            conn.execute("""
+            name = request.form.get('name', '').strip()
+            cur = conn.execute("""
                 INSERT INTO companies (name, industry, city, phone, email, address, website, tenant_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                request.form.get('name', '').strip(),
+                name,
                 request.form.get('industry', '').strip(),
                 request.form.get('city', '').strip(),
                 request.form.get('phone', '').strip(),
@@ -92,6 +94,8 @@ def add_company():
                 request.form.get('website', '').strip(),
                 tenant_id
             ))
+            log_activity(conn, tenant_id, 'company', cur.lastrowid, 'created',
+                         f'Company "{name}" created')
             conn.commit()
         finally:
             conn.close()
@@ -137,11 +141,14 @@ def company_detail(company_id):
             (company_id, tenant_id)
         ).fetchall()
 
+        activities = get_activities(conn, tenant_id, 'company', company_id)
+
     finally:
         conn.close()
 
     return render_template('companies/company_detail.html',
-                           company=company, contacts=contacts, projects=projects)
+                           company=company, contacts=contacts, projects=projects,
+                           activities=activities)
 
 
 @companies_bp.route('/<int:company_id>/edit', methods=['GET', 'POST'])
@@ -173,6 +180,8 @@ def edit_company(company_id):
                 request.form.get('website', '').strip(),
                 company_id, tenant_id
             ))
+            log_activity(conn, tenant_id, 'company', company_id, 'updated',
+                         'Company info updated')
             conn.commit()
             return redirect(url_for('companies.company_detail', company_id=company_id))
 
@@ -181,6 +190,34 @@ def edit_company(company_id):
 
     config = _get_config(conn, get_current_tenant_id(), ['industry', 'city'])
     return render_template('companies/company_form.html', company=company, config=config)
+
+
+@companies_bp.route('/quick-add', methods=['POST'])
+@require_tenant
+def quick_add():
+    if 'salesperson_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    data      = request.get_json(force=True, silent=True) or {}
+    name      = (data.get('name') or '').strip()
+    industry  = (data.get('industry') or '').strip()
+    phone     = (data.get('phone') or '').strip()
+    if not name:
+        return jsonify({'error': 'Company name is required'}), 400
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO companies (name, industry, phone, tenant_id) VALUES (?,?,?,?)",
+            (name, industry, phone, tenant_id)
+        )
+        conn.commit()
+        cid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({'company_id': cid, 'name': name}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @companies_bp.route('/<int:company_id>/delete', methods=['POST'])

@@ -195,6 +195,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('contacts', this)">{{ _('Contacts') }} ({{ contacts|length }})</button>
       <button class="tab-btn" onclick="switchTab('projects', this)">{{ _('Projects') }} ({{ projects|length }})</button>
+      <button class="tab-btn" onclick="switchTab('activity', this)">{{ _('Activity') }}</button>
     </div>
 
     <!-- Contacts tab -->
@@ -259,6 +260,11 @@
         </table>
       </div>
     </div>
+    <!-- Activity tab -->
+    <div id="tab-activity" class="tab-pane">
+      {% include "components/activity_timeline.html" %}
+    </div>
+
   </div>
 </div>
 
