@@ -236,12 +236,12 @@
           {% for c in all_contacts %}
           <div class="picker-opt"
                data-id="{{ c.customer_id }}"
-               data-name="{{ c.first_name }} {{ c.last_name or '' }}"
+               data-name="{{ c.contact_person or '' }}"
                data-sub="{{ c.company_name or '' }}"
-               data-phone="{{ c.phone or '' }}">
+               data-phone="{{ c.phone_number or '' }}">
             <div>
-              <div class="picker-opt-name">{{ c.first_name }} {{ c.last_name or '' }}</div>
-              <div class="picker-opt-sub">{{ c.company_name or '' }}{% if c.phone %} · {{ c.phone }}{% endif %}</div>
+              <div class="picker-opt-name">{{ c.contact_person or '—' }}</div>
+              <div class="picker-opt-sub">{{ c.company_name or '' }}{% if c.phone_number %} · {{ c.phone_number }}{% endif %}</div>
             </div>
             <button class="picker-add-btn" onclick="addContact({{ c.customer_id }}, event)">+ {{ _('Add') }}</button>
           </div>
@@ -255,14 +255,14 @@
       <div id="contactsList">
         {% for c in contacts %}
         <div class="contact-row" id="cr-{{ c.customer_id }}">
-          <div class="contact-avatar">{{ c.first_name[0]|upper }}</div>
+          <div class="contact-avatar">{{ (c.contact_person or '?')[0]|upper }}</div>
           <div class="contact-info">
             <div class="contact-name">
               <a href="{{ url_for('customers.customer_detail', customer_id=c.customer_id) }}" class="contact-link">
-                {{ c.first_name }} {{ c.last_name or '' }}
+                {{ c.contact_person or '—' }}
               </a>
             </div>
-            <div class="contact-sub">{{ c.company_name or '' }}{% if c.phone %} · {{ c.phone }}{% endif %}</div>
+            <div class="contact-sub">{{ c.company_name or '' }}{% if c.phone_number %} · {{ c.phone_number }}{% endif %}</div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="removeContact({{ c.customer_id }})" title="{{ _('Remove') }}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -319,9 +319,9 @@ function addContact(customerId, event) {
     if (opt) opt.remove();
     // Append to linked list
     const c = data.contact;
-    const initials = c.first_name ? c.first_name[0].toUpperCase() : '?';
-    const name = (c.first_name || '') + ' ' + (c.last_name || '');
-    const sub  = [c.company_name, c.phone].filter(Boolean).join(' · ');
+    const initials = c.contact_person ? c.contact_person[0].toUpperCase() : '?';
+    const name = c.contact_person || '—';
+    const sub  = [c.company_name, c.phone_number].filter(Boolean).join(' · ');
     document.getElementById('emptyMsg')?.remove();
     const row = document.createElement('div');
     row.className = 'contact-row';
