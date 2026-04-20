@@ -1,427 +1,404 @@
 {% extends "base.html" %}
-
-{% block title %}Customer Details{% endblock %}
+{% block title %}{{ customer.contact_person }}{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+  .page-header {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; flex-wrap: wrap;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .header-title { flex: 1; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px; }
+  .header-actions { display: flex; gap: 0.6rem; }
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.55rem 1rem; border-radius: 8px;
+    font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline {
+    background: #fff; color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+  }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
 
-    .page-title {
-        font-size: 1.875rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
+  /* Layout */
+  .detail-layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
 
-    .action-buttons {
-        display: flex;
-        gap: 0.75rem;
-    }
+  /* Info card */
+  .info-card {
+    background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden;
+  }
+  .info-card-head {
+    padding: 1.5rem; text-align: center;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .contact-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; font-weight: 700; color: #fff;
+    margin: 0 auto 0.75rem;
+  }
+  .contact-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+  .contact-company { font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px; }
 
-    .customer-info-section {
-        background-color: var(--card-background);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
+  .info-body { padding: 1rem 1.25rem; }
+  .info-row {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.65rem 0; border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row svg { flex-shrink: 0; color: var(--text-secondary); margin-top: 1px; }
+  .info-row-label { font-size: 0.75rem; color: var(--text-secondary); }
+  .info-row-val { color: var(--text-primary); font-weight: 500; word-break: break-word; }
+  .info-row-val a { color: var(--primary-color); text-decoration: none; }
+  .info-row-val a:hover { text-decoration: underline; }
 
-    .company-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
+  /* Stats + stage */
+  .stats-row {
+    display: flex; gap: 0.75rem; padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+  }
+  .stat-chip {
+    flex: 1; text-align: center; background: #f8fafc;
+    border-radius: 10px; padding: 0.65rem 0.5rem;
+  }
+  .stat-chip .num { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); }
+  .stat-chip .lbl { font-size: 0.73rem; color: var(--text-secondary); }
 
-    .company-name-container {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 1.25rem; }
+  .tab-btn {
+    padding: 0.65rem 1.1rem; font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    border: none; background: none; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s;
+  }
+  .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
 
-    .company-name {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 0;
-        line-height: 1.2;
-    }
+  /* Section card */
+  .section-card { background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; margin-bottom: 1rem; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+  }
+  .section-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
 
-    .potential-value {
-        font-size: 1.1rem;
-        color: #666;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+  /* Followup cards */
+  .followup-card {
+    border-bottom: 1px solid var(--border-color); padding: 1rem 1.25rem;
+  }
+  .followup-card:last-child { border-bottom: none; }
+  .followup-top {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
+  }
+  .followup-date { font-size: 0.8rem; color: var(--text-secondary); }
+  .followup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  @media (max-width: 600px) { .followup-grid { grid-template-columns: 1fr; } }
+  .followup-field { font-size: 0.8rem; }
+  .followup-label { color: var(--text-secondary); margin-bottom: 2px; }
+  .followup-value { color: var(--text-primary); font-weight: 500; }
+  .followup-notes {
+    margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-primary);
+    background: #f8fafc; border-radius: 6px; padding: 0.5rem 0.75rem;
+  }
+  .followup-footer { margin-top: 0.6rem; font-size: 0.75rem; color: var(--text-secondary); text-align: end; }
 
-    .potential-value .info-label {
-        font-weight: bold;
-        margin-left: 0.5rem;
-    }
+  /* Badge */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+  .badge-closewon { background: #dbeafe; color: #1e40af; }
+  .badge-closelost { background: #fee2e2; color: #991b1b; }
+  .badge-unknown { background: #f3f4f6; color: #4b5563; }
+  .stage-pill {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+    background: #e2e8f0; color: var(--text-secondary);
+  }
 
-    .potential-value .info-value {
-        color: #2c3e50;
-        font-weight: 500;
-    }
+  /* Projects table */
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; text-align: start; background: #f8fafc; }
+  td { padding: 0.8rem 1rem; font-size: 0.875rem; color: var(--text-primary); border-top: 1px solid var(--border-color); vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  td a { color: var(--primary-color); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+  .badge-new { background: #eff6ff; color: #2563eb; }
+  .badge-done { background: #f1f5f9; color: #64748b; }
+  .badge-hold { background: #fef9c3; color: #a16207; }
+  .empty-row td { text-align: center; color: var(--text-secondary); padding: 2rem; }
 
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-        border-top: 1px solid var(--border-color);
-        padding-top: 1.5rem;
-    }
+  /* Pagination */
+  .pagination { display: flex; gap: 0.3rem; justify-content: center; padding: 1rem; flex-wrap: wrap; }
+  .page-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; height: 32px; padding: 0 0.5rem;
+    border: 1.5px solid var(--border-color); border-radius: 6px;
+    font-size: 0.8rem; color: var(--text-primary); text-decoration: none; background: #fff;
+    transition: all .15s;
+  }
+  .page-link:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .page-link.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
-    .info-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .info-label {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .info-value {
-        color: var(--text-primary);
-        font-size: 1rem;
-    }
-
-    .stage-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        background-color: #e2e8f0;
-        color: var(--text-secondary);
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        margin-left: 0.5rem;
-    }
-
-    .status-active {
-        background-color: #dcfce7;
-        color: #166534;
-    }
-
-    .status-close-won {
-        background-color: #dbeafe;
-        color: #1e40af;
-    }
-
-    .status-close-lost {
-        background-color: #fee2e2;
-        color: #991b1b;
-    }
-
-    .status-unknown {
-        background-color: #f3f4f6;
-        color: #4b5563;
-    }
-
-    .followups-section {
-        background-color: var(--card-background);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .followup-card {
-        background-color: var(--background-color);
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--primary-color);
-        transition: transform 0.2s, box-shadow 0.2s;
-        position: relative;
-        min-height: 300px;
-    }
-
-    .followup-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .followup-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .followup-dates {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .followup-date {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-    }
-
-    .followup-created {
-        position: absolute;
-        bottom: 1rem;
-        inset-inline-end: 1rem;   /* right in LTR, left in RTL */
-        color: var(--text-secondary);
-        font-size: 0.75rem;
-        font-style: italic;
-        background-color: transparent;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        text-align: end;           /* aligns text to the correct edge */
-    }
-
-    .followup-content {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .followup-row {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .followup-label {
-        min-width: 120px;
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-    }
-
-    .followup-value {
-        color: var(--text-primary);
-        font-size: 0.875rem;
-    }
-
-    .section-footer {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
-    }
-
-    @media (max-width: 768px) {
-        .container {
-            padding: 1rem;
-        }
-
-        .header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .action-buttons {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .btn-link {
-        background: none;
-        border: none;
-        color: var(--primary-color);
-        font-weight: 600;
-        font-size: 1rem;
-        box-shadow: none;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-    .btn-link:hover {
-        color: #1d4ed8;
-        text-decoration: underline;
-        background: none;
-    }
+  /* Empty state */
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.875rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="welcome-header">
-        <h1>{{ _('Customer Details') }}</h1>
-        <div class="header-nav">
-            <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary">
-                <span>←</span> {{ _('Back to List') }}
-            </a>
+<div class="page-header">
+  <a href="{{ url_for('customers.customer_list') }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Customers') }}
+  </a>
+  <div class="header-title">
+    <h1 class="page-title">{{ customer.contact_person }}</h1>
+    {% if customer.company_name %}<p class="page-subtitle">{{ customer.company_name }}</p>{% endif %}
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('customers.edit_customer', customer_id=customer.customer_id) }}" class="btn btn-outline">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      {{ _('Edit') }}
+    </a>
+    <a href="{{ url_for('quotations.new_quotation', customer_id=customer.customer_id) }}" class="btn btn-primary">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      {{ _('Create Quotation') }}
+    </a>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <!-- LEFT: Info card -->
+  <div>
+    <div class="info-card">
+      <div class="info-card-head">
+        <div class="contact-avatar">{{ (customer.contact_person or '?')[0]|upper }}</div>
+        <div class="contact-name">{{ customer.contact_person }}</div>
+        {% if customer.contact_person_position %}
+          <div class="contact-company">{{ customer.contact_person_position }}</div>
+        {% endif %}
+      </div>
+      <div class="info-body">
+        {% if customer.company_name %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <div>
+            <div class="info-row-label">{{ _('Company') }}</div>
+            <div class="info-row-val">
+              {% if customer.company_id %}
+                <a href="{{ url_for('companies.company_detail', company_id=customer.company_id) }}">{{ customer.company_name }}</a>
+              {% else %}
+                {{ customer.company_name }}
+              {% endif %}
+            </div>
+          </div>
         </div>
+        {% endif %}
+        {% if customer.phone_number %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 12 18.92 19.5 19.5 0 0 1 4.36 12 19.79 19.79 0 0 1 1.27 3.18 2 2 0 0 1 3.27 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.62-.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <div><div class="info-row-label">{{ _('Phone') }}</div><div class="info-row-val">{{ customer.phone_number }}</div></div>
+        </div>
+        {% endif %}
+        {% if customer.email_address %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div><div class="info-row-label">{{ _('Email') }}</div><div class="info-row-val">{{ customer.email_address }}</div></div>
+        </div>
+        {% endif %}
+        {% if customer.company_industry %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <div><div class="info-row-label">{{ _('Industry') }}</div><div class="info-row-val">{{ customer.company_industry }}</div></div>
+        </div>
+        {% endif %}
+        {% if customer.salesperson_name %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div><div class="info-row-label">{{ _('Salesperson') }}</div><div class="info-row-val">{{ customer.salesperson_name }}</div></div>
+        </div>
+        {% endif %}
+        {% if customer.lead_source %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><div class="info-row-label">{{ _('Lead Source') }}</div><div class="info-row-val">{{ customer.lead_source }}</div></div>
+        </div>
+        {% endif %}
+        {% if customer.company_address %}
+        <div class="info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div><div class="info-row-label">{{ _('Address') }}</div><div class="info-row-val">{{ customer.company_address }}</div></div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip">
+          <div class="num">{{ followups|length }}</div>
+          <div class="lbl">{{ _('Follow-ups') }}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="num">{{ linked_projects|length }}</div>
+          <div class="lbl">{{ _('Projects') }}</div>
+        </div>
+      </div>
     </div>
 
-    <div class="customer-info-section">
-        <div class="company-header">
-            <div class="company-name-container">
-                <h1 class="company-name">{{ customer.company_name }}</h1>
-                <span class="stage-badge">{{ customer.current_sales_stage }}</span>
-            </div>
-            {% if customer.latest_potential_value %}
-            <div class="potential-value">
-                <span class="info-label">المبيعات المتوقعة:</span>
-                <span class="info-value">{{ "{:,.0f}".format(customer.latest_potential_value) }}</span>
-            </div>
-            {% endif %}
-        </div>
-        <div class="info-grid">
-            <div class="info-group">
-                <span class="info-label">{{ _('Contact Person') }}</span>
-                <span class="info-value">{{ customer.contact_person or _('N/A') }}</span>
-            </div>
-            <div class="info-group">
-                <span class="info-label">{{ _('Phone Number') }}</span>
-                <span class="info-value">{{ customer.phone_number or _('N/A') }}</span>
-            </div>
-            <div class="info-group">
-                <span class="info-label">{{ _('Industry') }}</span>
-                <span class="info-value">{{ customer.company_industry or _('N/A') }}</span>
-            </div>
-            <div class="info-group">
-                <span class="info-label">{{ _('Assigned Salesperson') }}</span>
-                <span class="info-value">{{ customer.salesperson_name or _('N/A') }}</span>
-            </div>
-            <div class="info-group">
-                <span class="info-label">{{ _('Initial Interest') }}</span>
-                <span class="info-value">{{ customer.initial_interest or _('N/A') }}</span>
-            </div>
-            <div class="info-group">
-                <span class="info-label">{{ _('Status') }}</span>
-                <span class="status-badge status-{{ customer.status|lower|replace(' ', '-') }}">{{ customer.status }}</span>
-            </div>
-        </div>
-        <div class="section-footer" style="display:flex;gap:.75rem;flex-wrap:wrap;">
-            <a href="{{ url_for('customers.edit_customer', customer_id=customer.customer_id) }}" class="btn btn-secondary">
-                {{ _('Edit Customer') }}
-            </a>
-            <a href="{{ url_for('quotations.new_quotation', customer_id=customer.customer_id) }}"
-               class="btn btn-primary">
-                📄 Create Quotation
-            </a>
-        </div>
+    <!-- Stage & value chip -->
+    {% if customer.current_sales_stage and customer.current_sales_stage != 'N/A' %}
+    <div style="margin-top:1rem; background:#fff; border:1.5px solid var(--border-color); border-radius:12px; padding:0.9rem 1.25rem;">
+      <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:4px;">{{ _('Sales Stage') }}</div>
+      <span class="stage-pill">{{ customer.current_sales_stage }}</span>
+      {% if customer.latest_potential_value %}
+      <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text-secondary);">{{ _('Expected Value') }}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--primary-color);">{{ "{:,.0f}".format(customer.latest_potential_value) }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: Tabs -->
+  <div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('followups', this)">{{ _('Follow-ups') }} ({{ followups|length }})</button>
+      <button class="tab-btn" onclick="switchTab('projects', this)">{{ _('Projects') }} ({{ linked_projects|length }})</button>
+      <button class="tab-btn" onclick="switchTab('activity', this)">{{ _('Activity') }}</button>
     </div>
 
-    <div class="followups-section">
+    <!-- Follow-ups tab -->
+    <div id="tab-followups" class="tab-pane active">
+      <div class="section-card">
         <div class="section-header">
-            <h2 class="section-title">{{ _('Follow-ups') }}</h2>
-            <a href="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}" class="btn-link">
-                {{ _('Add Follow-up') }}
-            </a>
+          <span class="section-title">{{ _('Follow-ups') }}</span>
+          <a href="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}" class="btn btn-primary btn-sm">+ {{ _('Add Follow-up') }}</a>
         </div>
 
         {% if followups %}
-            {% for followup in followups %}
-            <div class="followup-card">
-                <div class="followup-header">
-                    <div class="followup-dates">
-                        <span class="followup-date">{{ _('Contact Date:') }} {{ followup.last_contact_date }}</span>
-                    </div>
-                    <span class="stage-badge">{{ followup.current_sales_stage or 'N/A' }}</span>
-                </div>
-                <div class="followup-content">
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Contact Method:') }}</span>
-                        <span class="followup-value">{{ followup.last_contact_method or _('N/A') }}</span>
-                    </div>
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Summary:') }}</span>
-                        <span class="followup-value">{{ followup.summary_last_contact or _('N/A') }}</span>
-                    </div>
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Next Action:') }}</span>
-                        <span class="followup-value">{{ followup.next_action or _('N/A') }}</span>
-                    </div>
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Due Date:') }}</span>
-                        <span class="followup-value">{{ followup.next_action_due_date or _('N/A') }}</span>
-                    </div>
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Potential Value:') }}</span>
-                        <span class="followup-value">{{ followup.potential_deal_value or _('N/A') }}</span>
-                    </div>
-                    <div class="followup-row">
-                        <span class="followup-label">{{ _('Notes:') }}</span>
-                        <span class="followup-value">{{ followup.notes or _('N/A') }}</span>
-                    </div>
-                </div>
-                <div class="followup-created">
-                    <div style="font-size: 0.8em; color: var(--text-secondary); margin-bottom: 0.25rem;">
-                        {{ _('Created by') }}: {{ followup.salesperson_name or _('N/A') }}
-                    </div>
-                    {{ _('Created:') }} {{ followup.created_at }}
-                </div>
+          {% for followup in followups %}
+          <div class="followup-card">
+            <div class="followup-top">
+              <span class="followup-date">{{ _('Contact Date:') }} {{ followup.last_contact_date or '—' }}</span>
+              <span class="stage-pill">{{ followup.current_sales_stage or 'N/A' }}</span>
             </div>
+            <div class="followup-grid">
+              <div class="followup-field">
+                <div class="followup-label">{{ _('Contact Method') }}</div>
+                <div class="followup-value">{{ followup.last_contact_method or '—' }}</div>
+              </div>
+              <div class="followup-field">
+                <div class="followup-label">{{ _('Next Action') }}</div>
+                <div class="followup-value">{{ followup.next_action or '—' }}</div>
+              </div>
+              <div class="followup-field">
+                <div class="followup-label">{{ _('Due Date') }}</div>
+                <div class="followup-value">{{ followup.next_action_due_date or '—' }}</div>
+              </div>
+              <div class="followup-field">
+                <div class="followup-label">{{ _('Potential Value') }}</div>
+                <div class="followup-value">{{ followup.potential_deal_value or '—' }}</div>
+              </div>
+            </div>
+            {% if followup.summary_last_contact %}
+            <div class="followup-notes">{{ followup.summary_last_contact }}</div>
+            {% endif %}
+            {% if followup.notes %}
+            <div class="followup-notes" style="margin-top:0.4rem;border-left:3px solid var(--primary-color);">{{ followup.notes }}</div>
+            {% endif %}
+            <div class="followup-footer">
+              {{ _('Created by') }}: {{ followup.salesperson_name or '—' }} · {{ followup.created_at }}
+            </div>
+          </div>
+          {% endfor %}
+
+          {% if total_pages > 1 %}
+          <div class="pagination">
+            {% if page > 1 %}
+            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=page-1) }}" class="page-link">&laquo;</a>
+            {% endif %}
+            {% for p in range(1, total_pages + 1) %}
+            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=p) }}"
+               class="page-link {% if p == page %}active{% endif %}">{{ p }}</a>
             {% endfor %}
+            {% if page < total_pages %}
+            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=page+1) }}" class="page-link">&raquo;</a>
+            {% endif %}
+          </div>
+          {% endif %}
 
-            <div class="pagination">
-                {% if page > 1 %}
-                <li class="page-item">
-                    <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=page - 1) }}" class="page-link">&laquo;</a>
-                </li>
-                {% endif %}
-
-                {% for p in range(1, total_pages + 1) %}
-                <li class="page-item">
-                    <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=p) }}" 
-                       class="page-link {% if p == page %}active{% endif %}">
-                        {{ p }}
-                    </a>
-                </li>
-                {% endfor %}
-
-                {% if page < total_pages %}
-                <li class="page-item">
-                    <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id, page=page + 1) }}" class="page-link">&raquo;</a>
-                </li>
-                {% endif %}
-            </div>
         {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon">📋</div>
-                <h2>{{ _('No follow-ups yet') }}</h2>
-                <p>{{ _('Add your first follow-up to get started') }}</p>
-            </div>
+          <div class="empty-state">
+            <div style="font-size:2rem;margin-bottom:0.5rem">📋</div>
+            <div>{{ _('No follow-ups yet') }}</div>
+            <div style="margin-top:0.4rem;font-size:0.8rem">{{ _('Add your first follow-up to get started') }}</div>
+          </div>
         {% endif %}
+      </div>
     </div>
 
-    {% include "components/activity_timeline.html" %}
+    <!-- Projects tab -->
+    <div id="tab-projects" class="tab-pane">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">{{ _('Linked Projects') }}</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ _('Project') }}</th>
+              <th>{{ _('Company') }}</th>
+              <th>{{ _('Status') }}</th>
+              <th>{{ _('Value') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in linked_projects %}
+            <tr>
+              <td><a href="{{ url_for('projects.project_detail', project_id=p.id) }}">{{ p.name }}</a></td>
+              <td>
+                {% if p.company_id %}
+                  <a href="{{ url_for('companies.company_detail', company_id=p.company_id) }}">{{ p.company_name or '—' }}</a>
+                {% else %}
+                  {{ p.company_name or '—' }}
+                {% endif %}
+              </td>
+              <td><span class="badge badge-{{ p.status }}">{{ p.status|title }}</span></td>
+              <td>{{ p.value or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="4">{{ _('No projects linked to this contact.') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Activity tab -->
+    <div id="tab-activity" class="tab-pane">
+      {% include "components/activity_timeline.html" %}
+    </div>
+  </div>
 </div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
 {% endblock %}

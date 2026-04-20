@@ -215,8 +215,8 @@
           <tbody>
             {% for ct in contacts %}
             <tr>
-              <td><a href="{{ url_for('customers.customer_detail', customer_id=ct.customer_id) }}">{{ ct.first_name }} {{ ct.last_name or '' }}</a></td>
-              <td>{{ ct.phone or '—' }}</td>
+              <td><a href="{{ url_for('customers.customer_detail', customer_id=ct.customer_id) }}">{{ ct.contact_person }}</a></td>
+              <td>{{ ct.phone_number or '—' }}</td>
               <td>{{ ct.stage or '—' }}</td>
             </tr>
             {% else %}
