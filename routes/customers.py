@@ -359,13 +359,13 @@ def customer_detail(customer_id):
             cursor.execute("""
                 SELECT c.*, st.salesperson_name,
                     COALESCE(
-                        (SELECT sf.current_sales_stage 
-                         FROM sales_followup sf 
-                         WHERE sf.customer_id = c.customer_id 
+                        (SELECT sf.current_sales_stage
+                         FROM sales_followup sf
+                         WHERE sf.customer_id = c.customer_id
                          AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
+                         ORDER BY sf.created_at DESC, sf.followup_id DESC
                          LIMIT 1),
-                        'عميل محتمل'
+                        'N/A'
                     ) as current_sales_stage,
                     CASE 
                         WHEN (
@@ -451,12 +451,24 @@ def customer_detail(customer_id):
             total_followups = cursor.fetchone()[0]
             total_pages = (total_followups + per_page - 1) // per_page
 
+            # Get linked projects
+            cursor.execute("""
+                SELECT p.*, co.name as company_name
+                FROM projects p
+                JOIN project_contacts pc ON p.id = pc.project_id
+                LEFT JOIN companies co ON p.company_id = co.id
+                WHERE pc.customer_id = ? AND p.tenant_id = ?
+                ORDER BY p.created_at DESC
+            """, (customer_id, get_current_tenant_id()))
+            linked_projects = cursor.fetchall()
+
             activities = get_activities(conn, get_current_tenant_id(), 'customer', customer_id)
 
             conn.close()
             return render_template('customers/customer_detail.html',
                                 customer=customer,
                                 followups=followups,
+                                linked_projects=linked_projects,
                                 activities=activities,
                                 page=page,
                                 total_pages=total_pages,
@@ -466,9 +478,11 @@ def customer_detail(customer_id):
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             conn.close()
-            return render_template('customers/customer_detail.html', 
-                                customer=customer, 
-                                followups=followups, 
+            return render_template('customers/customer_detail.html',
+                                customer=customer,
+                                followups=followups,
+                                linked_projects=[],
+                                activities=[],
                                 is_admin=is_admin,
                                 page=page,
                                 total_pages=total_pages)
