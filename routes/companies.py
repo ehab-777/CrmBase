@@ -80,13 +80,15 @@ def add_company():
         tenant_id = get_current_tenant_id()
         conn = get_db()
         try:
+            from datetime import datetime
             name = request.form.get('name', '').strip()
+            industry = request.form.get('industry', '').strip()
             cur = conn.execute("""
                 INSERT INTO companies (name, industry, city, phone, email, address, website, tenant_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 name,
-                request.form.get('industry', '').strip(),
+                industry,
                 request.form.get('city', '').strip(),
                 request.form.get('phone', '').strip(),
                 request.form.get('email', '').strip(),
@@ -97,6 +99,7 @@ def add_company():
             new_company_id = cur.lastrowid
             log_activity(conn, tenant_id, 'company', new_company_id, 'created',
                          f'Company "{name}" created')
+
             # Auto-link any existing customers whose company_name matches
             conn.execute(
                 """UPDATE customers
@@ -105,14 +108,42 @@ def add_company():
                      AND (company_id IS NULL OR company_id = 0)""",
                 (new_company_id, name, tenant_id)
             )
+
+            # Auto-create contact if contact details were provided
+            contact_person = request.form.get('contact_person', '').strip()
+            contact_phone = request.form.get('contact_phone', '').strip()
+            if contact_person or contact_phone:
+                contact_cur = conn.execute("""
+                    INSERT INTO customers (
+                        company_name, company_industry, contact_person,
+                        contact_person_position, phone_number, email_address,
+                        company_address, date_added, assigned_salesperson_id,
+                        tenant_id, company_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    name,
+                    industry,
+                    contact_person,
+                    request.form.get('contact_position', '').strip(),
+                    contact_phone,
+                    request.form.get('contact_email', '').strip(),
+                    request.form.get('address', '').strip(),
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    session.get('salesperson_id'),
+                    tenant_id,
+                    new_company_id
+                ))
+                log_activity(conn, tenant_id, 'customer', contact_cur.lastrowid,
+                             'created', f'Contact auto-created from company "{name}"')
+
             conn.commit()
         finally:
             conn.close()
-        return redirect(url_for('companies.company_list'))
+        return redirect(url_for('companies.company_detail', company_id=new_company_id))
 
     conn2 = get_db()
     try:
-        config = _get_config(conn2, get_current_tenant_id(), ['industry', 'city'])
+        config = _get_config(conn2, get_current_tenant_id(), ['industry', 'city', 'job_title'])
     finally:
         conn2.close()
     return render_template('companies/company_form.html', company=None, config=config)

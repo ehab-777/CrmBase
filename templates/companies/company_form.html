@@ -17,9 +17,18 @@
 
   .form-card {
     background: #fff; border: 1.5px solid var(--border-color);
-    border-radius: 14px; padding: 2rem; max-width: 640px;
+    border-radius: 14px; padding: 2rem; max-width: 720px;
   }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+
+  .form-section { margin-bottom: 1.75rem; }
+  .form-section-title {
+    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .07em;
+    padding-bottom: 0.6rem; border-bottom: 1.5px solid var(--border-color);
+    margin-bottom: 1.1rem;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
   .form-full { grid-column: 1 / -1; }
 
   .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -27,6 +36,7 @@
     font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
     text-transform: uppercase; letter-spacing: .05em;
   }
+  .req { color: #ef4444; margin-inline-start: 2px; }
   .form-group input, .form-group select, .form-group textarea {
     padding: 0.65rem 0.9rem; border: 1.5px solid var(--border-color);
     border-radius: 8px; font-size: 0.9rem; font-family: inherit;
@@ -39,7 +49,23 @@
     outline: none; border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
   }
-  .form-group textarea { resize: vertical; min-height: 90px; }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* Contact toggle */
+  .contact-toggle-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; user-select: none;
+    margin-bottom: 1rem;
+  }
+  .contact-toggle-row input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--primary-color);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .contact-toggle-row span {
+    font-size: 0.875rem; font-weight: 500; color: var(--text-primary);
+  }
+  .contact-fields { display: none; }
+  .contact-fields.visible { display: block; }
 
   .form-actions {
     display: flex; gap: 0.75rem; margin-top: 1.75rem;
@@ -47,6 +73,8 @@
     justify-content: flex-end;
   }
   @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-card { padding: 1.25rem; }
     .form-actions { flex-direction: column-reverse; }
     .form-actions .btn { width: 100%; justify-content: center; }
   }
@@ -63,11 +91,6 @@
     border: 1.5px solid var(--border-color);
   }
   .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
-
-  @media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .form-card { padding: 1.25rem; }
-  }
 </style>
 {% endblock %}
 
@@ -83,57 +106,109 @@
 <div class="form-card">
   <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="form-grid">
-      <div class="form-group form-full">
-        <label>{{ _('Company Name') }} *</label>
-        <input type="text" name="name" value="{{ company.name if company else '' }}" required>
-      </div>
-      <div class="form-group">
-        <label>{{ _('Industry') }}</label>
-        <select name="industry">
-          <option value="">-- {{ _('Select') }} --</option>
-          {% for opt in config.industry %}
-          <option value="{{ opt.value }}" {% if company and company.industry == opt.value %}selected{% endif %}>
-            {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>{{ _('City') }}</label>
-        <select name="city">
-          <option value="">-- {{ _('Select') }} --</option>
-          {% for opt in config.city %}
-          <option value="{{ opt.value }}" {% if company and company.city == opt.value %}selected{% endif %}>
-            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>{{ _('Phone') }}</label>
-        <input type="tel" name="phone" value="{{ company.phone if company else '' }}">
-      </div>
-      <div class="form-group">
-        <label>{{ _('Email') }}</label>
-        <input type="email" name="email" value="{{ company.email if company else '' }}">
-      </div>
-      <div class="form-group">
-        <label>{{ _('Website') }}</label>
-        <input type="url" name="website" value="{{ company.website if company else '' }}" placeholder="https://...">
-      </div>
-      <div class="form-group form-full">
-        <label>{{ _('Address') }}</label>
-        <textarea name="address">{{ company.address if company else '' }}</textarea>
+
+    <!-- Company Information -->
+    <div class="form-section">
+      <div class="form-section-title">{{ _('Company Information') }}</div>
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label>{{ _('Company Name') }}<span class="req">*</span></label>
+          <input type="text" name="name" value="{{ company.name if company else '' }}" required autofocus>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Industry') }}</label>
+          <select name="industry">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.industry %}
+            <option value="{{ opt.value }}" {% if company and company.industry == opt.value %}selected{% endif %}>
+              {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('City') }}</label>
+          <select name="city">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.city %}
+            <option value="{{ opt.value }}" {% if company and company.city == opt.value %}selected{% endif %}>
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Phone') }}</label>
+          <input type="tel" name="phone" value="{{ company.phone if company else '' }}">
+        </div>
+        <div class="form-group">
+          <label>{{ _('Email') }}</label>
+          <input type="email" name="email" value="{{ company.email if company else '' }}">
+        </div>
+        <div class="form-group">
+          <label>{{ _('Website') }}</label>
+          <input type="url" name="website" value="{{ company.website if company else '' }}" placeholder="https://...">
+        </div>
+        <div class="form-group form-full">
+          <label>{{ _('Address') }}</label>
+          <textarea name="address">{{ company.address if company else '' }}</textarea>
+        </div>
       </div>
     </div>
+
+    <!-- Contact Details (Add only) -->
+    {% if not company %}
+    <div class="form-section">
+      <div class="form-section-title">{{ _('Contact Details') }}</div>
+
+      <label class="contact-toggle-row" for="addContactToggle">
+        <input type="checkbox" id="addContactToggle" onchange="toggleContact(this)">
+        <span>{{ _('Add a contact person for this company') }}</span>
+      </label>
+
+      <div class="contact-fields" id="contactFields">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>{{ _('Contact Person') }}</label>
+            <input type="text" name="contact_person" id="contact_person">
+          </div>
+          <div class="form-group">
+            <label>{{ _('Position') }}</label>
+            <select name="contact_position">
+              <option value="">-- {{ _('Select') }} --</option>
+              {% for opt in config.job_title %}
+              <option value="{{ opt.value }}">
+                {% if session.get('lang')=='ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ _('Phone Number') }}</label>
+            <input type="tel" name="contact_phone">
+          </div>
+          <div class="form-group">
+            <label>{{ _('Email Address') }}</label>
+            <input type="email" name="contact_email">
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="form-actions">
+      <a href="{{ url_for('companies.company_detail', company_id=company.id) if company else url_for('companies.company_list') }}" class="btn btn-outline">{{ _('Cancel') }}</a>
       <button type="submit" class="btn btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         {{ _('Save') }}
       </button>
-      <a href="{{ url_for('companies.company_detail', company_id=company.id) if company else url_for('companies.company_list') }}" class="btn btn-outline">{{ _('Cancel') }}</a>
     </div>
   </form>
 </div>
+
+<script>
+function toggleContact(cb) {
+  document.getElementById('contactFields').classList.toggle('visible', cb.checked);
+}
+</script>
 {% endblock %}
