@@ -194,11 +194,10 @@ def edit_company(company_id):
             conn.commit()
             return redirect(url_for('companies.company_detail', company_id=company_id))
 
+        config = _get_config(conn, tenant_id, ['industry', 'city'])
+        return render_template('companies/company_form.html', company=company, config=config)
     finally:
         conn.close()
-
-    config = _get_config(conn, get_current_tenant_id(), ['industry', 'city'])
-    return render_template('companies/company_form.html', company=company, config=config)
 
 
 @companies_bp.route('/quick-add', methods=['POST'])
