@@ -286,15 +286,28 @@ def add_customer():
             initial_interest = request.form.get('initial_interest')
             date_added = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             assigned_salesperson_id = salesperson_id # Default to the creator
+            company_id_input = request.form.get('company_id', '').strip()
 
             if user_role in ['manager', 'admin']:
                 assigned_salesperson_id = request.form.get('assigned_salesperson_id', salesperson_id)
 
             try:
-                # Auto-create or find matching company ─────────────────
                 tid = get_current_tenant_id()
                 auto_company_id = None
-                if company_name:
+
+                # If user explicitly selected an existing company, use it directly
+                if company_id_input:
+                    verified = conn.execute(
+                        "SELECT id, name, industry FROM companies WHERE id = ? AND tenant_id = ?",
+                        (company_id_input, tid)
+                    ).fetchone()
+                    if verified:
+                        auto_company_id = verified['id']
+                        company_name = verified['name']
+                        company_industry = verified['industry'] or company_industry
+
+                # Fallback: auto-create or find company by name (existing behavior)
+                if auto_company_id is None and company_name:
                     existing_co = conn.execute(
                         "SELECT id FROM companies WHERE LOWER(name) = LOWER(?) AND tenant_id = ?",
                         (company_name, tid)
@@ -309,7 +322,6 @@ def add_customer():
                         auto_company_id = cur_co.lastrowid
                         log_activity(conn, tid, 'company', auto_company_id, 'created',
                                      f'Auto-created from customer "{company_name}"')
-                # ─────────────────────────────────────────────────────────
                 cursor.execute('''
                     INSERT INTO customers (
                         company_name, company_industry, contact_person,
@@ -505,15 +517,28 @@ def edit_customer(customer_id):
             initial_interest = request.form['initial_interest']
             company_industry = request.form.get('company_industry')
             contact_person_position = request.form.get('contact_person_position')
+            company_id_input = request.form.get('company_id', '').strip()
 
             # Always keep the original creator as assigned_salesperson_id
             cursor.execute("SELECT assigned_salesperson_id FROM customers WHERE customer_id = ?", (customer_id,))
             assigned_salesperson_id = cursor.fetchone()['assigned_salesperson_id']
 
-            # Auto-create or find matching company ─────────────────
             tid = get_current_tenant_id()
             auto_company_id = None
-            if company_name:
+
+            # If user explicitly selected an existing company, use it directly
+            if company_id_input:
+                verified = conn.execute(
+                    "SELECT id, name, industry FROM companies WHERE id = ? AND tenant_id = ?",
+                    (company_id_input, tid)
+                ).fetchone()
+                if verified:
+                    auto_company_id = verified['id']
+                    company_name = verified['name']
+                    company_industry = verified['industry'] or company_industry
+
+            # Fallback: auto-create or find company by name (existing behavior)
+            if auto_company_id is None and company_name:
                 existing_co = conn.execute(
                     "SELECT id FROM companies WHERE LOWER(name) = LOWER(?) AND tenant_id = ?",
                     (company_name, tid)
@@ -528,7 +553,7 @@ def edit_customer(customer_id):
                     auto_company_id = cur_co.lastrowid
                     log_activity(conn, tid, 'company', auto_company_id, 'created',
                                  f'Auto-created from customer "{company_name}"')
-            # ─────────────────────────────────────────────────────────
+
             cursor.execute('''
                 UPDATE customers SET company_name=?, contact_person=?, phone_number=?, email_address=?,
                 company_address=?, lead_source=?, initial_interest=?, company_industry=?,
@@ -543,13 +568,23 @@ def edit_customer(customer_id):
             conn.close()
             return redirect(url_for('customers.customer_detail', customer_id=customer_id))
         else:
-            cursor.execute("SELECT * FROM customers WHERE customer_id = ?", (customer_id,))
+            cursor.execute("""
+                SELECT c.*, co.name as company_linked_name, co.id as company_linked_id
+                FROM customers c
+                LEFT JOIN companies co ON co.id = c.company_id AND co.tenant_id = c.tenant_id
+                WHERE c.customer_id = ?
+            """, (customer_id,))
             customer = cursor.fetchone()
+            linked_company = None
+            if customer and customer['company_linked_id']:
+                linked_company = {'id': customer['company_linked_id'], 'name': customer['company_linked_name']}
             config = _get_config(conn, get_current_tenant_id(), ['industry', 'job_title', 'lead_source'])
             conn.close()
             if customer:
-                return render_template('customers/edit_customer.html', customer=customer, config=config)
-            return render_template('customers/edit_customer.html', customer=None, config=config)
+                return render_template('customers/edit_customer.html', customer=customer,
+                                       config=config, linked_company=linked_company)
+            return render_template('customers/edit_customer.html', customer=None,
+                                   config=config, linked_company=None)
     return redirect(url_for('auth.login'))
 
 @customers_bp.route('/assign/<int:customer_id>', methods=['GET', 'POST'])

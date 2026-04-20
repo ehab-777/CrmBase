@@ -231,6 +231,26 @@ def edit_company(company_id):
         conn.close()
 
 
+@companies_bp.route('/search', methods=['GET'])
+@require_tenant
+def search_companies():
+    if not _require_login():
+        return jsonify([]), 401
+    q = request.args.get('q', '').strip()
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            """SELECT id, name, industry FROM companies
+               WHERE tenant_id = ? AND name LIKE ?
+               ORDER BY name LIMIT 20""",
+            (tenant_id, f'%{q}%')
+        ).fetchall()
+        return jsonify([{'id': r['id'], 'name': r['name'], 'industry': r['industry']} for r in rows])
+    finally:
+        conn.close()
+
+
 @companies_bp.route('/quick-add', methods=['POST'])
 @require_tenant
 def quick_add():

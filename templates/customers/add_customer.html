@@ -64,7 +64,7 @@
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.65rem 1.25rem; border-radius: 8px;
     font-size: 0.9rem; font-weight: 500; cursor: pointer;
-    border: none; text-decoration: none; transition: all .2s;
+    border: none; text-decoration: none; transition: all .2s; white-space: nowrap;
   }
   .btn-primary { background: var(--primary-color); color: #fff; }
   .btn-primary:hover { background: #1d4ed8; }
@@ -80,6 +80,54 @@
     .form-actions { flex-direction: column-reverse; }
     .form-actions .btn { width: 100%; justify-content: center; }
   }
+
+  /* ── Company picker ───────────────────────────────────────── */
+  .co-picker-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+  .co-input-wrap { flex: 1; position: relative; }
+  .co-dropdown {
+    position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+    background: #fff; border: 1.5px solid var(--border-color);
+    border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    z-index: 200; max-height: 210px; overflow-y: auto;
+  }
+  .co-dropdown-item { padding: 0.55rem 0.75rem; cursor: pointer; font-size: 0.9rem; }
+  .co-dropdown-item:hover { background: #f8fafc; }
+  .co-industry-hint { font-size: 0.72rem; color: var(--text-secondary); }
+  .btn-new-co {
+    padding: 0.65rem 0.9rem; background: #16a34a; color: white;
+    border: none; border-radius: 8px; cursor: pointer;
+    white-space: nowrap; font-size: 0.85rem; font-weight: 500;
+    transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .btn-new-co:hover { opacity: 0.88; }
+  .co-linked-badge {
+    display: none; align-items: center; gap: 0.4rem;
+    margin-top: 0.35rem; font-size: 0.8rem; color: #16a34a;
+  }
+  .co-unlink-btn {
+    background: none; border: none; color: var(--text-secondary);
+    cursor: pointer; font-size: 0.78rem; text-decoration: underline;
+    padding: 0; margin-inline-start: 0.25rem;
+  }
+
+  /* ── Quick-create modal ───────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 1000; display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 14px; padding: 1.5rem;
+    width: 90%; max-width: 440px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+  .modal-header h3 { font-size: 1.1rem; font-weight: 600; }
+  .modal-close-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-secondary); line-height: 1; }
+  .modal-body .form-group { margin-bottom: 1rem; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; }
+  .modal-error { display: none; color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; }
+  .btn-secondary-sm { background: var(--border-color); color: var(--text-primary); }
+  .btn-secondary-sm:hover { background: #cbd5e1; }
 </style>
 {% endblock %}
 
@@ -104,13 +152,29 @@
     <div class="form-section">
       <div class="form-section-title">{{ _('Company Information') }}</div>
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group form-full">
           <label>{{ _('Company Name') }}<span class="req">*</span></label>
-          <input type="text" name="company_name" required autofocus>
+          <div class="co-picker-row">
+            <div class="co-input-wrap">
+              <input type="text" id="company_name" name="company_name"
+                     autocomplete="off"
+                     placeholder="{{ _('Search or type company name…') }}" required>
+              <input type="hidden" id="company_id" name="company_id">
+              <div id="co-dropdown" class="co-dropdown" style="display:none;"></div>
+            </div>
+            <button type="button" id="new-company-btn" class="btn-new-co">
+              + {{ _('New Company') }}
+            </button>
+          </div>
+          <div id="co-linked-badge" class="co-linked-badge">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            {{ _('Linked') }}: <strong id="co-linked-name"></strong>
+            <button type="button" id="co-unlink-btn" class="co-unlink-btn">{{ _('Unlink') }}</button>
+          </div>
         </div>
         <div class="form-group">
           <label>{{ _('Industry') }}</label>
-          <select name="company_industry">
+          <select id="company_industry" name="company_industry">
             <option value="">-- {{ _('Select') }} --</option>
             {% for opt in config.industry %}
             <option value="{{ opt.value }}">
@@ -119,9 +183,9 @@
             {% endfor %}
           </select>
         </div>
-        <div class="form-group form-full">
+        <div class="form-group">
           <label>{{ _('Company Address') }}</label>
-          <textarea name="company_address"></textarea>
+          <input type="text" id="company_address" name="company_address">
         </div>
       </div>
     </div>
@@ -198,4 +262,182 @@
     </div>
   </form>
 </div>
+
+<!-- Quick-create company modal -->
+<div id="company-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>{{ _('Create New Company') }}</h3>
+            <button type="button" id="modal-close-btn" class="modal-close-btn" aria-label="Close">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>{{ _('Company Name') }} <span class="req">*</span></label>
+                <input type="text" id="modal-co-name" placeholder="{{ _('Company name') }}">
+            </div>
+            <div class="form-group">
+                <label>{{ _('Industry') }}</label>
+                <input type="text" id="modal-co-industry" placeholder="{{ _('e.g. Technology') }}">
+            </div>
+            <div class="form-group">
+                <label>{{ _('Phone') }}</label>
+                <input type="tel" id="modal-co-phone">
+            </div>
+            <div id="modal-error" class="modal-error"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="modal-cancel-btn" class="btn btn-secondary-sm">{{ _('Cancel') }}</button>
+            <button type="button" id="modal-save-btn" class="btn btn-primary">{{ _('Create Company') }}</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const searchInput  = document.getElementById('company_name');
+    const hiddenId     = document.getElementById('company_id');
+    const dropdown     = document.getElementById('co-dropdown');
+    const badge        = document.getElementById('co-linked-badge');
+    const badgeName    = document.getElementById('co-linked-name');
+    const unlinkBtn    = document.getElementById('co-unlink-btn');
+    const newBtn       = document.getElementById('new-company-btn');
+    const industryFld  = document.getElementById('company_industry');
+
+    const modal        = document.getElementById('company-modal');
+    const modalName    = document.getElementById('modal-co-name');
+    const modalInd     = document.getElementById('modal-co-industry');
+    const modalPhone   = document.getElementById('modal-co-phone');
+    const modalSave    = document.getElementById('modal-save-btn');
+    const modalCancel  = document.getElementById('modal-cancel-btn');
+    const modalClose   = document.getElementById('modal-close-btn');
+    const modalErr     = document.getElementById('modal-error');
+
+    let debounceTimer;
+    let lastLinkedName = '';
+
+    function selectCompany(id, name, industry) {
+        hiddenId.value     = id;
+        searchInput.value  = name;
+        lastLinkedName     = name;
+        badge.style.display = 'flex';
+        badgeName.textContent = name;
+        dropdown.style.display = 'none';
+        if (industry && industryFld) {
+            const opt = Array.from(industryFld.options).find(o => o.value === industry);
+            if (opt) industryFld.value = industry;
+        }
+    }
+
+    function clearSelection() {
+        hiddenId.value      = '';
+        lastLinkedName      = '';
+        badge.style.display = 'none';
+    }
+
+    searchInput.addEventListener('input', function () {
+        const q = this.value.trim();
+        if (q !== lastLinkedName) clearSelection();
+        clearTimeout(debounceTimer);
+        if (q.length < 1) { dropdown.style.display = 'none'; return; }
+        debounceTimer = setTimeout(function () {
+            fetch('/companies/search?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.length) { dropdown.style.display = 'none'; return; }
+                    dropdown.innerHTML = data.map(function (c) {
+                        return '<div class="co-dropdown-item" data-id="' + c.id +
+                               '" data-name="' + c.name.replace(/"/g, '&quot;') +
+                               '" data-industry="' + (c.industry || '').replace(/"/g, '&quot;') + '">' +
+                               '<div>' + c.name + '</div>' +
+                               (c.industry ? '<div class="co-industry-hint">' + c.industry + '</div>' : '') +
+                               '</div>';
+                    }).join('');
+                    dropdown.style.display = 'block';
+                })
+                .catch(function () { dropdown.style.display = 'none'; });
+        }, 280);
+    });
+
+    dropdown.addEventListener('mousedown', function (e) {
+        const item = e.target.closest('.co-dropdown-item');
+        if (item) {
+            e.preventDefault();
+            selectCompany(item.dataset.id, item.dataset.name, item.dataset.industry);
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    unlinkBtn.addEventListener('click', function () {
+        clearSelection();
+        searchInput.value = '';
+        searchInput.focus();
+    });
+
+    function openModal() {
+        modalName.value  = searchInput.value.trim();
+        modalInd.value   = '';
+        modalPhone.value = '';
+        modalErr.style.display = 'none';
+        modal.classList.add('open');
+        setTimeout(function () { modalName.focus(); }, 50);
+    }
+    function closeModal() { modal.classList.remove('open'); }
+
+    newBtn.addEventListener('click', openModal);
+    modalClose.addEventListener('click', closeModal);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+    [modalName, modalInd, modalPhone].forEach(function (el) {
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); modalSave.click(); }
+            if (e.key === 'Escape') closeModal();
+        });
+    });
+
+    modalSave.addEventListener('click', function () {
+        const name = modalName.value.trim();
+        if (!name) {
+            modalErr.textContent = '{{ _("Company name is required") }}';
+            modalErr.style.display = 'block';
+            modalName.focus();
+            return;
+        }
+        modalSave.disabled = true;
+        modalErr.style.display = 'none';
+
+        fetch('/companies/quick-add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name:     name,
+                industry: modalInd.value.trim(),
+                phone:    modalPhone.value.trim()
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.company_id) {
+                selectCompany(data.company_id, data.name, modalInd.value.trim());
+                closeModal();
+            } else {
+                modalErr.textContent = data.error || '{{ _("Failed to create company") }}';
+                modalErr.style.display = 'block';
+            }
+        })
+        .catch(function () {
+            modalErr.textContent = '{{ _("Network error — please try again") }}';
+            modalErr.style.display = 'block';
+        })
+        .finally(function () { modalSave.disabled = false; });
+    });
+})();
+</script>
 {% endblock %}
