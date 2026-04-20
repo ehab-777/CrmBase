@@ -1960,3 +1960,18 @@ msgstr "المشاريع"
 msgid "Sales Analytics"
 msgstr "تحليلات المبيعات"
 
+msgid "Add Company"
+msgstr "إضافة شركة"
+
+msgid "Add Project"
+msgstr "إضافة مشروع"
+
+msgid "Search companies…"
+msgstr "بحث في الشركات..."
+
+msgid "Search projects…"
+msgstr "بحث في المشاريع..."
+
+msgid "total"
+msgstr "إجمالي"
+
