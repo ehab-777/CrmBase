@@ -82,7 +82,8 @@
   }
 
   /* ── Company picker ───────────────────────────────────────── */
-  .co-picker-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+  .co-picker-row { display: flex; gap: 0.5rem; align-items: flex-start; flex-direction: row-reverse; }
+  [dir="ltr"] .co-picker-row { flex-direction: row; }
   .co-input-wrap { flex: 1; position: relative; }
   .co-dropdown {
     position: absolute; top: calc(100% + 2px); left: 0; right: 0;
@@ -343,9 +344,13 @@
         if (q.length < 1) { dropdown.style.display = 'none'; return; }
         debounceTimer = setTimeout(function () {
             fetch('/companies/search?q=' + encodeURIComponent(q))
-                .then(function (r) { return r.json(); })
+                .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
                 .then(function (data) {
-                    if (!data.length) { dropdown.style.display = 'none'; return; }
+                    if (!data.length) {
+                        dropdown.innerHTML = '<div class="co-dropdown-item" style="color:var(--text-secondary);cursor:default;">{{ _("No companies found") }}</div>';
+                        dropdown.style.display = 'block';
+                        return;
+                    }
                     dropdown.innerHTML = data.map(function (c) {
                         return '<div class="co-dropdown-item" data-id="' + c.id +
                                '" data-name="' + c.name.replace(/"/g, '&quot;') +
