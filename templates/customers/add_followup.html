@@ -1,297 +1,189 @@
 {% extends "base.html" %}
-
 {% block title %}{{ _('Add Follow-up') }}{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+  .page-header {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .header-title { flex: 1; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px; }
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
+  .form-card {
+    background: #fff; border: 1.5px solid var(--border-color);
+    border-radius: 14px; padding: 2rem; max-width: 720px;
+  }
 
-    .page-title {
-        font-size: 1.875rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
+  .form-section { margin-bottom: 1.75rem; }
+  .form-section-title {
+    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .07em;
+    padding-bottom: 0.6rem; border-bottom: 1.5px solid var(--border-color);
+    margin-bottom: 1.1rem;
+  }
 
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.25rem;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-        background-color: var(--secondary-color);
-        color: white;
-    }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+  .form-full { grid-column: 1 / -1; }
 
-    .back-button:hover {
-        background-color: #475569;
-        transform: translateY(-1px);
-    }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .req { color: #ef4444; margin-inline-start: 2px; }
 
-    .form-container {
-        background-color: var(--card-background);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.65rem 0.9rem; border: 1.5px solid var(--border-color);
+    border-radius: 8px; font-size: 0.9rem; font-family: inherit;
+    background: #fafafa; transition: border-color .2s, box-shadow .2s; width: 100%;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none; border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
 
-    .form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
+  /* Stage highlight badge inside select */
+  .stage-hint {
+    font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;
+  }
 
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
+  .form-actions {
+    display: flex; gap: 0.75rem; margin-top: 1.75rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--border-color);
+    justify-content: flex-end;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.65rem 1.25rem; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline {
+    background: #fff; color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+  }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
 
-    .form-label {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .form-input {
-        padding: 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-        font-size: 1rem;
-        transition: all 0.2s;
-        background-color: var(--background-color);
-    }
-
-    .form-input:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .form-textarea {
-        min-height: 100px;
-        resize: vertical;
-    }
-
-    .form-select {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 0.75rem center;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
-        cursor: pointer;
-    }
-
-    .form-select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .form-select option {
-        padding: 0.5rem;
-        background-color: white;
-    }
-
-    .form-select option:hover {
-        background-color: #f0f0f0;
-    }
-
-    .error-message {
-        color: var(--error-color);
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .submit-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        font-size: 1rem;
-        width: 100%;
-        max-width: 200px;
-        margin: 0 auto;
-    }
-
-    .submit-button:hover {
-        background-color: #1d4ed8;
-        transform: translateY(-1px);
-    }
-
-    .submit-button:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-    }
-
-    .required-indicator {
-        color: var(--error-color);
-        margin-left: 0.25rem;
-    }
-
-    .customer-name {
-        color: var(--text-secondary);
-        font-size: 1rem;
-        margin-top: 0.25rem;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-    }
-
-    @media (max-width: 768px) {
-        .container {
-            padding: 1rem;
-        }
-
-        .header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-card { padding: 1.25rem; }
+    .form-actions { flex-direction: column-reverse; }
+    .form-actions .btn { width: 100%; justify-content: center; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <div>
-            <h1 class="page-title">{{ _('Add Follow-up') }}</h1>
-            <p class="customer-name">{{ customer.company_name }}</p>
+<div class="page-header">
+  <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Back') }}
+  </a>
+  <div class="header-title">
+    <h1 class="page-title">{{ _('Add Follow-up') }}</h1>
+    <p class="page-subtitle">{{ customer.contact_person or customer.company_name }}</p>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST" action="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- This Contact -->
+    <div class="form-section">
+      <div class="form-section-title">{{ _('This Contact') }}</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ _('Contact Date') }}<span class="req">*</span></label>
+          <input type="date" id="last_contact_date" name="last_contact_date" required>
         </div>
-        <div class="action-buttons">
-            <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="back-button">
-                ← {{ _('Back to Customer') }}
-            </a>
-            {% if session['role'] in ['admin', 'manager'] %}
-            <a href="{{ url_for('dashboard.manager_dashboard') }}" class="back-button">
-                ← {{ _('Back to Dashboard') }}
-            </a>
-            {% else %}
-            <a href="{{ url_for('dashboard.dashboard') }}" class="back-button">
-                ← {{ _('Back to Dashboard') }}
-            </a>
-            {% endif %}
+        <div class="form-group">
+          <label>{{ _('Contact Method') }}</label>
+          <select name="last_contact_method">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.contact_method %}
+            <option value="{{ opt.value }}">
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
         </div>
+        <div class="form-group">
+          <label>{{ _('Sales Stage') }}</label>
+          <select name="current_sales_stage">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.sales_stage %}
+            <option value="{{ opt.value }}">
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Deal Value (SAR)') }}</label>
+          <input type="number" name="deal_value" min="0" step="0.01" placeholder="0">
+        </div>
+        <div class="form-group form-full">
+          <label>{{ _('Summary') }}</label>
+          <textarea name="summary" placeholder="{{ _('What was discussed?') }}"></textarea>
+        </div>
+      </div>
     </div>
 
-    <div class="form-container">
-        <form method="POST" action="{{ url_for('follow_up.add_followup', customer_id=customer.customer_id) }}">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="last_contact_date" class="form-label">
-                        {{ _('Last Contact Date') }}<span class="required-indicator">*</span>
-                    </label>
-                    <input type="date" id="last_contact_date" name="last_contact_date" class="form-input" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="last_contact_method" class="form-label">{{ _('Contact Method') }}</label>
-                    <select id="last_contact_method" name="last_contact_method" class="form-input form-select">
-                        <option value="">-- {{ _('Select') }} --</option>
-                        {% for opt in config.contact_method %}
-                        <option value="{{ opt.value }}">
-                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="current_sales_stage" class="form-label">{{ _('Current Sales Stage') }}</label>
-                    <select id="current_sales_stage" name="current_sales_stage" class="form-input form-select">
-                        <option value="">-- {{ _('Select stage') }} --</option>
-                        {% for opt in config.sales_stage %}
-                        <option value="{{ opt.value }}">
-                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="next_action" class="form-label">{{ _('Next Action') }}</label>
-                    <select id="next_action" name="next_action" class="form-input form-select">
-                        <option value="">-- {{ _('Select next action') }} --</option>
-                        {% for opt in config.next_action %}
-                        <option value="{{ opt.value }}" {% if followup and followup.next_action == opt.value %}selected{% endif %}>
-                            {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="next_action_date" class="form-label">{{ _('Next Action Date') }}</label>
-                    <input type="date" id="next_action_date" name="next_action_date" class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <label for="deal_value" class="form-label">{{ _('Deal Value (SAR)') }}</label>
-                    <input type="number" id="deal_value" name="deal_value" class="form-input" min="0" step="0.01">
-                </div>
-
-                <div class="form-group">
-                    <label for="summary" class="form-label">{{ _('Summary') }}</label>
-                    <textarea id="summary" name="summary" class="form-input form-textarea"></textarea>
-                </div>
-            </div>
-
-            <button type="submit" class="submit-button">{{ _('Add Follow-up') }}</button>
-        </form>
+    <!-- Next Steps -->
+    <div class="form-section">
+      <div class="form-section-title">{{ _('Next Steps') }}</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ _('Next Action') }}</label>
+          <select name="next_action">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.next_action %}
+            <option value="{{ opt.value }}">
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Due Date') }}</label>
+          <input type="date" name="next_action_date">
+        </div>
+        <div class="form-group form-full">
+          <label>{{ _('Notes') }}</label>
+          <textarea name="notes" placeholder="{{ _('Internal notes…') }}"></textarea>
+        </div>
+      </div>
     </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-outline">{{ _('Cancel') }}</a>
+      <button type="submit" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ _('Add Follow-up') }}
+      </button>
+    </div>
+  </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Set default date to today
-    document.getElementById('last_contact_date').valueAsDate = new Date();
-</script>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Ensure select elements are properly styled
-        const selectElements = document.querySelectorAll('.form-select');
-        selectElements.forEach(select => {
-            select.addEventListener('click', function() {
-                this.style.backgroundColor = 'white';
-            });
-        });
-    });
+  document.getElementById('last_contact_date').valueAsDate = new Date();
 </script>
 {% endblock %}
