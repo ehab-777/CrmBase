@@ -149,6 +149,14 @@ textarea.form-control { resize:vertical; min-height:70px; }
 .action-bar { display:flex; flex-direction:column; gap:.6rem; }
 .btn-save { padding:.75rem; font-size:.9rem; font-weight:600; width:100%; justify-content:center; }
 
+.back-btn {
+    display:inline-flex; align-items:center; gap:.4rem;
+    color:var(--text-secondary); text-decoration:none; font-size:.875rem;
+    padding:.4rem .7rem; border-radius:7px; border:1.5px solid var(--border-color);
+    background:#fff; transition:all .2s; flex-shrink:0;
+}
+.back-btn:hover { border-color:var(--primary-color); color:var(--primary-color); }
+
 @media (max-width:768px) {
     .container { padding:1rem; }
     .builder-layout { grid-template-columns:1fr; }
@@ -167,11 +175,14 @@ textarea.form-control { resize:vertical; min-height:70px; }
     {% endfor %}{% endif %}{% endwith %}
 
     <div class="page-header">
+        <a href="{{ url_for('quotations.quotation_list') }}" class="back-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            {{ _('Quotations') }}
+        </a>
         <h1 class="page-title">
-            {% if action=='edit' %}✏️ {{ _('Edit Quotation') }}
-            {% else %}📄 {{ _('New Quotation') }}{% endif %}
+            {% if action=='edit' %}{{ _('Edit Quotation') }}
+            {% else %}{{ _('New Quotation') }}{% endif %}
         </h1>
-        <a href="{{ url_for('quotations.quotation_list') }}" class="btn btn-secondary">← {{ _('Back') }}</a>
     </div>
 
     <form method="POST"
