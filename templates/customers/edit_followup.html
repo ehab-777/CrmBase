@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Edit Follow-up') }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .page-header {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    padding: 0.4rem 0.7rem; border-radius: 7px; border: 1.5px solid var(--border-color);
+    background: #fff; transition: all .2s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+  .header-title { flex: 1; }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px; }
+
+  .form-card {
+    background: #fff; border: 1.5px solid var(--border-color);
+    border-radius: 14px; padding: 2rem; max-width: 720px;
+  }
+
+  .form-section { margin-bottom: 1.75rem; }
+  .form-section-title {
+    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .07em;
+    padding-bottom: 0.6rem; border-bottom: 1.5px solid var(--border-color);
+    margin-bottom: 1.1rem;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+  .form-full { grid-column: 1 / -1; }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .req { color: #ef4444; margin-inline-start: 2px; }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.65rem 0.9rem; border: 1.5px solid var(--border-color);
+    border-radius: 8px; font-size: 0.9rem; font-family: inherit;
+    background: #fafafa; transition: border-color .2s, box-shadow .2s; width: 100%;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none; border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
+
+  .form-actions {
+    display: flex; gap: 0.75rem; margin-top: 1.75rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--border-color);
+    justify-content: flex-end;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.65rem 1.25rem; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    border: none; text-decoration: none; transition: all .2s;
+  }
+  .btn-primary { background: var(--primary-color); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline {
+    background: #fff; color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+  }
+  .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-card { padding: 1.25rem; }
+    .form-actions { flex-direction: column-reverse; }
+    .form-actions .btn { width: 100%; justify-content: center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ _('Back') }}
+  </a>
+  <div class="header-title">
+    <h1 class="page-title">{{ _('Edit Follow-up') }}</h1>
+    <p class="page-subtitle">{{ customer.contact_person or customer.company_name }}</p>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST" action="{{ url_for('follow_up.edit_followup', customer_id=customer.customer_id, followup_id=followup.followup_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-section">
+      <div class="form-section-title">{{ _('This Contact') }}</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ _('Contact Date') }}<span class="req">*</span></label>
+          <input type="date" name="last_contact_date" required
+                 value="{{ followup.last_contact_date[:10] if followup.last_contact_date else '' }}">
+        </div>
+        <div class="form-group">
+          <label>{{ _('Contact Method') }}</label>
+          <select name="last_contact_method">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.contact_method %}
+            <option value="{{ opt.value }}"
+              {% if followup.last_contact_method == opt.value %}selected{% endif %}>
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Sales Stage') }}</label>
+          <select name="current_sales_stage">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.sales_stage %}
+            <option value="{{ opt.value }}"
+              {% if followup.current_sales_stage == opt.value %}selected{% endif %}>
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Deal Value (SAR)') }}</label>
+          <input type="number" name="deal_value" min="0" step="0.01"
+                 value="{{ followup.potential_deal_value or '' }}">
+        </div>
+        <div class="form-group form-full">
+          <label>{{ _('Summary') }}</label>
+          <textarea name="summary">{{ followup.summary_last_contact or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">{{ _('Next Steps') }}</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ _('Next Action') }}</label>
+          <select name="next_action">
+            <option value="">-- {{ _('Select') }} --</option>
+            {% for opt in config.next_action %}
+            <option value="{{ opt.value }}"
+              {% if followup.next_action == opt.value %}selected{% endif %}>
+              {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('Due Date') }}</label>
+          <input type="date" name="next_action_date"
+                 value="{{ followup.next_action_due_date[:10] if followup.next_action_due_date else '' }}">
+        </div>
+        <div class="form-group form-full">
+          <label>{{ _('Notes') }}</label>
+          <textarea name="notes">{{ followup.notes or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('customers.customer_detail', customer_id=customer.customer_id) }}" class="btn btn-outline">{{ _('Cancel') }}</a>
+      <button type="submit" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ _('Save Changes') }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -14,70 +14,166 @@ def _get_config(conn, tenant_id, categories):
         result[cat] = rows
     return result
 
-# Create a Blueprint for follow-up routes
+
 follow_up_bp = Blueprint('follow_up', __name__)
+
 
 @follow_up_bp.route('/customers/<int:customer_id>/followup/add', methods=['GET', 'POST'])
 @require_tenant
 def add_followup(customer_id):
-    if 'salesperson_id' in session:
-        conn = None
-        try:
-            conn = get_db()
-            cursor = conn.cursor()
-            
-            # First verify the customer exists AND belongs to this tenant
-            tenant_id = get_current_tenant_id()
-            cursor.execute(
-                "SELECT * FROM customers WHERE customer_id = ? AND tenant_id = ?",
-                (customer_id, tenant_id)
-            )
-            customer = cursor.fetchone()
-            if not customer:
-                return redirect(url_for('customers.customer_list'))
-                
-            if request.method == 'POST':
-                last_contact_date = request.form['last_contact_date']
-                last_contact_method = request.form.get('last_contact_method')
-                summary_last_contact = request.form.get('summary')
-                next_action = request.form.get('next_action')
-                next_action_due_date = request.form.get('next_action_date')
-                current_sales_stage = request.form.get('current_sales_stage')
-                potential_deal_value = request.form.get('deal_value')
-                notes = request.form.get('notes', '')
-                assigned_salesperson_id = session['salesperson_id']
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
 
-                cursor.execute('''
-                    INSERT INTO sales_followup (
-                        customer_id, assigned_salesperson_id, last_contact_date,
-                        last_contact_method, summary_last_contact, next_action,
-                        next_action_due_date, current_sales_stage, potential_deal_value,
-                        notes, tenant_id, created_at, created_by
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
-                ''', (
-                    customer_id, assigned_salesperson_id, last_contact_date,
-                    last_contact_method, summary_last_contact, next_action,
-                    next_action_due_date, current_sales_stage, potential_deal_value,
-                    notes, tenant_id, session['salesperson_id']
-                ))
-                cursor.execute(
-                    "UPDATE customers SET current_stage = ? WHERE customer_id = ? AND tenant_id = ?",
-                    (current_sales_stage, customer_id, tenant_id)
-                )
-                log_activity(conn, tenant_id, 'customer', customer_id, 'follow_up_added',
-                             f'Follow-up added — Stage: {current_sales_stage or "—"}')
-                conn.commit()
-                return redirect(url_for('customers.customer_detail', customer_id=customer_id))
-                    
-            config = _get_config(conn, tenant_id,
-                               ['contact_method', 'sales_stage', 'next_action'])
-            return render_template('customers/add_followup.html',
-                                   customer=customer, config=config)
-            
-        except Exception as e:
-            print(f"Error: {e}")
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        tenant_id = get_current_tenant_id()
+
+        cursor.execute(
+            "SELECT * FROM customers WHERE customer_id = ? AND tenant_id = ?",
+            (customer_id, tenant_id)
+        )
+        customer = cursor.fetchone()
+        if not customer:
             return redirect(url_for('customers.customer_list'))
-        finally:
-            if conn:
-                conn.close()
-    return redirect(url_for('auth.login')) 
+
+        if request.method == 'POST':
+            last_contact_date    = request.form['last_contact_date']
+            last_contact_method  = request.form.get('last_contact_method')
+            summary_last_contact = request.form.get('summary')
+            next_action          = request.form.get('next_action')
+            next_action_due_date = request.form.get('next_action_date')
+            current_sales_stage  = request.form.get('current_sales_stage')
+            potential_deal_value = request.form.get('deal_value')
+            notes                = request.form.get('notes', '')
+
+            company_id = None
+            try:
+                company_id = customer['company_id']
+            except (IndexError, KeyError):
+                pass
+
+            cursor.execute('''
+                INSERT INTO sales_followup (
+                    customer_id, company_id, assigned_salesperson_id,
+                    last_contact_date, last_contact_method, summary_last_contact,
+                    next_action, next_action_due_date, current_sales_stage,
+                    potential_deal_value, notes, tenant_id, created_at, created_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), ?)
+            ''', (
+                customer_id, company_id, session['salesperson_id'],
+                last_contact_date, last_contact_method, summary_last_contact,
+                next_action, next_action_due_date, current_sales_stage,
+                potential_deal_value, notes, tenant_id, session['salesperson_id']
+            ))
+
+            cursor.execute(
+                "UPDATE customers SET current_stage = ? WHERE customer_id = ? AND tenant_id = ?",
+                (current_sales_stage, customer_id, tenant_id)
+            )
+
+            contact_name = customer['contact_person'] or customer['company_name'] or ''
+            log_activity(conn, tenant_id, 'customer', customer_id, 'follow_up_added',
+                         f'Follow-up added — Stage: {current_sales_stage or "—"}')
+            if company_id:
+                log_activity(conn, tenant_id, 'company', company_id, 'follow_up_added',
+                             f'Follow-up for {contact_name} — Stage: {current_sales_stage or "—"}')
+
+            conn.commit()
+            return redirect(url_for('customers.customer_detail', customer_id=customer_id))
+
+        config = _get_config(conn, tenant_id, ['contact_method', 'sales_stage', 'next_action'])
+        return render_template('customers/add_followup.html', customer=customer, config=config)
+
+    except Exception as e:
+        print(f"Error in add_followup: {e}")
+        return redirect(url_for('customers.customer_list'))
+    finally:
+        if conn:
+            conn.close()
+
+
+@follow_up_bp.route('/customers/<int:customer_id>/followup/<int:followup_id>/edit',
+                    methods=['GET', 'POST'])
+@require_tenant
+def edit_followup(customer_id, followup_id):
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        tenant_id = get_current_tenant_id()
+
+        cursor.execute(
+            "SELECT * FROM customers WHERE customer_id = ? AND tenant_id = ?",
+            (customer_id, tenant_id)
+        )
+        customer = cursor.fetchone()
+        if not customer:
+            return redirect(url_for('customers.customer_list'))
+
+        cursor.execute(
+            "SELECT * FROM sales_followup WHERE followup_id = ? AND customer_id = ? AND tenant_id = ?",
+            (followup_id, customer_id, tenant_id)
+        )
+        followup = cursor.fetchone()
+        if not followup:
+            return redirect(url_for('customers.customer_detail', customer_id=customer_id))
+
+        if request.method == 'POST':
+            last_contact_date    = request.form['last_contact_date']
+            last_contact_method  = request.form.get('last_contact_method')
+            summary_last_contact = request.form.get('summary')
+            next_action          = request.form.get('next_action')
+            next_action_due_date = request.form.get('next_action_date')
+            current_sales_stage  = request.form.get('current_sales_stage')
+            potential_deal_value = request.form.get('deal_value')
+            notes                = request.form.get('notes', '')
+
+            cursor.execute('''
+                UPDATE sales_followup SET
+                    last_contact_date    = ?,
+                    last_contact_method  = ?,
+                    summary_last_contact = ?,
+                    next_action          = ?,
+                    next_action_due_date = ?,
+                    current_sales_stage  = ?,
+                    potential_deal_value = ?,
+                    notes                = ?,
+                    updated_at           = datetime('now','localtime')
+                WHERE followup_id = ? AND customer_id = ? AND tenant_id = ?
+            ''', (
+                last_contact_date, last_contact_method, summary_last_contact,
+                next_action, next_action_due_date, current_sales_stage,
+                potential_deal_value, notes,
+                followup_id, customer_id, tenant_id
+            ))
+
+            # Keep current_stage in sync with latest follow-up stage
+            cursor.execute("""
+                UPDATE customers SET current_stage = (
+                    SELECT current_sales_stage FROM sales_followup
+                    WHERE customer_id = ? AND tenant_id = ?
+                    ORDER BY created_at DESC LIMIT 1
+                ) WHERE customer_id = ? AND tenant_id = ?
+            """, (customer_id, tenant_id, customer_id, tenant_id))
+
+            log_activity(conn, tenant_id, 'customer', customer_id, 'updated',
+                         f'Follow-up edited — Stage: {current_sales_stage or "—"}')
+
+            conn.commit()
+            return redirect(url_for('customers.customer_detail', customer_id=customer_id))
+
+        config = _get_config(conn, tenant_id, ['contact_method', 'sales_stage', 'next_action'])
+        return render_template('customers/edit_followup.html',
+                               customer=customer, followup=followup, config=config)
+
+    except Exception as e:
+        print(f"Error in edit_followup: {e}")
+        return redirect(url_for('customers.customer_detail', customer_id=customer_id))
+    finally:
+        if conn:
+            conn.close()

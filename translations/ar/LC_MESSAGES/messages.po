@@ -230,6 +230,9 @@ msgstr "تثبيت التطبيق"
 msgid "Add Follow-up"
 msgstr "إضافة متابعة"
 
+msgid "Edit Follow-up"
+msgstr "تعديل المتابعة"
+
 #: templates/customers/add_followup.html:196
 msgid "Back to Customer"
 msgstr "العودة للعميل"

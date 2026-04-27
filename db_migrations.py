@@ -78,6 +78,27 @@ def run(conn):
     else:
         print("⏭  M003: current_stage already exists")
 
+    # ── M004: extend sales_followup (company_id, project_id, updated_at) ───────
+    if not _col_exists(cur, 'sales_followup', 'company_id'):
+        cur.execute("ALTER TABLE sales_followup ADD COLUMN company_id INTEGER")
+        if _col_exists(cur, 'customers', 'company_id'):
+            cur.execute("""
+                UPDATE sales_followup
+                SET company_id = (
+                    SELECT company_id FROM customers
+                    WHERE customer_id = sales_followup.customer_id
+                )
+            """)
+        print("✅ M004a: company_id added to sales_followup")
+
+    if not _col_exists(cur, 'sales_followup', 'project_id'):
+        cur.execute("ALTER TABLE sales_followup ADD COLUMN project_id INTEGER")
+        print("✅ M004b: project_id added to sales_followup")
+
+    if not _col_exists(cur, 'sales_followup', 'updated_at'):
+        cur.execute("ALTER TABLE sales_followup ADD COLUMN updated_at DATETIME")
+        print("✅ M004c: updated_at added to sales_followup")
+
     conn.commit()
 
 

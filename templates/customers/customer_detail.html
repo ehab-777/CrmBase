@@ -318,8 +318,10 @@
             {% if followup.notes %}
             <div class="followup-notes" style="margin-top:0.4rem;border-left:3px solid var(--primary-color);">{{ followup.notes }}</div>
             {% endif %}
-            <div class="followup-footer">
-              {{ _('Created by') }}: {{ followup.salesperson_name or '—' }} · {{ followup.created_at }}
+            <div class="followup-footer" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>{{ _('Created by') }}: {{ followup.salesperson_name or '—' }} · {{ followup.created_at }}</span>
+              <a href="{{ url_for('follow_up.edit_followup', customer_id=customer.customer_id, followup_id=followup.followup_id) }}"
+                 class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
             </div>
           </div>
           {% endfor %}
