@@ -150,6 +150,13 @@ def run(conn):
     else:
         print("⏭  M005b: sales_followup already migrated")
 
+    # ── M006: drop sales_followup (data fully migrated to activities in M005) ────
+    if _table_exists(cur, 'sales_followup'):
+        cur.execute("DROP TABLE sales_followup")
+        print("✅ M006: sales_followup dropped")
+    else:
+        print("⏭  M006: sales_followup already gone")
+
     conn.commit()
 
 
