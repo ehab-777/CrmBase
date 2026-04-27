@@ -48,6 +48,7 @@ def get_activities(conn, tenant_id, entity_type, entity_id, limit=40):
                WHERE  tenant_id = ?
                  AND  entity_type = ?
                  AND  entity_id   = ?
+                 AND  action != 'follow_up'
                ORDER  BY created_at DESC
                LIMIT  ?""",
             (tenant_id, entity_type, entity_id, limit)

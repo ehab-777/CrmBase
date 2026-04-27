@@ -39,44 +39,23 @@ def customer_list():
         per_page = 12
 
         query = '''
-            WITH latest_followup AS (
-                SELECT 
-                    customer_id,
-                    current_sales_stage,
-                    created_at,
-                    followup_id
-                FROM sales_followup
-                WHERE tenant_id = ?
-                GROUP BY customer_id
-                HAVING MAX(created_at) = created_at AND MAX(followup_id) = followup_id
-            )
-            SELECT 
-                c.*, 
+            SELECT
+                c.*,
                 st.salesperson_name,
-                COALESCE(lf.current_sales_stage, 'N/A') as current_sales_stage,
-                (
-                    SELECT sf.potential_deal_value
-                    FROM sales_followup sf 
-                    WHERE sf.customer_id = c.customer_id 
-                    AND sf.tenant_id = c.tenant_id
-                    ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                    LIMIT 1
-                ) as potential_value,
-                (
-                    SELECT datetime(sf.created_at, 'localtime')
-                    FROM sales_followup sf 
-                    WHERE sf.customer_id = c.customer_id 
-                    AND sf.tenant_id = c.tenant_id
-                    AND sf.created_at IS NOT NULL
-                    ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                    LIMIT 1
-                ) as last_contact_date
+                COALESCE(c.current_stage, 'N/A') as current_sales_stage,
+                (SELECT a.deal_value FROM activities a
+                 WHERE a.entity_type = 'customer' AND a.entity_id = c.customer_id
+                   AND a.action = 'follow_up' AND a.tenant_id = c.tenant_id
+                 ORDER BY a.created_at DESC, a.id DESC LIMIT 1) as potential_value,
+                (SELECT datetime(a.created_at, 'localtime') FROM activities a
+                 WHERE a.entity_type = 'customer' AND a.entity_id = c.customer_id
+                   AND a.action = 'follow_up' AND a.tenant_id = c.tenant_id
+                 ORDER BY a.created_at DESC, a.id DESC LIMIT 1) as last_contact_date
             FROM customers c
             LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
-            LEFT JOIN latest_followup lf ON c.customer_id = lf.customer_id
             WHERE c.tenant_id = ?
         '''
-        params = [get_current_tenant_id(), get_current_tenant_id()]  # First for CTE, second for WHERE clause
+        params = [get_current_tenant_id()]
 
         if user_role not in ['admin', 'manager']:
             query += " AND c.assigned_salesperson_id = ?"
@@ -86,46 +65,20 @@ def customer_list():
         if stage_filter:
             if stage_filter == 'N/A':
                 query += """
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM sales_followup sf
-                        WHERE sf.customer_id = c.customer_id
-                        AND sf.tenant_id = c.tenant_id
-                        AND sf.current_sales_stage IS NOT NULL
-                    )
+                    AND (c.current_stage IS NULL OR c.current_stage = '')
                 """
             else:
-                query += """
-                    AND EXISTS (
-                        SELECT 1
-                        FROM sales_followup sf
-                        WHERE sf.customer_id = c.customer_id
-                        AND sf.tenant_id = c.tenant_id
-                        AND sf.current_sales_stage = ?
-                        AND sf.created_at = (
-                            SELECT MAX(created_at)
-                            FROM sales_followup
-                            WHERE customer_id = c.customer_id
-                            AND tenant_id = c.tenant_id
-                        )
-                    )
-                """
+                query += " AND c.current_stage = ?"
                 params.append(stage_filter)
 
         if search_term:
             search_term_lower = f"%{search_term.lower()}%"
             query += """
-                AND (LOWER(c.company_name) LIKE ? OR 
-                     LOWER(c.contact_person) LIKE ? OR 
+                AND (LOWER(c.company_name) LIKE ? OR
+                     LOWER(c.contact_person) LIKE ? OR
                      LOWER(c.phone_number) LIKE ? OR
                      LOWER(st.salesperson_name) LIKE ? OR
-                     EXISTS (
-                         SELECT 1
-                         FROM sales_followup sf_search
-                         WHERE sf_search.customer_id = c.customer_id
-                           AND sf_search.tenant_id = c.tenant_id
-                           AND LOWER(sf_search.current_sales_stage) LIKE ?
-                     ))
+                     LOWER(COALESCE(c.current_stage, '')) LIKE ?)
             """
             params.extend([search_term_lower] * 5)
 
@@ -134,7 +87,7 @@ def customer_list():
             allowed_columns = ['customer_id', 'company_name', 'contact_person', 'phone_number', 'date_added', 'last_contact_date', 'current_sales_stage', 'salesperson_name']
             if sort_by_lower in allowed_columns:
                 if sort_by_lower == 'current_sales_stage':
-                    query += f" ORDER BY COALESCE(lf.current_sales_stage, 'N/A') {order}"
+                    query += f" ORDER BY COALESCE(c.current_stage, 'N/A') {order}"
                 elif sort_by_lower == 'salesperson_name':
                     query += f" ORDER BY LOWER(st.salesperson_name) {order}"
                 else:
@@ -153,8 +106,7 @@ def customer_list():
         query += " LIMIT ? OFFSET ?"
         params.extend([per_page, (page - 1) * per_page])
 
-        # Execute the count query with only the necessary parameters
-        count_params = [get_current_tenant_id(), get_current_tenant_id()]  # First for CTE, second for WHERE clause
+        count_params = [get_current_tenant_id()]
         if user_role not in ['admin', 'manager']:
             count_params.append(salesperson_id)
         if stage_filter and stage_filter != 'N/A':
@@ -163,21 +115,9 @@ def customer_list():
             count_params.extend([search_term_lower] * 5)
 
         count_query = """
-            WITH latest_followup AS (
-                SELECT 
-                    customer_id,
-                    current_sales_stage,
-                    created_at,
-                    followup_id
-                FROM sales_followup
-                WHERE tenant_id = ?
-                GROUP BY customer_id
-                HAVING MAX(created_at) = created_at AND MAX(followup_id) = followup_id
-            )
-            SELECT COUNT(DISTINCT c.customer_id) 
+            SELECT COUNT(DISTINCT c.customer_id)
             FROM customers c
             LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
-            LEFT JOIN latest_followup lf ON c.customer_id = lf.customer_id
             WHERE c.tenant_id = ?
         """
 
@@ -186,45 +126,17 @@ def customer_list():
 
         if stage_filter:
             if stage_filter == 'N/A':
-                count_query += """
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM sales_followup sf
-                        WHERE sf.customer_id = c.customer_id
-                        AND sf.tenant_id = c.tenant_id
-                        AND sf.current_sales_stage IS NOT NULL
-                    )
-                """
+                count_query += " AND (c.current_stage IS NULL OR c.current_stage = '')"
             else:
-                count_query += """
-                    AND EXISTS (
-                        SELECT 1
-                        FROM sales_followup sf
-                        WHERE sf.customer_id = c.customer_id
-                        AND sf.tenant_id = c.tenant_id
-                        AND sf.current_sales_stage = ?
-                        AND sf.created_at = (
-                            SELECT MAX(created_at)
-                            FROM sales_followup
-                            WHERE customer_id = c.customer_id
-                            AND tenant_id = c.tenant_id
-                        )
-                    )
-                """
+                count_query += " AND c.current_stage = ?"
 
         if search_term:
             count_query += """
-                AND (LOWER(c.company_name) LIKE ? OR 
-                     LOWER(c.contact_person) LIKE ? OR 
+                AND (LOWER(c.company_name) LIKE ? OR
+                     LOWER(c.contact_person) LIKE ? OR
                      LOWER(c.phone_number) LIKE ? OR
                      LOWER(st.salesperson_name) LIKE ? OR
-                     EXISTS (
-                         SELECT 1
-                         FROM sales_followup sf_search
-                         WHERE sf_search.customer_id = c.customer_id
-                           AND sf_search.tenant_id = c.tenant_id
-                           AND LOWER(sf_search.current_sales_stage) LIKE ?
-                     ))
+                     LOWER(COALESCE(c.current_stage, '')) LIKE ?)
             """
 
         cursor.execute(count_query, count_params)
@@ -235,13 +147,13 @@ def customer_list():
         cursor.execute(query, params)
         customers = cursor.fetchall()
 
-        # Get all available sales stages for this tenant only
         cursor.execute(
-            "SELECT DISTINCT current_sales_stage FROM sales_followup WHERE current_sales_stage IS NOT NULL AND tenant_id = ?",
+            """SELECT DISTINCT sales_stage FROM activities
+               WHERE action = 'follow_up' AND sales_stage IS NOT NULL AND tenant_id = ?
+               ORDER BY sales_stage""",
             (get_current_tenant_id(),)
         )
-        sales_stages = [row['current_sales_stage'] for row in cursor.fetchall()]
-        # Add 'N/A' to the list of sales stages if it's not already there
+        sales_stages = [row['sales_stage'] for row in cursor.fetchall()]
         if 'N/A' not in sales_stages:
             sales_stages.append('N/A')
 
@@ -370,69 +282,14 @@ def customer_detail(customer_id):
             # Get customer details
             cursor.execute("""
                 SELECT c.*, st.salesperson_name,
+                    COALESCE(c.current_stage, 'N/A') as current_sales_stage,
                     COALESCE(
-                        (SELECT sf.current_sales_stage
-                         FROM sales_followup sf
-                         WHERE sf.customer_id = c.customer_id
-                         AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at DESC, sf.followup_id DESC
-                         LIMIT 1),
-                        'N/A'
-                    ) as current_sales_stage,
-                    CASE 
-                        WHEN (
-                            SELECT sf.current_sales_stage 
-                            FROM sales_followup sf 
-                            WHERE sf.customer_id = c.customer_id 
-                            AND sf.tenant_id = c.tenant_id
-                            ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                            LIMIT 1
-                        ) IN ('عميل محتمل', 'تقديم عرض السعر', 'جاري التواصل', 'جاري التفاوض') THEN 'Active'
-                        WHEN (
-                            SELECT sf.current_sales_stage 
-                            FROM sales_followup sf 
-                            WHERE sf.customer_id = c.customer_id 
-                            AND sf.tenant_id = c.tenant_id
-                            ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                            LIMIT 1
-                        ) = 'تم التسليم' THEN 'Close Won'
-                        WHEN (
-                            SELECT sf.current_sales_stage 
-                            FROM sales_followup sf 
-                            WHERE sf.customer_id = c.customer_id 
-                            AND sf.tenant_id = c.tenant_id
-                            ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                            LIMIT 1
-                        ) = 'لم يتم البيع' THEN 'Close Lost'
-                        ELSE 'Unknown'
-                    END as status,
-                    COALESCE(
-                        (SELECT sf.potential_deal_value
-                         FROM sales_followup sf 
-                         WHERE sf.customer_id = c.customer_id 
-                         AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                         LIMIT 1),
+                        (SELECT a.deal_value FROM activities a
+                         WHERE a.entity_type = 'customer' AND a.entity_id = c.customer_id
+                           AND a.action = 'follow_up' AND a.tenant_id = c.tenant_id
+                         ORDER BY a.created_at DESC, a.id DESC LIMIT 1),
                         0
-                    ) as latest_potential_value,
-                    COALESCE(
-                        (SELECT sf.next_action
-                         FROM sales_followup sf 
-                         WHERE sf.customer_id = c.customer_id 
-                         AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                         LIMIT 1),
-                        NULL
-                    ) as next_action,
-                    COALESCE(
-                        (SELECT sf.next_action_due_date
-                         FROM sales_followup sf 
-                         WHERE sf.customer_id = c.customer_id 
-                         AND sf.tenant_id = c.tenant_id
-                         ORDER BY sf.created_at DESC, sf.followup_id DESC 
-                         LIMIT 1),
-                        NULL
-                    ) as next_action_due_date
+                    ) as latest_potential_value
                 FROM customers c
                 LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
                 WHERE c.customer_id = ? AND c.tenant_id = ?
@@ -445,20 +302,21 @@ def customer_detail(customer_id):
             # Get followups with pagination
             offset = (page - 1) * per_page
             cursor.execute("""
-                SELECT sf.*, st.salesperson_name,
-                       datetime(sf.created_at, 'localtime') as created_at
-                FROM sales_followup sf
-                LEFT JOIN sales_team st ON sf.created_by = st.salesperson_id
-                WHERE sf.customer_id = ? AND sf.tenant_id = ?
-                ORDER BY sf.created_at DESC, sf.followup_id DESC
+                SELECT a.*,
+                       datetime(a.created_at, 'localtime') as created_at
+                FROM activities a
+                WHERE a.entity_type = 'customer' AND a.entity_id = ?
+                  AND a.action = 'follow_up' AND a.tenant_id = ?
+                ORDER BY a.created_at DESC, a.id DESC
                 LIMIT ? OFFSET ?
             """, (customer_id, get_current_tenant_id(), per_page, offset))
             followups = cursor.fetchall()
 
             # Get total count for pagination
             cursor.execute("""
-                SELECT COUNT(*) FROM sales_followup
-                WHERE customer_id = ? AND tenant_id = ?
+                SELECT COUNT(*) FROM activities
+                WHERE entity_type = 'customer' AND entity_id = ?
+                  AND action = 'follow_up' AND tenant_id = ?
             """, (customer_id, get_current_tenant_id()))
             total_followups = cursor.fetchone()[0]
             total_pages = (total_followups + per_page - 1) // per_page
@@ -709,10 +567,13 @@ def delete_customer(customer_id):
         ).fetchone()
         if not row:
             return jsonify({'success': False, 'message': 'Not found'}), 404
-        conn.execute("DELETE FROM sales_followup   WHERE customer_id = ? AND tenant_id = ?",
+        conn.execute("DELETE FROM sales_followup WHERE customer_id = ? AND tenant_id = ?",
+                     (customer_id, tenant_id))
+        conn.execute("""DELETE FROM activities
+                        WHERE entity_type = 'customer' AND entity_id = ? AND tenant_id = ?""",
                      (customer_id, tenant_id))
         conn.execute("DELETE FROM project_contacts WHERE customer_id = ?", (customer_id,))
-        conn.execute("DELETE FROM customers         WHERE customer_id = ? AND tenant_id = ?",
+        conn.execute("DELETE FROM customers WHERE customer_id = ? AND tenant_id = ?",
                      (customer_id, tenant_id))
         conn.commit()
         return jsonify({'success': True})

@@ -165,16 +165,10 @@ def company_detail(company_id):
             return redirect(url_for('companies.company_list'))
 
         contacts = conn.execute("""
-            SELECT cu.*, COALESCE(sf.current_sales_stage, 'N/A') as stage
+            SELECT cu.*, COALESCE(cu.current_stage, 'N/A') as stage
             FROM customers cu
-            LEFT JOIN (
-                SELECT customer_id, current_sales_stage
-                FROM sales_followup
-                WHERE tenant_id = ?
-                GROUP BY customer_id HAVING MAX(created_at)
-            ) sf ON sf.customer_id = cu.customer_id
             WHERE cu.company_id = ? AND cu.tenant_id = ?
-        """, (tenant_id, company_id, tenant_id)).fetchall()
+        """, (company_id, tenant_id)).fetchall()
 
         projects = conn.execute(
             "SELECT * FROM projects WHERE company_id = ? AND tenant_id = ? ORDER BY created_at DESC",

@@ -39,14 +39,14 @@ def add_followup(customer_id):
             return redirect(url_for('customers.customer_list'))
 
         if request.method == 'POST':
-            last_contact_date    = request.form['last_contact_date']
             last_contact_method  = request.form.get('last_contact_method')
-            summary_last_contact = request.form.get('summary')
-            next_action          = request.form.get('next_action')
-            next_action_due_date = request.form.get('next_action_date')
+            last_contact_date    = request.form['last_contact_date']
+            summary              = request.form.get('summary')
+            notes                = request.form.get('notes', '')
             current_sales_stage  = request.form.get('current_sales_stage')
             potential_deal_value = request.form.get('deal_value')
-            notes                = request.form.get('notes', '')
+            next_action          = request.form.get('next_action')
+            next_action_due_date = request.form.get('next_action_date')
 
             company_id = None
             try:
@@ -54,18 +54,27 @@ def add_followup(customer_id):
             except (IndexError, KeyError):
                 pass
 
-            cursor.execute('''
-                INSERT INTO sales_followup (
-                    customer_id, company_id, assigned_salesperson_id,
-                    last_contact_date, last_contact_method, summary_last_contact,
-                    next_action, next_action_due_date, current_sales_stage,
-                    potential_deal_value, notes, tenant_id, created_at, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), ?)
-            ''', (
-                customer_id, company_id, session['salesperson_id'],
-                last_contact_date, last_contact_method, summary_last_contact,
-                next_action, next_action_due_date, current_sales_stage,
-                potential_deal_value, notes, tenant_id, session['salesperson_id']
+            actor = session.get('salesperson_name', '')
+            details = f'Follow-up — Stage: {current_sales_stage or "—"}'
+
+            cursor.execute("""
+                INSERT INTO activities (
+                    tenant_id, entity_type, entity_id, action,
+                    actor_name, details,
+                    activity_type, contact_date, summary, notes,
+                    sales_stage, deal_value, next_action, next_action_due,
+                    created_by, company_id, created_at
+                ) VALUES (?, 'customer', ?, 'follow_up',
+                          ?, ?,
+                          ?, ?, ?, ?,
+                          ?, ?, ?, ?,
+                          ?, ?, datetime('now','localtime'))
+            """, (
+                tenant_id, customer_id,
+                actor, details,
+                last_contact_method, last_contact_date, summary, notes,
+                current_sales_stage, potential_deal_value, next_action, next_action_due_date,
+                session['salesperson_id'], company_id
             ))
 
             cursor.execute(
@@ -73,10 +82,8 @@ def add_followup(customer_id):
                 (current_sales_stage, customer_id, tenant_id)
             )
 
-            contact_name = customer['contact_person'] or customer['company_name'] or ''
-            log_activity(conn, tenant_id, 'customer', customer_id, 'follow_up_added',
-                         f'Follow-up added — Stage: {current_sales_stage or "—"}')
             if company_id:
+                contact_name = customer['contact_person'] or customer['company_name'] or ''
                 log_activity(conn, tenant_id, 'company', company_id, 'follow_up_added',
                              f'Follow-up for {contact_name} — Stage: {current_sales_stage or "—"}')
 
@@ -115,55 +122,59 @@ def edit_followup(customer_id, followup_id):
         if not customer:
             return redirect(url_for('customers.customer_list'))
 
-        cursor.execute(
-            "SELECT * FROM sales_followup WHERE followup_id = ? AND customer_id = ? AND tenant_id = ?",
-            (followup_id, customer_id, tenant_id)
-        )
+        cursor.execute("""
+            SELECT * FROM activities
+            WHERE id = ? AND entity_type = 'customer' AND entity_id = ?
+              AND action = 'follow_up' AND tenant_id = ?
+        """, (followup_id, customer_id, tenant_id))
         followup = cursor.fetchone()
         if not followup:
             return redirect(url_for('customers.customer_detail', customer_id=customer_id))
 
         if request.method == 'POST':
-            last_contact_date    = request.form['last_contact_date']
             last_contact_method  = request.form.get('last_contact_method')
-            summary_last_contact = request.form.get('summary')
-            next_action          = request.form.get('next_action')
-            next_action_due_date = request.form.get('next_action_date')
+            last_contact_date    = request.form['last_contact_date']
+            summary              = request.form.get('summary')
+            notes                = request.form.get('notes', '')
             current_sales_stage  = request.form.get('current_sales_stage')
             potential_deal_value = request.form.get('deal_value')
-            notes                = request.form.get('notes', '')
+            next_action          = request.form.get('next_action')
+            next_action_due_date = request.form.get('next_action_date')
 
-            cursor.execute('''
-                UPDATE sales_followup SET
-                    last_contact_date    = ?,
-                    last_contact_method  = ?,
-                    summary_last_contact = ?,
-                    next_action          = ?,
-                    next_action_due_date = ?,
-                    current_sales_stage  = ?,
-                    potential_deal_value = ?,
-                    notes                = ?,
-                    updated_at           = datetime('now','localtime')
-                WHERE followup_id = ? AND customer_id = ? AND tenant_id = ?
-            ''', (
-                last_contact_date, last_contact_method, summary_last_contact,
-                next_action, next_action_due_date, current_sales_stage,
-                potential_deal_value, notes,
+            cursor.execute("""
+                UPDATE activities SET
+                    activity_type   = ?,
+                    contact_date    = ?,
+                    summary         = ?,
+                    notes           = ?,
+                    sales_stage     = ?,
+                    deal_value      = ?,
+                    next_action     = ?,
+                    next_action_due = ?,
+                    details         = ?,
+                    updated_at      = datetime('now','localtime')
+                WHERE id = ? AND entity_type = 'customer' AND entity_id = ?
+                  AND action = 'follow_up' AND tenant_id = ?
+            """, (
+                last_contact_method, last_contact_date,
+                summary, notes,
+                current_sales_stage, potential_deal_value,
+                next_action, next_action_due_date,
+                f'Follow-up — Stage: {current_sales_stage or "—"}',
                 followup_id, customer_id, tenant_id
             ))
 
-            # Keep current_stage in sync with latest follow-up stage
             cursor.execute("""
                 UPDATE customers SET current_stage = (
-                    SELECT current_sales_stage FROM sales_followup
-                    WHERE customer_id = ? AND tenant_id = ?
-                    ORDER BY created_at DESC LIMIT 1
+                    SELECT sales_stage FROM activities
+                    WHERE entity_type = 'customer' AND entity_id = ? AND action = 'follow_up'
+                      AND tenant_id = ?
+                    ORDER BY created_at DESC, id DESC LIMIT 1
                 ) WHERE customer_id = ? AND tenant_id = ?
             """, (customer_id, tenant_id, customer_id, tenant_id))
 
             log_activity(conn, tenant_id, 'customer', customer_id, 'updated',
                          f'Follow-up edited — Stage: {current_sales_stage or "—"}')
-
             conn.commit()
             return redirect(url_for('customers.customer_detail', customer_id=customer_id))
 

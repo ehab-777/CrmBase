@@ -291,13 +291,13 @@
           {% for followup in followups %}
           <div class="followup-card">
             <div class="followup-top">
-              <span class="followup-date">{{ _('Contact Date:') }} {{ followup.last_contact_date or '—' }}</span>
-              <span class="stage-pill">{{ followup.current_sales_stage or 'N/A' }}</span>
+              <span class="followup-date">{{ _('Contact Date:') }} {{ followup.contact_date or '—' }}</span>
+              <span class="stage-pill">{{ followup.sales_stage or 'N/A' }}</span>
             </div>
             <div class="followup-grid">
               <div class="followup-field">
                 <div class="followup-label">{{ _('Contact Method') }}</div>
-                <div class="followup-value">{{ followup.last_contact_method or '—' }}</div>
+                <div class="followup-value">{{ followup.activity_type or '—' }}</div>
               </div>
               <div class="followup-field">
                 <div class="followup-label">{{ _('Next Action') }}</div>
@@ -305,22 +305,22 @@
               </div>
               <div class="followup-field">
                 <div class="followup-label">{{ _('Due Date') }}</div>
-                <div class="followup-value">{{ followup.next_action_due_date or '—' }}</div>
+                <div class="followup-value">{{ followup.next_action_due or '—' }}</div>
               </div>
               <div class="followup-field">
                 <div class="followup-label">{{ _('Potential Value') }}</div>
-                <div class="followup-value">{{ followup.potential_deal_value or '—' }}</div>
+                <div class="followup-value">{{ followup.deal_value or '—' }}</div>
               </div>
             </div>
-            {% if followup.summary_last_contact %}
-            <div class="followup-notes">{{ followup.summary_last_contact }}</div>
+            {% if followup.summary %}
+            <div class="followup-notes">{{ followup.summary }}</div>
             {% endif %}
             {% if followup.notes %}
             <div class="followup-notes" style="margin-top:0.4rem;border-left:3px solid var(--primary-color);">{{ followup.notes }}</div>
             {% endif %}
             <div class="followup-footer" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>{{ _('Created by') }}: {{ followup.salesperson_name or '—' }} · {{ followup.created_at }}</span>
-              <a href="{{ url_for('follow_up.edit_followup', customer_id=customer.customer_id, followup_id=followup.followup_id) }}"
+              <span>{{ _('Created by') }}: {{ followup.actor_name or '—' }} · {{ followup.created_at }}</span>
+              <a href="{{ url_for('follow_up.edit_followup', customer_id=customer.customer_id, followup_id=followup.id) }}"
                  class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
             </div>
           </div>

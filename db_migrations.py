@@ -99,6 +99,57 @@ def run(conn):
         cur.execute("ALTER TABLE sales_followup ADD COLUMN updated_at DATETIME")
         print("✅ M004c: updated_at added to sales_followup")
 
+    # ── M005: extend activities for full follow-up data + migrate sales_followup ─
+    _FU_COLS = [
+        ('activity_type',    'TEXT'),
+        ('contact_date',     'DATE'),
+        ('summary',          'TEXT'),
+        ('notes',            'TEXT'),
+        ('sales_stage',      'TEXT'),
+        ('deal_value',       'REAL'),
+        ('next_action',      'TEXT'),
+        ('next_action_due',  'DATE'),
+        ('next_action_done', 'INTEGER DEFAULT 0'),
+        ('created_by',       'INTEGER'),
+        ('company_id',       'INTEGER'),
+        ('updated_at',       'DATETIME'),
+    ]
+    any_added = False
+    for col_name, col_def in _FU_COLS:
+        if not _col_exists(cur, 'activities', col_name):
+            cur.execute(f"ALTER TABLE activities ADD COLUMN {col_name} {col_def}")
+            any_added = True
+    if any_added:
+        print("✅ M005a: follow-up columns added to activities")
+    else:
+        print("⏭  M005a: activities follow-up columns already exist")
+
+    cur.execute("SELECT COUNT(*) FROM activities WHERE action='follow_up'")
+    if cur.fetchone()[0] == 0:
+        cur.execute("""
+            INSERT INTO activities (
+                tenant_id, entity_type, entity_id, action,
+                actor_name, details,
+                activity_type, contact_date, summary, notes,
+                sales_stage, deal_value, next_action, next_action_due,
+                created_by, company_id, created_at
+            )
+            SELECT
+                sf.tenant_id, 'customer', sf.customer_id, 'follow_up',
+                COALESCE(st.salesperson_name, 'Unknown'),
+                'Migrated from sales_followup',
+                sf.last_contact_method, sf.last_contact_date,
+                sf.summary_last_contact, sf.notes,
+                sf.current_sales_stage, sf.potential_deal_value,
+                sf.next_action, sf.next_action_due_date,
+                sf.created_by, sf.company_id, sf.created_at
+            FROM sales_followup sf
+            LEFT JOIN sales_team st ON sf.created_by = st.salesperson_id
+        """)
+        print(f"✅ M005b: migrated {cur.rowcount} rows from sales_followup → activities")
+    else:
+        print("⏭  M005b: sales_followup already migrated")
+
     conn.commit()
 
 
