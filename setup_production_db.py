@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS customers (
     contact_person_position TEXT,
     assigned_salesperson_id INTEGER NOT NULL REFERENCES sales_team(salesperson_id),
     tenant_id INTEGER NOT NULL REFERENCES tenants(id),
-    date_added DATETIME DEFAULT CURRENT_TIMESTAMP
+    date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
+    current_stage TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sales_followup (

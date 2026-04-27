@@ -1,6 +1,4 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
-import sqlite3
-from datetime import datetime
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
 from activity_logger import log_activity
 
@@ -62,6 +60,10 @@ def add_followup(customer_id):
                     next_action_due_date, current_sales_stage, potential_deal_value,
                     notes, tenant_id, session['salesperson_id']
                 ))
+                cursor.execute(
+                    "UPDATE customers SET current_stage = ? WHERE customer_id = ? AND tenant_id = ?",
+                    (current_sales_stage, customer_id, tenant_id)
+                )
                 log_activity(conn, tenant_id, 'customer', customer_id, 'follow_up_added',
                              f'Follow-up added — Stage: {current_sales_stage or "—"}')
                 conn.commit()

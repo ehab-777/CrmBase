@@ -21,5 +21,9 @@ else
     echo "✅ DB exists, skipping init"
 fi
 
+echo "🔄 Running schema migrations..."
+python db_migrations.py
+echo "✅ Migrations complete"
+
 echo "🚀 Starting gunicorn on port ${PORT:-8000}..."
 exec gunicorn -w 1 -b 0.0.0.0:${PORT:-8000} app:app
