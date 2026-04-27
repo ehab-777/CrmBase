@@ -56,6 +56,9 @@ msgstr "الهاتف"
 msgid "Customers"
 msgstr "العملاء"
 
+msgid "Contacts"
+msgstr "جهات الاتصال"
+
 #: templates/components/bottom_nav.html:30
 msgid "Quotes"
 msgstr "عروض الأسعار"
