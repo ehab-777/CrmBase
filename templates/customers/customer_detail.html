@@ -130,6 +130,12 @@
     display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
     background: #e2e8f0; color: var(--text-secondary);
   }
+  .sp-potential   { background: #f1f5f9; color: #64748b; }
+  .sp-contacted   { background: #eff6ff; color: #3b82f6; }
+  .sp-quoted      { background: #f5f3ff; color: #8b5cf6; }
+  .sp-negotiation { background: #fffbeb; color: #d97706; }
+  .sp-won         { background: #ecfdf5; color: #16a34a; }
+  .sp-lost        { background: #fef2f2; color: #dc2626; }
 
   /* Projects table */
   table { width: 100%; border-collapse: collapse; }
@@ -159,6 +165,19 @@
   .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.875rem; }
 </style>
 {% endblock %}
+
+{% macro stage_pill(stage) %}
+  {% set cls = 'stage-pill ' %}
+  {% if 'محتمل' in (stage or '') %}{% set cls = cls ~ 'sp-potential' %}
+  {% elif 'التواصل' in (stage or '') %}{% set cls = cls ~ 'sp-contacted' %}
+  {% elif 'عرض' in (stage or '') %}{% set cls = cls ~ 'sp-quoted' %}
+  {% elif 'التفاوض' in (stage or '') %}{% set cls = cls ~ 'sp-negotiation' %}
+  {% elif 'التسليم' in (stage or '') or 'won' in (stage or '')|lower %}{% set cls = cls ~ 'sp-won' %}
+  {% elif 'لم يتم' in (stage or '') or 'lost' in (stage or '')|lower %}{% set cls = cls ~ 'sp-lost' %}
+  {% else %}{% set cls = cls ~ 'sp-contacted' %}
+  {% endif %}
+  <span class="{{ cls }}">{{ stage or 'N/A' }}</span>
+{% endmacro %}
 
 {% block content %}
 <div class="page-header">
@@ -262,7 +281,7 @@
     {% if customer.current_sales_stage and customer.current_sales_stage != 'N/A' %}
     <div style="margin-top:1rem; background:#fff; border:1.5px solid var(--border-color); border-radius:12px; padding:0.9rem 1.25rem;">
       <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:4px;">{{ _('Sales Stage') }}</div>
-      <span class="stage-pill">{{ customer.current_sales_stage }}</span>
+      {{ stage_pill(customer.current_sales_stage) }}
       {% if customer.latest_potential_value %}
       <div style="margin-top:0.6rem;font-size:0.75rem;color:var(--text-secondary);">{{ _('Expected Value') }}</div>
       <div style="font-size:1rem;font-weight:700;color:var(--primary-color);">{{ "{:,.0f}".format(customer.latest_potential_value) }}</div>
@@ -292,7 +311,7 @@
           <div class="followup-card">
             <div class="followup-top">
               <span class="followup-date">{{ _('Contact Date:') }} {{ followup.contact_date or '—' }}</span>
-              <span class="stage-pill">{{ followup.sales_stage or 'N/A' }}</span>
+              {{ stage_pill(followup.sales_stage) }}
             </div>
             <div class="followup-grid">
               <div class="followup-field">

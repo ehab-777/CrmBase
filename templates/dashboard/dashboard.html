@@ -243,6 +243,14 @@
     .badge-negotiation { background: #fffbeb; color: var(--stage-negotiation, #f59e0b); }
     .badge-won { background: #ecfdf5; color: var(--stage-won, #10b981); }
     .badge-lost { background: #fef2f2; color: var(--stage-lost, #ef4444); }
+
+    .btn-done {
+        font-size: 0.75rem; padding: 0.25rem 0.65rem; border-radius: 6px;
+        border: 1.5px solid #bbf7d0; background: #f0fdf4; color: #16a34a;
+        cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .btn-done:hover { background: #dcfce7; border-color: #86efac; }
+    .followup-actions { display: flex; justify-content: flex-end; margin-top: 0.4rem; }
 </style>
 {% endblock %}
 
@@ -332,13 +340,16 @@
         </div>
         <div id="group-{{ group_id }}">
             {% for f in items %}
-            <div class="followup-item">
+            <div class="followup-item" id="fu-item-{{ f.activity_id }}">
                 <a href="{{ url_for('customers.customer_detail', customer_id=f.customer_id) }}" class="company-link">{{ f.company_name }}</a>
                 <div class="followup-meta">
                     <span><strong>{{ _('Next') }}:</strong> {{ f.next_action or '—' }}</span>
                     <span><strong>{{ _('Due') }}:</strong> {{ f.next_action_due_date or '—' }}</span>
                     <span><strong>{{ _('Summary') }}:</strong> {{ (f.summary_last_contact or '')|truncate(60) }}</span>
                     <span><strong>{{ _('Value') }}:</strong> <span class="deal-value">{{ f.potential_deal_value or '—' }}</span></span>
+                </div>
+                <div class="followup-actions">
+                    <button class="btn-done" onclick="markDone({{ f.activity_id }}, this)">✓ {{ _('Mark Done') }}</button>
                 </div>
             </div>
             {% endfor %}
@@ -370,6 +381,27 @@ function toggleGroup(id, header) {
         content.style.display = 'none';
         header.classList.add('collapsed');
     }
+}
+
+function markDone(id, btn) {
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    btn.disabled = true;
+    fetch('/followup/' + id + '/complete', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            const item = document.getElementById('fu-item-' + id);
+            item.style.transition = 'opacity .3s';
+            item.style.opacity = '0';
+            setTimeout(() => item.remove(), 300);
+        } else {
+            btn.disabled = false;
+        }
+    })
+    .catch(() => { btn.disabled = false; });
 }
 </script>
 {% endblock %}

@@ -567,8 +567,6 @@ def delete_customer(customer_id):
         ).fetchone()
         if not row:
             return jsonify({'success': False, 'message': 'Not found'}), 404
-        conn.execute("DELETE FROM sales_followup WHERE customer_id = ? AND tenant_id = ?",
-                     (customer_id, tenant_id))
         conn.execute("""DELETE FROM activities
                         WHERE entity_type = 'customer' AND entity_id = ? AND tenant_id = ?""",
                      (customer_id, tenant_id))

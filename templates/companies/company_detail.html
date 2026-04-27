@@ -111,6 +111,26 @@
   .badge-hold { background: #fef9c3; color: #a16207; }
 
   .empty-row td { text-align: center; color: var(--text-secondary); padding: 2rem; }
+
+  .fu-card { border-bottom: 1px solid var(--border-color); padding: 1rem 1.25rem; }
+  .fu-card:last-child { border-bottom: none; }
+  .fu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .fu-contact { font-size: 0.8rem; color: var(--text-secondary); }
+  .fu-date { font-size: 0.8rem; color: var(--text-secondary); }
+  .fu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; }
+  @media (max-width: 600px) { .fu-grid { grid-template-columns: 1fr; } }
+  .fu-field { font-size: 0.8rem; }
+  .fu-label { color: var(--text-secondary); margin-bottom: 1px; }
+  .fu-value { color: var(--text-primary); font-weight: 500; }
+  .fu-summary { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-primary); background: #f8fafc; border-radius: 6px; padding: 0.4rem 0.65rem; }
+  .stage-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; background: #e2e8f0; color: var(--text-secondary); }
+  .sp-potential   { background: #f1f5f9; color: #64748b; }
+  .sp-contacted   { background: #eff6ff; color: #3b82f6; }
+  .sp-quoted      { background: #f5f3ff; color: #8b5cf6; }
+  .sp-negotiation { background: #fffbeb; color: #d97706; }
+  .sp-won         { background: #ecfdf5; color: #16a34a; }
+  .sp-lost        { background: #fef2f2; color: #dc2626; }
+  .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.875rem; }
 </style>
 {% endblock %}
 
@@ -195,6 +215,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('contacts', this)">{{ _('Contacts') }} ({{ contacts|length }})</button>
       <button class="tab-btn" onclick="switchTab('projects', this)">{{ _('Projects') }} ({{ projects|length }})</button>
+      <button class="tab-btn" onclick="switchTab('followups', this)">{{ _('Follow-ups') }} ({{ company_followups|length }})</button>
       <button class="tab-btn" onclick="switchTab('activity', this)">{{ _('Activity') }}</button>
     </div>
 
@@ -260,6 +281,64 @@
         </table>
       </div>
     </div>
+    <!-- Follow-ups tab -->
+    <div id="tab-followups" class="tab-pane">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">{{ _('Follow-ups') }}</span>
+        </div>
+        {% if company_followups %}
+          {% for fu in company_followups %}
+          {%- set stage = fu.sales_stage or '' -%}
+          {%- if 'محتمل' in stage %}{% set sp_cls = 'stage-pill sp-potential' %}
+          {%- elif 'التواصل' in stage %}{% set sp_cls = 'stage-pill sp-contacted' %}
+          {%- elif 'عرض' in stage %}{% set sp_cls = 'stage-pill sp-quoted' %}
+          {%- elif 'التفاوض' in stage %}{% set sp_cls = 'stage-pill sp-negotiation' %}
+          {%- elif 'التسليم' in stage %}{% set sp_cls = 'stage-pill sp-won' %}
+          {%- elif 'لم يتم' in stage %}{% set sp_cls = 'stage-pill sp-lost' %}
+          {%- else %}{% set sp_cls = 'stage-pill sp-contacted' %}
+          {%- endif %}
+          <div class="fu-card">
+            <div class="fu-top">
+              <div>
+                <a href="{{ url_for('customers.customer_detail', customer_id=fu.entity_id) }}"
+                   style="color:var(--primary-color);font-weight:600;text-decoration:none;font-size:0.9rem;">
+                  {{ fu.contact_name or '—' }}
+                </a>
+                <span class="fu-contact" style="margin-inline-start:0.5rem;">{{ fu.activity_type or '' }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="{{ sp_cls }}">{{ fu.sales_stage or 'N/A' }}</span>
+                <span class="fu-date">{{ fu.contact_date or '—' }}</span>
+              </div>
+            </div>
+            <div class="fu-grid">
+              <div class="fu-field">
+                <div class="fu-label">{{ _('Next Action') }}</div>
+                <div class="fu-value">{{ fu.next_action or '—' }}</div>
+              </div>
+              <div class="fu-field">
+                <div class="fu-label">{{ _('Due Date') }}</div>
+                <div class="fu-value">{{ fu.next_action_due or '—' }}</div>
+              </div>
+              {% if fu.deal_value %}
+              <div class="fu-field">
+                <div class="fu-label">{{ _('Deal Value') }}</div>
+                <div class="fu-value" style="color:#dc2626;font-weight:600;">{{ "{:,.0f}".format(fu.deal_value) }}</div>
+              </div>
+              {% endif %}
+            </div>
+            {% if fu.summary %}
+            <div class="fu-summary">{{ fu.summary }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">{{ _('No follow-ups recorded for contacts in this company.') }}</div>
+        {% endif %}
+      </div>
+    </div>
+
     <!-- Activity tab -->
     <div id="tab-activity" class="tab-pane">
       {% include "components/activity_timeline.html" %}

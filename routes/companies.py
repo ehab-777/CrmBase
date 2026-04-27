@@ -177,12 +177,22 @@ def company_detail(company_id):
 
         activities = get_activities(conn, tenant_id, 'company', company_id)
 
+        company_followups = conn.execute("""
+            SELECT a.*, c.contact_person AS contact_name
+            FROM activities a
+            JOIN customers c ON a.entity_id = c.customer_id AND a.tenant_id = c.tenant_id
+            WHERE a.action = 'follow_up' AND a.entity_type = 'customer'
+              AND c.company_id = ? AND a.tenant_id = ?
+            ORDER BY a.contact_date DESC, a.created_at DESC
+            LIMIT 50
+        """, (company_id, tenant_id)).fetchall()
+
     finally:
         conn.close()
 
     return render_template('companies/company_detail.html',
                            company=company, contacts=contacts, projects=projects,
-                           activities=activities)
+                           activities=activities, company_followups=company_followups)
 
 
 @companies_bp.route('/<int:company_id>/edit', methods=['GET', 'POST'])
