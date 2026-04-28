@@ -134,6 +134,31 @@
 
   .empty-contacts { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.875rem; }
 
+  /* Follow-ups section */
+  .fu-section { margin-top: 1.5rem; background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+  .fu-section-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); }
+  .fu-section-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+  .fu-card { border-bottom: 1px solid var(--border-color); padding: 1rem 1.25rem; }
+  .fu-card:last-child { border-bottom: none; }
+  .fu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem; }
+  .fu-contact-link { color: var(--primary-color); font-weight: 600; text-decoration: none; font-size: 0.9rem; }
+  .fu-contact-link:hover { text-decoration: underline; }
+  .fu-method { font-size: 0.78rem; color: var(--text-secondary); margin-inline-start: 0.4rem; }
+  .fu-date { font-size: 0.78rem; color: var(--text-secondary); }
+  .fu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; margin-top: 0.35rem; }
+  @media (max-width: 600px) { .fu-grid { grid-template-columns: 1fr; } }
+  .fu-field-label { font-size: 0.75rem; color: var(--text-secondary); }
+  .fu-field-val { font-size: 0.82rem; color: var(--text-primary); font-weight: 500; }
+  .fu-summary { margin-top: 0.45rem; font-size: 0.8rem; color: var(--text-primary); background: #f8fafc; border-radius: 6px; padding: 0.4rem 0.65rem; }
+  .fu-empty { text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.875rem; }
+  .stage-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; }
+  .sp-potential   { background: #f1f5f9; color: #64748b; }
+  .sp-contacted   { background: #eff6ff; color: #3b82f6; }
+  .sp-quoted      { background: #f5f3ff; color: #8b5cf6; }
+  .sp-negotiation { background: #fffbeb; color: #d97706; }
+  .sp-won         { background: #ecfdf5; color: #16a34a; }
+  .sp-lost        { background: #fef2f2; color: #dc2626; }
+
   /* Description */
   .desc-box {
     background: #f8fafc; border-radius: 10px; padding: 1rem 1.25rem;
@@ -275,6 +300,59 @@
     </div>
   </div>
 
+</div>
+
+{# ── Follow-ups for linked contacts ── #}
+<div class="fu-section">
+  <div class="fu-section-header">
+    <span class="fu-section-title">{{ _('Follow-ups') }} <span style="font-weight:400;color:var(--text-secondary)">({{ project_followups|length }})</span></span>
+  </div>
+  {% if project_followups %}
+    {% for fu in project_followups %}
+      {%- set stage = fu.sales_stage or '' -%}
+      {%- if 'محتمل' in stage %}{% set sp = 'stage-pill sp-potential' %}
+      {%- elif 'التواصل' in stage %}{% set sp = 'stage-pill sp-contacted' %}
+      {%- elif 'عرض' in stage %}{% set sp = 'stage-pill sp-quoted' %}
+      {%- elif 'التفاوض' in stage %}{% set sp = 'stage-pill sp-negotiation' %}
+      {%- elif 'التسليم' in stage %}{% set sp = 'stage-pill sp-won' %}
+      {%- elif 'لم يتم' in stage %}{% set sp = 'stage-pill sp-lost' %}
+      {%- else %}{% set sp = 'stage-pill sp-contacted' %}
+      {%- endif %}
+    <div class="fu-card">
+      <div class="fu-top">
+        <div>
+          <a href="{{ url_for('customers.customer_detail', customer_id=fu.entity_id) }}" class="fu-contact-link">{{ fu.contact_name or '—' }}</a>
+          <span class="fu-method">{{ fu.activity_type or '' }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="{{ sp }}">{{ fu.sales_stage or 'N/A' }}</span>
+          <span class="fu-date">{{ fu.contact_date or '—' }}</span>
+        </div>
+      </div>
+      <div class="fu-grid">
+        <div>
+          <div class="fu-field-label">{{ _('Next Action') }}</div>
+          <div class="fu-field-val">{{ fu.next_action or '—' }}</div>
+        </div>
+        <div>
+          <div class="fu-field-label">{{ _('Due Date') }}</div>
+          <div class="fu-field-val">{{ fu.next_action_due or '—' }}</div>
+        </div>
+        {% if fu.deal_value %}
+        <div>
+          <div class="fu-field-label">{{ _('Deal Value') }}</div>
+          <div class="fu-field-val" style="color:#dc2626;font-weight:600;">{{ "{:,.0f}".format(fu.deal_value) }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if fu.summary %}
+      <div class="fu-summary">{{ fu.summary }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="fu-empty">{{ _('No follow-ups recorded for contacts linked to this project.') }}</div>
+  {% endif %}
 </div>
 
 {% include "components/activity_timeline.html" %}

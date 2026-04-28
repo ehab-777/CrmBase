@@ -179,12 +179,23 @@ def project_detail(project_id):
 
         activities = get_activities(conn, tenant_id, 'project', project_id)
 
+        project_followups = conn.execute("""
+            SELECT a.*, cu.contact_person AS contact_name
+            FROM activities a
+            JOIN project_contacts pc ON pc.customer_id = a.entity_id
+            JOIN customers cu ON cu.customer_id = a.entity_id AND cu.tenant_id = a.tenant_id
+            WHERE a.action = 'follow_up' AND a.entity_type = 'customer'
+              AND pc.project_id = ? AND a.tenant_id = ?
+            ORDER BY a.contact_date DESC, a.created_at DESC
+            LIMIT 50
+        """, (project_id, tenant_id)).fetchall()
+
     finally:
         conn.close()
 
     return render_template('projects/project_detail.html',
                            project=project, contacts=contacts, all_contacts=all_contacts,
-                           activities=activities)
+                           activities=activities, project_followups=project_followups)
 
 
 @projects_bp.route('/<int:project_id>/edit', methods=['GET', 'POST'])
