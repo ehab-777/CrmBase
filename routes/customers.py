@@ -32,11 +32,13 @@ def customer_list():
         user_role = session.get('role')  # Get the user's role
         conn = get_db()
         cursor = conn.cursor()
-        search_term = request.args.get('search')
-        sort_by = request.args.get('sort_by')
-        order = request.args.get('order', 'asc')
-        page = request.args.get('page', 1, type=int)
-        per_page = 12
+        search_term   = request.args.get('search')
+        sort_by       = request.args.get('sort_by')
+        order         = request.args.get('order', 'asc')
+        page          = request.args.get('page', 1, type=int)
+        per_page      = 12
+        contact_from  = request.args.get('contact_from', '').strip()
+        contact_to    = request.args.get('contact_to', '').strip()
 
         query = '''
             SELECT
@@ -82,6 +84,17 @@ def customer_list():
             """
             params.extend([search_term_lower] * 5)
 
+        _last_contact_subq = """(SELECT date(a2.contact_date) FROM activities a2
+             WHERE a2.entity_type='customer' AND a2.entity_id=c.customer_id
+               AND a2.action='follow_up' AND a2.tenant_id=c.tenant_id
+             ORDER BY a2.contact_date DESC, a2.id DESC LIMIT 1)"""
+        if contact_from:
+            query += f" AND {_last_contact_subq} >= ?"
+            params.append(contact_from)
+        if contact_to:
+            query += f" AND {_last_contact_subq} <= ?"
+            params.append(contact_to)
+
         if sort_by:
             sort_by_lower = sort_by.lower()
             allowed_columns = ['customer_id', 'company_name', 'contact_person', 'phone_number', 'date_added', 'last_contact_date', 'current_sales_stage', 'salesperson_name']
@@ -113,6 +126,10 @@ def customer_list():
             count_params.append(stage_filter)
         if search_term:
             count_params.extend([search_term_lower] * 5)
+        if contact_from:
+            count_params.append(contact_from)
+        if contact_to:
+            count_params.append(contact_to)
 
         count_query = """
             SELECT COUNT(DISTINCT c.customer_id)
@@ -138,6 +155,11 @@ def customer_list():
                      LOWER(st.salesperson_name) LIKE ? OR
                      LOWER(COALESCE(c.current_stage, '')) LIKE ?)
             """
+
+        if contact_from:
+            count_query += f" AND {_last_contact_subq} >= ?"
+        if contact_to:
+            count_query += f" AND {_last_contact_subq} <= ?"
 
         cursor.execute(count_query, count_params)
         total_customers = cursor.fetchone()[0]
@@ -167,7 +189,9 @@ def customer_list():
                              page=page,
                              total_pages=total_pages,
                              sales_stages=sales_stages,
-                             current_stage=request.args.get('stage', ''))
+                             current_stage=request.args.get('stage', ''),
+                             contact_from=contact_from,
+                             contact_to=contact_to)
     return redirect(url_for('auth.login'))
 
 @customers_bp.route('/add', methods=['GET', 'POST'])

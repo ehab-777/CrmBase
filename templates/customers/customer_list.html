@@ -133,10 +133,26 @@
   .page-link.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
   .page-link.disabled { opacity: .4; pointer-events: none; }
 
+  .date-input {
+    padding: 0.52rem 0.6rem; border: 1.5px solid var(--border-color);
+    border-radius: 8px; font-size: 0.82rem; font-family: inherit;
+    background: #fff; color: var(--text-primary); transition: border-color .2s;
+    max-width: 140px;
+  }
+  .date-input:focus { outline: none; border-color: var(--primary-color); }
+  .date-sep { font-size: 0.8rem; color: var(--text-secondary); }
+  .btn-clear-date {
+    padding: 0.42rem 0.55rem; border-radius: 7px; font-size: 0.8rem;
+    border: 1.5px solid var(--border-color); background: #fff;
+    color: var(--text-secondary); cursor: pointer; line-height: 1; transition: all .15s;
+  }
+  .btn-clear-date:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
   @media (max-width: 640px) {
     .ph-toolbar { gap: 0.4rem; }
     .search-box input { width: 150px; }
     .cards-grid { grid-template-columns: 1fr; }
+    .date-input { max-width: 120px; }
   }
 </style>
 {% endblock %}
@@ -148,20 +164,34 @@
     <span class="ph-count">{{ total }} {{ _('total') }}</span>
   </div>
   <div class="ph-toolbar">
-    <form method="get" action="" id="filterForm" class="search-box">
-      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" name="search" id="searchInput"
-             value="{{ search_term or '' }}"
-             placeholder="{{ _('Search customers…') }}"
-             oninput="debounceSearch()">
+    <form method="get" action="" id="filterForm" style="display:contents">
+      <div class="search-box">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" name="search" id="searchInput"
+               value="{{ search_term or '' }}"
+               placeholder="{{ _('Search customers…') }}"
+               oninput="debounceSearch()">
+      </div>
       <input type="hidden" name="stage" id="stageHidden" value="{{ current_stage or '' }}">
+      <select class="filter-select" id="stageSelect" onchange="applyStage(this.value)">
+        <option value="">{{ _('All Stages') }}</option>
+        {% for stage in sales_stages %}
+        <option value="{{ stage }}" {% if current_stage == stage %}selected{% endif %}>{{ stage }}</option>
+        {% endfor %}
+      </select>
+      <input type="date" name="contact_from" class="date-input"
+             value="{{ contact_from or '' }}"
+             title="{{ _('Last contacted from') }}"
+             onchange="this.form.submit()">
+      <span class="date-sep">–</span>
+      <input type="date" name="contact_to" class="date-input"
+             value="{{ contact_to or '' }}"
+             title="{{ _('Last contacted to') }}"
+             onchange="this.form.submit()">
+      {% if contact_from or contact_to %}
+      <button type="button" class="btn-clear-date" onclick="clearDates()" title="{{ _('Clear date filter') }}">✕</button>
+      {% endif %}
     </form>
-    <select class="filter-select" id="stageSelect" onchange="applyStage(this.value)">
-      <option value="">{{ _('All Stages') }}</option>
-      {% for stage in sales_stages %}
-      <option value="{{ stage }}" {% if current_stage == stage %}selected{% endif %}>{{ stage }}</option>
-      {% endfor %}
-    </select>
     <div class="view-toggle">
       <button class="view-btn" id="btnCards" onclick="setView('cards')" title="{{ _('Card view') }}">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -299,15 +329,13 @@
 {% endif %}
 
 {% if total_pages > 1 %}
+{% set pg_base = '&search=' ~ (search_term or '') ~ '&stage=' ~ (current_stage or '') ~ '&contact_from=' ~ (contact_from or '') ~ '&contact_to=' ~ (contact_to or '') %}
 <div class="pagination">
-  <a href="?page={{ page-1 }}&search={{ search_term or '' }}&stage={{ current_stage or '' }}"
-     class="page-link {% if page == 1 %}disabled{% endif %}">‹</a>
+  <a href="?page={{ page-1 }}{{ pg_base }}" class="page-link {% if page == 1 %}disabled{% endif %}">‹</a>
   {% for p in range(1, total_pages+1) %}
-    <a href="?page={{ p }}&search={{ search_term or '' }}&stage={{ current_stage or '' }}"
-       class="page-link {% if p == page %}active{% endif %}">{{ p }}</a>
+    <a href="?page={{ p }}{{ pg_base }}" class="page-link {% if p == page %}active{% endif %}">{{ p }}</a>
   {% endfor %}
-  <a href="?page={{ page+1 }}&search={{ search_term or '' }}&stage={{ current_stage or '' }}"
-     class="page-link {% if page == total_pages %}disabled{% endif %}">›</a>
+  <a href="?page={{ page+1 }}{{ pg_base }}" class="page-link {% if page == total_pages %}disabled{% endif %}">›</a>
 </div>
 {% endif %}
 
@@ -335,6 +363,13 @@ let _st;
 function debounceSearch() {
   clearTimeout(_st);
   _st = setTimeout(() => document.getElementById('filterForm').submit(), 400);
+}
+
+// ── Clear date filter ──────────────────────────────────
+function clearDates() {
+  document.querySelector('input[name="contact_from"]').value = '';
+  document.querySelector('input[name="contact_to"]').value = '';
+  document.getElementById('filterForm').submit();
 }
 
 // ── Delete ─────────────────────────────────────────────
