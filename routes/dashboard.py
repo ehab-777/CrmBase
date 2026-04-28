@@ -8,13 +8,12 @@ _ACTIVE_STAGES = ('عميل محتمل', 'تقديم عرض السعر', 'جار
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def _latest_fu_scalar(field, alias=None):
-    """Return a scalar subquery that fetches `field` from the latest follow_up activity."""
-    a = alias or field
+def _lfu(field):
+    """Raw scalar subquery — latest follow_up activity field for the current customer row c."""
     return f"""(SELECT a.{field} FROM activities a
              WHERE a.entity_type='customer' AND a.entity_id=c.customer_id
                AND a.action='follow_up' AND a.tenant_id=c.tenant_id
-             ORDER BY a.created_at DESC, a.id DESC LIMIT 1) AS {a}"""
+             ORDER BY a.created_at DESC, a.id DESC LIMIT 1)"""
 
 
 # ── salesperson dashboard ────────────────────────────────────────────────────
@@ -32,8 +31,8 @@ def dashboard():
 
     # Total customers
     cursor.execute(
-        "SELECT COUNT(*) FROM customers WHERE assigned_salesperson_id = ?",
-        (salesperson_id,)
+        "SELECT COUNT(*) FROM customers WHERE assigned_salesperson_id = ? AND tenant_id = ?",
+        (salesperson_id, tenant_id)
     )
     total_customers = cursor.fetchone()[0]
 
@@ -46,14 +45,14 @@ def dashboard():
             COUNT(DISTINCT CASE WHEN c.current_stage='تم التسليم'   THEN c.customer_id END) AS won_count,
             COUNT(DISTINCT CASE WHEN c.current_stage='لم يتم البيع' THEN c.customer_id END) AS lost_count,
             COALESCE(SUM(CASE WHEN COALESCE(c.current_stage,'عميل محتمل') IN ({active_in})
-                THEN COALESCE({_latest_fu_scalar('deal_value','dv')},0) ELSE 0 END),0) AS active_value,
+                THEN COALESCE({_lfu('deal_value')}, 0) ELSE 0 END), 0) AS active_value,
             COALESCE(SUM(CASE WHEN c.current_stage='تم التسليم'
-                THEN COALESCE({_latest_fu_scalar('deal_value','dv')},0) ELSE 0 END),0) AS won_value,
+                THEN COALESCE({_lfu('deal_value')}, 0) ELSE 0 END), 0) AS won_value,
             COALESCE(SUM(CASE WHEN c.current_stage='لم يتم البيع'
-                THEN COALESCE({_latest_fu_scalar('deal_value','dv')},0) ELSE 0 END),0) AS lost_value
+                THEN COALESCE({_lfu('deal_value')}, 0) ELSE 0 END), 0) AS lost_value
         FROM customers c
-        WHERE c.assigned_salesperson_id = ?
-    """, list(_ACTIVE_STAGES) * 2 + [salesperson_id])
+        WHERE c.assigned_salesperson_id = ? AND c.tenant_id = ?
+    """, list(_ACTIVE_STAGES) * 2 + [salesperson_id, tenant_id])
     metrics = cursor.fetchone()
     status_counts = {
         'Active':     {'count': metrics['active_count'], 'value': metrics['active_value']},
@@ -65,25 +64,25 @@ def dashboard():
     # Open leads — active stage customers sorted by deal value
     cursor.execute(f"""
         SELECT c.customer_id, c.company_name,
-               COALESCE({_latest_fu_scalar('deal_value','dv')}, 0) AS deal_value
+               COALESCE({_lfu('deal_value')}, 0) AS deal_value
         FROM customers c
-        WHERE c.assigned_salesperson_id = ?
+        WHERE c.assigned_salesperson_id = ? AND c.tenant_id = ?
           AND COALESCE(c.current_stage,'عميل محتمل') IN ({active_in})
         ORDER BY deal_value DESC, c.company_name
-    """, [salesperson_id] + list(_ACTIVE_STAGES))
+    """, [salesperson_id, tenant_id] + list(_ACTIVE_STAGES))
     open_leads = cursor.fetchall()
 
     # Sales pipeline
     cursor.execute(f"""
-        SELECT DISTINCT
+        SELECT
             COALESCE(c.current_stage,'عميل محتمل') AS current_sales_stage,
             c.customer_id,
             c.company_name AS company,
-            {_latest_fu_scalar('contact_date', 'last_contact_date')},
-            {_latest_fu_scalar('summary')},
-            {_latest_fu_scalar('deal_value')}
+            {_lfu('contact_date')} AS last_contact_date,
+            {_lfu('summary')}      AS summary,
+            {_lfu('deal_value')}   AS deal_value
         FROM customers c
-        WHERE c.assigned_salesperson_id = ?
+        WHERE c.assigned_salesperson_id = ? AND c.tenant_id = ?
         ORDER BY
             CASE COALESCE(c.current_stage,'عميل محتمل')
                 WHEN 'عميل محتمل'        THEN 1
@@ -94,36 +93,37 @@ def dashboard():
                 WHEN 'لم يتم البيع'      THEN 6
                 ELSE 7
             END, c.company_name
-    """, (salesperson_id,))
+    """, (salesperson_id, tenant_id))
     sales_pipeline = {}
     for row in cursor.fetchall():
         stage = row['current_sales_stage']
         if stage not in sales_pipeline:
             sales_pipeline[stage] = []
         sales_pipeline[stage].append({
-            'customer_id':      row['customer_id'],
-            'company':          row['company'],
+            'customer_id':       row['customer_id'],
+            'company':           row['company'],
             'last_contact_date': row['last_contact_date'],
-            'summary':          row['summary'],
-            'deal_value':       row['deal_value'],
+            'summary':           row['summary'],
+            'deal_value':        row['deal_value'],
         })
 
     # Recent follow-ups
     cursor.execute("""
         SELECT a.entity_id AS customer_id, c.company_name,
-               a.contact_date AS last_contact_date,
-               a.activity_type AS last_contact_method,
-               a.summary AS summary_last_contact
+               a.contact_date     AS last_contact_date,
+               a.activity_type    AS last_contact_method,
+               a.summary          AS summary_last_contact
         FROM activities a
         JOIN customers c ON a.entity_id = c.customer_id AND a.tenant_id = c.tenant_id
         WHERE a.action = 'follow_up' AND a.entity_type = 'customer'
+          AND a.tenant_id = ?
           AND c.assigned_salesperson_id = ?
         ORDER BY a.contact_date DESC
         LIMIT 5
-    """, (salesperson_id,))
+    """, (tenant_id, salesperson_id))
     recent_followups = cursor.fetchall()
 
-    # Upcoming follow-ups with next_action_done filter
+    # Upcoming follow-ups
     today = datetime.now().strftime('%Y-%m-%d')
     cursor.execute(f"""
         SELECT
@@ -135,9 +135,12 @@ def dashboard():
             a.deal_value         AS potential_deal_value,
             a.id                 AS activity_id,
             CASE
-                WHEN date(a.next_action_due) = ?                                           THEN 'today'
-                WHEN date(a.next_action_due) BETWEEN date(?,'+1 day') AND date(?,'+7 days') THEN 'this_week'
-                WHEN date(a.next_action_due) BETWEEN date(?,'+8 days') AND date(?,'+14 days') THEN 'next_week'
+                WHEN date(a.next_action_due) = date(?)
+                    THEN 'today'
+                WHEN date(a.next_action_due) BETWEEN date(?,'+1 day') AND date(?,'+7 days')
+                    THEN 'this_week'
+                WHEN date(a.next_action_due) BETWEEN date(?,'+8 days') AND date(?,'+14 days')
+                    THEN 'next_week'
                 ELSE 'later'
             END AS time_period
         FROM activities a
@@ -146,8 +149,7 @@ def dashboard():
           AND a.tenant_id = ?
           AND c.assigned_salesperson_id = ?
           AND a.next_action_due IS NOT NULL
-          AND date(a.next_action_due) >= ?
-          AND (a.next_action IS NULL OR a.next_action != 'إغلاق البيع')
+          AND date(a.next_action_due) >= date(?)
           AND COALESCE(c.current_stage,'عميل محتمل') NOT IN ('تم التسليم','لم يتم البيع')
           AND COALESCE(a.next_action_done, 0) = 0
         ORDER BY a.next_action_due ASC
@@ -204,7 +206,7 @@ def manager_dashboard():
         )
         salespeople = cursor.fetchall()
 
-        # Stage dropdown — from current_stage on customers
+        # Stage dropdown
         cursor.execute("""
             SELECT DISTINCT current_stage AS current_sales_stage
             FROM customers
@@ -222,7 +224,7 @@ def manager_dashboard():
                    AND a.action='follow_up' AND a.tenant_id=c.tenant_id
                    AND a.next_action_due IS NOT NULL AND COALESCE(a.next_action_done,0)=0
                  ORDER BY a.next_action_due ASC LIMIT 1) AS next_followup_date,
-                {_latest_fu_scalar('contact_date','last_contact_date')}
+                {_lfu('contact_date')} AS last_contact_date
             FROM customers c
             LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
             WHERE c.tenant_id = ?
@@ -273,7 +275,7 @@ def manager_dashboard():
             SELECT
                 COALESCE(c.current_stage,'عميل محتمل') AS current_sales_stage,
                 COUNT(*) AS count,
-                COALESCE(SUM(COALESCE({_latest_fu_scalar('deal_value','dv')},0)),0) AS total_value
+                COALESCE(SUM(COALESCE({_lfu('deal_value')}, 0)), 0) AS total_value
             FROM customers c
             LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
             WHERE c.tenant_id = ?
@@ -312,18 +314,20 @@ def manager_dashboard():
                 c.customer_id, c.company_name AS company,
                 c.contact_person, c.phone_number,
                 st.first_name AS salesperson_name,
-                (SELECT a.next_action FROM activities a WHERE a.entity_type='customer'
-                 AND a.entity_id=c.customer_id AND a.action='follow_up' AND a.tenant_id=c.tenant_id
+                (SELECT a.next_action FROM activities a
+                 WHERE a.entity_type='customer' AND a.entity_id=c.customer_id
+                   AND a.action='follow_up' AND a.tenant_id=c.tenant_id
                  ORDER BY a.created_at DESC, a.id DESC LIMIT 1) AS next_action,
-                (SELECT a.next_action_due FROM activities a WHERE a.entity_type='customer'
-                 AND a.entity_id=c.customer_id AND a.action='follow_up' AND a.tenant_id=c.tenant_id
+                (SELECT a.next_action_due FROM activities a
+                 WHERE a.entity_type='customer' AND a.entity_id=c.customer_id
+                   AND a.action='follow_up' AND a.tenant_id=c.tenant_id
                  ORDER BY a.created_at DESC, a.id DESC LIMIT 1) AS next_action_due_date,
-                {_latest_fu_scalar('contact_date','last_contact_date')},
-                {_latest_fu_scalar('summary','summary_last_contact')},
-                COALESCE({_latest_fu_scalar('deal_value','potential_deal_value')},0) AS potential_deal_value,
-                (SELECT COUNT(*) FROM activities a WHERE a.entity_type='customer'
-                 AND a.entity_id=c.customer_id AND a.action='follow_up'
-                 AND a.tenant_id=c.tenant_id) AS followup_count
+                {_lfu('contact_date')} AS last_contact_date,
+                {_lfu('summary')}      AS summary_last_contact,
+                COALESCE({_lfu('deal_value')}, 0) AS potential_deal_value,
+                (SELECT COUNT(*) FROM activities a
+                 WHERE a.entity_type='customer' AND a.entity_id=c.customer_id
+                   AND a.action='follow_up' AND a.tenant_id=c.tenant_id) AS followup_count
             FROM customers c
             LEFT JOIN sales_team st ON c.assigned_salesperson_id = st.salesperson_id
             WHERE c.tenant_id = ?
@@ -354,17 +358,17 @@ def manager_dashboard():
             if row_stage not in pipeline_by_stage:
                 pipeline_by_stage[row_stage] = {'companies': [], 'total_value': 0.0}
             pipeline_by_stage[row_stage]['companies'].append({
-                'customer_id':      row['customer_id'],
-                'company':          row['company'],
-                'contact_person':   row['contact_person'],
-                'phone_number':     row['phone_number'],
-                'salesperson':      row['salesperson_name'],
-                'next_action':      row['next_action'],
-                'next_action_date': row['next_action_due_date'],
-                'last_contact_date':row['last_contact_date'],
-                'summary':          row['summary_last_contact'],
-                'deal_value':       deal_value,
-                'followup_count':   row['followup_count'],
+                'customer_id':       row['customer_id'],
+                'company':           row['company'],
+                'contact_person':    row['contact_person'],
+                'phone_number':      row['phone_number'],
+                'salesperson':       row['salesperson_name'],
+                'next_action':       row['next_action'],
+                'next_action_date':  row['next_action_due_date'],
+                'last_contact_date': row['last_contact_date'],
+                'summary':           row['summary_last_contact'],
+                'deal_value':        deal_value,
+                'followup_count':    row['followup_count'],
             })
             pipeline_by_stage[row_stage]['total_value'] += deal_value
 
