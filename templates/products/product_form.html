@@ -170,15 +170,15 @@
                 </div>
                 <div class="form-group">
                     <label for="category" class="form-label">{{ _('Category') }}</label>
-                    <input type="text" id="category" name="category" class="form-control"
-                           value="{{ product.get('category', '') }}"
-                           list="category-list"
-                           placeholder="{{ _('e.g. Software, Hardware…') }}">
-                    <datalist id="category-list">
+                    <select id="category" name="category" class="form-control">
+                        <option value="">— {{ _('Select category') }} —</option>
                         {% for cat in categories %}
-                        <option value="{{ cat }}">
+                        <option value="{{ cat.value }}"
+                                {% if product.get('category') == cat.value %}selected{% endif %}>
+                            {% if session.get('lang') == 'ar' and cat.label_ar %}{{ cat.label_ar }}{% else %}{{ cat.value }}{% endif %}
+                        </option>
                         {% endfor %}
-                    </datalist>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="unit" class="form-label">{{ _('Unit of Measure') }}</label>

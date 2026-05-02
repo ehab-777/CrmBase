@@ -301,7 +301,9 @@
         <select name="category">
             <option value="">{{ _('All Categories') }}</option>
             {% for cat in categories %}
-            <option value="{{ cat }}" {% if cat == category %}selected{% endif %}>{{ cat }}</option>
+            <option value="{{ cat.value }}" {% if cat.value == category %}selected{% endif %}>
+                {% if session.get('lang') == 'ar' and cat.label_ar %}{{ cat.label_ar }}{% else %}{{ cat.value }}{% endif %}
+            </option>
             {% endfor %}
         </select>
         <button type="submit" class="btn-search">{{ _('Search') }}</button>

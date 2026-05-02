@@ -14,7 +14,8 @@ CATEGORIES = [
     {'key': 'sales_stage',    'name_en': 'Sales Stages',      'name_ar': 'مراحل البيع',        'icon': 'trending',  'module': 'follow_up'},
     {'key': 'next_action',    'name_en': 'Next Actions',      'name_ar': 'الإجراءات التالية',  'icon': 'zap',       'module': 'follow_up'},
     {'key': 'activity_type',  'name_en': 'Activity Types',    'name_ar': 'أنواع الأنشطة',      'icon': 'activity',  'module': 'follow_up'},
-    {'key': 'project_status', 'name_en': 'Project Statuses',  'name_ar': 'حالات المشاريع',     'icon': 'briefcase', 'module': 'projects'},
+    {'key': 'project_status',   'name_en': 'Project Statuses',   'name_ar': 'حالات المشاريع',      'icon': 'briefcase', 'module': 'projects'},
+    {'key': 'product_category', 'name_en': 'Product Categories', 'name_ar': 'تصنيفات المنتجات',   'icon': 'tag',       'module': 'products'},
 ]
 
 CATEGORY_KEYS = {c['key'] for c in CATEGORIES}
@@ -40,6 +41,11 @@ SECTIONS = [
         'key': 'projects',  'name_en': 'Projects',    'name_ar': 'المشاريع',
         'color': '#16a34a', 'bg': '#f0fdf4',
         'cat_keys': ['project_status'],
+    },
+    {
+        'key': 'products',  'name_en': 'Products',    'name_ar': 'المنتجات',
+        'color': '#0891b2', 'bg': '#f0f9ff',
+        'cat_keys': ['product_category'],
     },
 ]
 

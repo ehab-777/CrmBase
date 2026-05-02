@@ -87,8 +87,8 @@ def product_list():
         params + [per_page, (page - 1) * per_page]
     ).fetchall()
 
-    categories = cursor.execute(
-        'SELECT DISTINCT category FROM products WHERE tenant_id = ? AND is_active = 1 AND category IS NOT NULL ORDER BY category',
+    config_categories = cursor.execute(
+        "SELECT value, label_ar FROM config_options WHERE tenant_id = ? AND category = 'product_category' AND is_active = 1 ORDER BY display_order, value",
         (tenant_id,)
     ).fetchall()
 
@@ -98,7 +98,7 @@ def product_list():
 
     return render_template('products/product_list.html',
         products=products,
-        categories=[c['category'] for c in categories],
+        categories=config_categories,
         search=search,
         category=category,
         page=page,
@@ -122,11 +122,10 @@ def add_product():
     tenant_id = get_current_tenant_id()
     conn = get_db()
 
-    # Existing categories for datalist
-    categories = [r['category'] for r in conn.execute(
-        'SELECT DISTINCT category FROM products WHERE tenant_id = ? AND category IS NOT NULL ORDER BY category',
+    config_categories = conn.execute(
+        "SELECT value, label_ar FROM config_options WHERE tenant_id = ? AND category = 'product_category' AND is_active = 1 ORDER BY display_order, value",
         (tenant_id,)
-    ).fetchall()]
+    ).fetchall()
 
     if request.method == 'POST':
         data = _form_data()
@@ -135,7 +134,7 @@ def add_product():
             conn.close()
             flash(error, 'error')
             return render_template('products/product_form.html',
-                product=data, categories=categories, units=UNITS, action='add')
+                product=data, categories=config_categories, units=UNITS, action='add')
 
         conn.execute('''
             INSERT INTO products
@@ -151,7 +150,7 @@ def add_product():
 
     conn.close()
     return render_template('products/product_form.html',
-        product={}, categories=categories, units=UNITS, action='add')
+        product={}, categories=config_categories, units=UNITS, action='add')
 
 
 # ── Edit ──────────────────────────────────────────────────────────────────────
@@ -177,10 +176,10 @@ def edit_product(product_id):
         conn.close()
         abort(404)
 
-    categories = [r['category'] for r in conn.execute(
-        'SELECT DISTINCT category FROM products WHERE tenant_id = ? AND category IS NOT NULL ORDER BY category',
+    config_categories = conn.execute(
+        "SELECT value, label_ar FROM config_options WHERE tenant_id = ? AND category = 'product_category' AND is_active = 1 ORDER BY display_order, value",
         (tenant_id,)
-    ).fetchall()]
+    ).fetchall()
 
     if request.method == 'POST':
         data = _form_data()
@@ -190,7 +189,7 @@ def edit_product(product_id):
             flash(error, 'error')
             return render_template('products/product_form.html',
                 product={**dict(product), **data},
-                categories=categories, units=UNITS, action='edit',
+                categories=config_categories, units=UNITS, action='edit',
                 product_id=product_id)
 
         conn.execute('''
@@ -208,7 +207,7 @@ def edit_product(product_id):
 
     conn.close()
     return render_template('products/product_form.html',
-        product=dict(product), categories=categories,
+        product=dict(product), categories=config_categories,
         units=UNITS, action='edit', product_id=product_id)
 
 
