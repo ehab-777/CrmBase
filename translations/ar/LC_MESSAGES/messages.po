@@ -79,7 +79,7 @@ msgstr "تحميل"
 #: templates/customers/customer_list.html:362
 #: templates/dashboard/dashboard.html:252
 msgid "Add Customer"
-msgstr "إضافة عميل"
+msgstr "إضافة جهة اتصال"
 
 #: templates/components/fab.html:31
 msgid "Full Customer Form"
