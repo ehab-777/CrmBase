@@ -177,7 +177,7 @@
 .fab-main {
   position: fixed;
   bottom: 24px;
-  inset-inline-end: 28px;   /* right in LTR, LEFT in RTL = far left in Arabic */
+  right: 28px;              /* always physical right, regardless of RTL */
   width: 52px; height: 52px;
   border-radius: 50%;
   background: #2563eb;
