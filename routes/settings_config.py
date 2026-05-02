@@ -6,18 +6,50 @@ settings_config_bp = Blueprint('settings_config', __name__, url_prefix='/setting
 
 # All supported categories with metadata
 CATEGORIES = [
-    {'key': 'lead_source',    'name_en': 'Lead Sources',     'name_ar': 'مصادر الفرص',      'icon': 'target',    'module': 'customers'},
-    {'key': 'city',           'name_en': 'Cities',            'name_ar': 'المدن',            'icon': 'map-pin',   'module': 'customers'},
+    {'key': 'lead_source',    'name_en': 'Lead Sources',     'name_ar': 'مصادر الفرص',       'icon': 'target',    'module': 'customers'},
+    {'key': 'city',           'name_en': 'Cities',            'name_ar': 'المدن',             'icon': 'map-pin',   'module': 'customers'},
     {'key': 'job_title',      'name_en': 'Job Titles',        'name_ar': 'المسميات الوظيفية', 'icon': 'briefcase', 'module': 'customers'},
-    {'key': 'industry',       'name_en': 'Industries',        'name_ar': 'القطاعات',          'icon': 'building',  'module': 'companies'},
-    {'key': 'contact_method', 'name_en': 'Contact Methods',   'name_ar': 'طرق التواصل',       'icon': 'phone',     'module': 'follow_up'},
-    {'key': 'sales_stage',    'name_en': 'Sales Stages',      'name_ar': 'مراحل البيع',       'icon': 'trending',  'module': 'follow_up'},
-    {'key': 'next_action',    'name_en': 'Next Actions',      'name_ar': 'الإجراءات التالية', 'icon': 'zap',       'module': 'follow_up'},
-    {'key': 'activity_type',  'name_en': 'Activity Types',    'name_ar': 'أنواع الأنشطة',     'icon': 'activity',  'module': 'follow_up'},
-    {'key': 'project_status', 'name_en': 'Project Statuses',  'name_ar': 'حالات المشاريع',    'icon': 'briefcase', 'module': 'projects'},
+    {'key': 'industry',       'name_en': 'Industries',        'name_ar': 'القطاعات',           'icon': 'building',  'module': 'companies'},
+    {'key': 'contact_method', 'name_en': 'Contact Methods',   'name_ar': 'طرق التواصل',        'icon': 'phone',     'module': 'follow_up'},
+    {'key': 'sales_stage',    'name_en': 'Sales Stages',      'name_ar': 'مراحل البيع',        'icon': 'trending',  'module': 'follow_up'},
+    {'key': 'next_action',    'name_en': 'Next Actions',      'name_ar': 'الإجراءات التالية',  'icon': 'zap',       'module': 'follow_up'},
+    {'key': 'activity_type',  'name_en': 'Activity Types',    'name_ar': 'أنواع الأنشطة',      'icon': 'activity',  'module': 'follow_up'},
+    {'key': 'project_status', 'name_en': 'Project Statuses',  'name_ar': 'حالات المشاريع',     'icon': 'briefcase', 'module': 'projects'},
 ]
 
 CATEGORY_KEYS = {c['key'] for c in CATEGORIES}
+
+# Sections group categories by their usage context
+SECTIONS = [
+    {
+        'key': 'customers', 'name_en': 'Contacts',   'name_ar': 'جهات الاتصال',
+        'color': '#2563eb', 'bg': '#eff6ff',
+        'cat_keys': ['lead_source', 'city', 'job_title'],
+    },
+    {
+        'key': 'companies', 'name_en': 'Companies',   'name_ar': 'الشركات',
+        'color': '#7c3aed', 'bg': '#f5f3ff',
+        'cat_keys': ['industry'],
+    },
+    {
+        'key': 'follow_up', 'name_en': 'Follow-ups',  'name_ar': 'المتابعات',
+        'color': '#d97706', 'bg': '#fffbeb',
+        'cat_keys': ['contact_method', 'sales_stage', 'next_action', 'activity_type'],
+    },
+    {
+        'key': 'projects',  'name_en': 'Projects',    'name_ar': 'المشاريع',
+        'color': '#16a34a', 'bg': '#f0fdf4',
+        'cat_keys': ['project_status'],
+    },
+]
+
+
+def _build_sections():
+    cat_map = {c['key']: c for c in CATEGORIES}
+    return [
+        {**s, 'cats': [cat_map[k] for k in s['cat_keys'] if k in cat_map]}
+        for s in SECTIONS
+    ]
 
 
 def _require_login():
@@ -77,8 +109,14 @@ def config_category(category):
         conn.close()
 
     active_cat = next(c for c in CATEGORIES if c['key'] == category)
+    sections = _build_sections()
+    active_section = next(
+        (s for s in sections if any(c['key'] == category for c in s['cats'])), None
+    )
     return render_template('settings/config.html',
                            categories=CATEGORIES,
+                           sections=sections,
+                           active_section=active_section,
                            active_cat=active_cat,
                            options=options)
 
