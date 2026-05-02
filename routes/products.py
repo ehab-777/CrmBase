@@ -274,9 +274,10 @@ def quick_add():
         return jsonify({'error': 'Not authenticated'}), 401
     if session.get('role') not in ['admin', 'manager']:
         return jsonify({'error': 'Insufficient permissions'}), 403
-    data  = request.get_json(force=True, silent=True) or {}
-    name  = (data.get('name') or '').strip()
-    price = data.get('selling_price', 0)
+    data     = request.get_json(force=True, silent=True) or {}
+    name     = (data.get('name') or '').strip()
+    category = (data.get('category') or '').strip() or None
+    price    = data.get('selling_price', 0)
     try:
         price = float(price)
     except (ValueError, TypeError):
@@ -288,8 +289,8 @@ def quick_add():
     conn = get_db()
     try:
         conn.execute(
-            "INSERT INTO products (name, selling_price, tenant_id) VALUES (?, ?, ?)",
-            (name, price, tenant_id)
+            "INSERT INTO products (name, category, selling_price, tenant_id) VALUES (?, ?, ?, ?)",
+            (name, category, price, tenant_id)
         )
         conn.commit()
         product_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]

@@ -219,10 +219,11 @@ def edit_followup(customer_id, followup_id):
 def quick_add():
     if 'salesperson_id' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
-    data        = request.get_json(force=True, silent=True) or {}
-    customer_id = data.get('customer_id')
-    summary     = (data.get('summary') or '').strip()
-    date        = (data.get('date') or '').strip()
+    data           = request.get_json(force=True, silent=True) or {}
+    customer_id    = data.get('customer_id')
+    summary        = (data.get('summary') or '').strip()
+    date           = (data.get('date') or '').strip()
+    contact_method = (data.get('contact_method') or '').strip()
     if not customer_id:
         return jsonify({'error': 'Contact is required'}), 400
     tenant_id = get_current_tenant_id()
@@ -238,12 +239,14 @@ def quick_add():
             INSERT INTO activities (
                 tenant_id, entity_type, entity_id, action,
                 actor_name, details, summary, contact_date,
-                created_by, company_id, created_at
-            ) VALUES (?, 'customer', ?, 'follow_up', ?, ?, ?, ?, ?, ?, datetime('now','localtime'))
+                activity_type, created_by, company_id, created_at
+            ) VALUES (?, 'customer', ?, 'follow_up', ?, ?, ?, ?,
+                      ?, ?, ?, datetime('now','localtime'))
         """, (
             tenant_id, customer_id,
             session.get('salesperson_name', ''), 'Quick follow-up',
             summary, date or None,
+            contact_method or None,
             session['salesperson_id'], customer['company_id']
         ))
         conn.commit()

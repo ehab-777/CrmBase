@@ -370,6 +370,12 @@
           </div>
         </div>
         <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}طريقة التواصل{% else %}Contact Method{% endif %}</label>
+          <select class="qcm-select" id="qcf-fu-method">
+            <option value="">— {% if session.get('lang') == 'ar' %}اختر{% else %}Select{% endif %} —</option>
+          </select>
+        </div>
+        <div class="qcm-field">
           <label class="qcm-label">{% if session.get('lang') == 'ar' %}الموعد{% else %}Date{% endif %}</label>
           <input class="qcm-input" id="qcf-fu-date" type="date">
         </div>
@@ -399,6 +405,12 @@
           <label class="qcm-label">{% if session.get('lang') == 'ar' %}اسم المنتج{% else %}Product Name{% endif %} *</label>
           <input class="qcm-input" id="qcf-product-name" type="text" autocomplete="off"
                  placeholder="{% if session.get('lang') == 'ar' %}مثال: خدمة صيانة{% else %}e.g. Maintenance Service{% endif %}">
+        </div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}التصنيف{% else %}Category{% endif %}</label>
+          <select class="qcm-select" id="qcf-product-category">
+            <option value="">— {% if session.get('lang') == 'ar' %}اختر{% else %}Select{% endif %} —</option>
+          </select>
         </div>
         <div class="qcm-field">
           <label class="qcm-label">{% if session.get('lang') == 'ar' %}السعر{% else %}Selling Price{% endif %}</label>
@@ -475,11 +487,47 @@ function qcmShowForm(type) {
   // Focus first input
   setTimeout(() => { form?.querySelector('.qcm-input')?.focus(); }, 120);
 
-  // Set today's date for follow-up
+  // Set today's date for follow-up + load contact methods
   if (type === 'followup') {
     const d = document.getElementById('qcf-fu-date');
     if (d && !d.value) d.value = new Date().toISOString().slice(0,10);
+    _qcmLoadConfig('contact_method', 'qcf-fu-method');
   }
+
+  // Load product categories
+  if (type === 'product') {
+    _qcmLoadConfig('product_category', 'qcf-product-category');
+  }
+}
+
+// Load config options into a <select> from the settings config API
+const _qcmConfigCache = {};
+function _qcmLoadConfig(category, selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  if (_qcmConfigCache[category]) {
+    _qcmFillSelect(sel, _qcmConfigCache[category]);
+    return;
+  }
+  fetch('/settings/config/api/' + category)
+    .then(r => r.json())
+    .then(opts => {
+      _qcmConfigCache[category] = opts;
+      _qcmFillSelect(sel, opts);
+    })
+    .catch(() => {});
+}
+function _qcmFillSelect(sel, opts) {
+  const cur = sel.value;
+  // keep the first blank option
+  while (sel.options.length > 1) sel.remove(1);
+  opts.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o.value;
+    opt.textContent = (_QC_IS_AR && o.label_ar) ? o.label_ar : o.value;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
 }
 
 function _qcmShowErr(type, msg) {
@@ -534,12 +582,14 @@ function qcfSubmit(type) {
     const summary = document.getElementById('qcf-fu-summary').value.trim();
     name = document.getElementById('qcf-fu-search').value.trim();
     if (!cid) { _qcmShowErr(type, _QC_IS_AR ? 'يرجى اختيار جهة اتصال' : 'Please select a contact'); return; }
-    url = '/followup/quick-add'; body = { customer_id: parseInt(cid), date, summary };
+    const contact_method = document.getElementById('qcf-fu-method').value;
+    url = '/followup/quick-add'; body = { customer_id: parseInt(cid), date, summary, contact_method };
   } else if (type === 'product') {
     name = document.getElementById('qcf-product-name').value.trim();
+    const category = document.getElementById('qcf-product-category').value;
     const price = parseFloat(document.getElementById('qcf-product-price').value) || 0;
     if (!name) { _qcmShowErr(type, _QC_IS_AR ? 'الاسم مطلوب' : 'Name is required'); return; }
-    url = '/products/quick-add'; body = { name, selling_price: price };
+    url = '/products/quick-add'; body = { name, category, selling_price: price };
   } else return;
 
   const btn = document.querySelector('#qcf-' + type + ' .qcm-submit');
