@@ -159,6 +159,12 @@
   .sp-won         { background: #ecfdf5; color: #16a34a; }
   .sp-lost        { background: #fef2f2; color: #dc2626; }
 
+  .fu-menu-item {
+    display: block; padding: 0.65rem 1rem; font-size: 0.875rem;
+    color: var(--text-primary); text-decoration: none; transition: background .1s;
+  }
+  .fu-menu-item:hover { background: #f0f9ff; }
+
   /* Description */
   .desc-box {
     background: #f8fafc; border-radius: 10px; padding: 1rem 1.25rem;
@@ -248,6 +254,11 @@
     <div class="contacts-panel">
       <div class="panel-header">
         <span class="panel-title">{{ _('Linked Contacts') }} <span id="contactCount" style="font-weight:400;color:var(--text-secondary)">({{ contacts|length }})</span></span>
+        {% if company_contacts %}
+        <button class="btn btn-primary btn-sm" onclick="linkCompanyContacts()">
+          + {{ _('Link company contacts') }} ({{ company_contacts|length }})
+        </button>
+        {% endif %}
       </div>
 
       <!-- Picker -->
@@ -289,6 +300,10 @@
             </div>
             <div class="contact-sub">{{ c.company_name or '' }}{% if c.phone_number %} · {{ c.phone_number }}{% endif %}</div>
           </div>
+          <a href="{{ url_for('follow_up.add_followup', customer_id=c.customer_id, next=url_for('projects.project_detail', project_id=project.id)) }}"
+             class="btn btn-outline btn-sm" title="{{ _('Add Follow-up') }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </a>
           <button class="btn btn-ghost btn-sm" onclick="removeContact({{ c.customer_id }})" title="{{ _('Remove') }}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -306,6 +321,20 @@
 <div class="fu-section">
   <div class="fu-section-header">
     <span class="fu-section-title">{{ _('Follow-ups') }} <span style="font-weight:400;color:var(--text-secondary)">({{ project_followups|length }})</span></span>
+    {% if contacts %}
+    <div style="position:relative">
+      <button class="btn btn-primary btn-sm" onclick="toggleFuMenu()" id="fuMenuBtn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        {{ _('Add Follow-up') }}
+      </button>
+      <div id="fuContactMenu" style="display:none;position:absolute;{% if session.get('lang')=='ar' %}left:0{% else %}right:0{% endif %};top:calc(100% + 4px);background:#fff;border:1.5px solid var(--border-color);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;min-width:200px;">
+        {% for c in contacts %}
+        <a href="{{ url_for('follow_up.add_followup', customer_id=c.customer_id, next=url_for('projects.project_detail', project_id=project.id)) }}"
+           class="fu-menu-item">{{ c.contact_person or '—' }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
   {% if project_followups %}
     {% for fu in project_followups %}
@@ -447,6 +476,30 @@ function updateCount(delta) {
   const cur = parseInt(el.textContent.replace(/\D/g,'')) || 0;
   el.textContent = `(${cur + delta})`;
 }
+
+// ── Link all company contacts ─────────────────────────────
+function linkCompanyContacts() {
+  fetch(`/projects/${PROJECT_ID}/contacts/link-company`, {
+    method: 'POST', headers: { 'X-CSRFToken': CSRF }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) { alert(data.error || 'Error'); return; }
+    location.reload();
+  });
+}
+
+// ── Add follow-up dropdown ────────────────────────────────
+function toggleFuMenu() {
+  const menu = document.getElementById('fuContactMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#fuMenuBtn') && !e.target.closest('#fuContactMenu')) {
+    const menu = document.getElementById('fuContactMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
 
 // ── Delete project ────────────────────────────────────────
 function deleteProject(id, name) {

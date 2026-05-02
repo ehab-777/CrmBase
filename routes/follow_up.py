@@ -47,6 +47,7 @@ def add_followup(customer_id):
             potential_deal_value = request.form.get('deal_value')
             next_action          = request.form.get('next_action')
             next_action_due_date = request.form.get('next_action_date')
+            next_url             = request.form.get('next_url', '').strip()
 
             company_id = None
             try:
@@ -88,10 +89,33 @@ def add_followup(customer_id):
                              f'Follow-up for {contact_name} — Stage: {current_sales_stage or "—"}')
 
             conn.commit()
+            if next_url and next_url.startswith('/'):
+                return redirect(next_url)
             return redirect(url_for('customers.customer_detail', customer_id=customer_id))
 
+        # GET — pre-fill deal value from last follow-up
+        next_url = request.args.get('next', '')
+        latest_row = conn.execute("""
+            SELECT deal_value FROM activities
+            WHERE entity_type = 'customer' AND entity_id = ? AND action = 'follow_up' AND tenant_id = ?
+            ORDER BY created_at DESC, id DESC LIMIT 1
+        """, (customer_id, tenant_id)).fetchone()
+        latest_deal_value = latest_row['deal_value'] if latest_row else None
+
+        # If triggered from a project page, fall back to the project's own value
+        if not latest_deal_value:
+            project_id_param = request.args.get('project_id', type=int)
+            if project_id_param:
+                proj = conn.execute(
+                    "SELECT value FROM projects WHERE id = ? AND tenant_id = ?",
+                    (project_id_param, tenant_id)
+                ).fetchone()
+                if proj and proj['value']:
+                    latest_deal_value = proj['value']
+
         config = _get_config(conn, tenant_id, ['contact_method', 'sales_stage', 'next_action'])
-        return render_template('customers/add_followup.html', customer=customer, config=config)
+        return render_template('customers/add_followup.html', customer=customer, config=config,
+                               latest_deal_value=latest_deal_value, next_url=next_url)
 
     except Exception as e:
         print(f"Error in add_followup: {e}")

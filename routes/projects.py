@@ -190,12 +190,26 @@ def project_detail(project_id):
             LIMIT 50
         """, (project_id, tenant_id)).fetchall()
 
+        # Contacts from this project's company that are not yet linked
+        company_contacts = []
+        if project['company_id']:
+            company_contacts = conn.execute("""
+                SELECT customer_id, contact_person, company_name, phone_number
+                FROM customers
+                WHERE company_id = ? AND tenant_id = ?
+                  AND customer_id NOT IN (
+                    SELECT customer_id FROM project_contacts WHERE project_id = ?
+                  )
+                ORDER BY contact_person
+            """, (project['company_id'], tenant_id, project_id)).fetchall()
+
     finally:
         conn.close()
 
     return render_template('projects/project_detail.html',
                            project=project, contacts=contacts, all_contacts=all_contacts,
-                           activities=activities, project_followups=project_followups)
+                           activities=activities, project_followups=project_followups,
+                           company_contacts=company_contacts)
 
 
 @projects_bp.route('/<int:project_id>/edit', methods=['GET', 'POST'])
@@ -354,6 +368,48 @@ def quick_add():
         pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         return jsonify({'project_id': pid, 'name': name}), 201
     except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@projects_bp.route('/<int:project_id>/contacts/link-company', methods=['POST'])
+@require_tenant
+def link_company_contacts(project_id):
+    if not _require_login():
+        return jsonify({'error': 'Unauthorized'}), 403
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        project = conn.execute(
+            "SELECT company_id FROM projects WHERE id = ? AND tenant_id = ?",
+            (project_id, tenant_id)
+        ).fetchone()
+        if not project or not project['company_id']:
+            return jsonify({'error': 'No company linked to this project'}), 400
+
+        unlinked = conn.execute("""
+            SELECT customer_id, contact_person, company_name, phone_number
+            FROM customers
+            WHERE company_id = ? AND tenant_id = ?
+              AND customer_id NOT IN (
+                SELECT customer_id FROM project_contacts WHERE project_id = ?
+              )
+        """, (project['company_id'], tenant_id, project_id)).fetchall()
+
+        linked = []
+        for cu in unlinked:
+            conn.execute("INSERT OR IGNORE INTO project_contacts (project_id, customer_id) VALUES (?,?)",
+                         (project_id, cu['customer_id']))
+            linked.append(dict(cu))
+
+        if linked:
+            log_activity(conn, tenant_id, 'project', project_id, 'contact_linked',
+                         f'{len(linked)} company contact(s) auto-linked')
+        conn.commit()
+        return jsonify({'success': True, 'linked': linked})
+    except sqlite3.Error as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500
     finally:

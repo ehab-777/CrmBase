@@ -231,6 +231,7 @@
               <th>{{ _('Name') }}</th>
               <th>{{ _('Phone') }}</th>
               <th>{{ _('Stage') }}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -239,9 +240,13 @@
               <td><a href="{{ url_for('customers.customer_detail', customer_id=ct.customer_id) }}">{{ ct.contact_person }}</a></td>
               <td>{{ ct.phone_number or '—' }}</td>
               <td>{{ ct.stage or '—' }}</td>
+              <td>
+                <a href="{{ url_for('follow_up.add_followup', customer_id=ct.customer_id, next=url_for('companies.company_detail', company_id=company.id)) }}"
+                   class="btn btn-outline btn-sm">+ {{ _('Follow-up') }}</a>
+              </td>
             </tr>
             {% else %}
-            <tr class="empty-row"><td colspan="3">{{ _('No contacts linked to this company.') }}</td></tr>
+            <tr class="empty-row"><td colspan="4">{{ _('No contacts linked to this company.') }}</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -286,6 +291,23 @@
       <div class="section-card">
         <div class="section-header">
           <span class="section-title">{{ _('Follow-ups') }}</span>
+          {% if contacts %}
+          <div style="position:relative">
+            <button class="btn btn-primary btn-sm" onclick="toggleCoFuMenu()" id="coFuMenuBtn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              {{ _('Add Follow-up') }}
+            </button>
+            <div id="coFuContactMenu" style="display:none;position:absolute;{% if session.get('lang')=='ar' %}left:0{% else %}right:0{% endif %};top:calc(100% + 4px);background:#fff;border:1.5px solid var(--border-color);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;min-width:200px;">
+              {% for ct in contacts %}
+              <a href="{{ url_for('follow_up.add_followup', customer_id=ct.customer_id, next=url_for('companies.company_detail', company_id=company.id)) }}"
+                 style="display:block;padding:0.65rem 1rem;font-size:0.875rem;color:var(--text-primary);text-decoration:none;"
+                 onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background=''">
+                {{ ct.contact_person or '—' }}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </div>
         {% if company_followups %}
           {% for fu in company_followups %}
@@ -354,6 +376,17 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
+
+function toggleCoFuMenu() {
+  const menu = document.getElementById('coFuContactMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#coFuMenuBtn') && !e.target.closest('#coFuContactMenu')) {
+    const menu = document.getElementById('coFuContactMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
 
 function deleteCompany(id, name) {
   if (!confirm('Delete "' + name + '"?')) return;
