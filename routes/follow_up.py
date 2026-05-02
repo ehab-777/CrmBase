@@ -214,7 +214,7 @@ def edit_followup(customer_id, followup_id):
             conn.close()
 
 
-@follow_up_bp.route('/quick-add', methods=['POST'])
+@follow_up_bp.route('/followup/quick-add', methods=['POST'])
 @require_tenant
 def quick_add():
     if 'salesperson_id' not in session:

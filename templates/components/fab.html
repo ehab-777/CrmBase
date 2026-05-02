@@ -422,7 +422,8 @@
   </div>
 </div>
 
-{# Keep legacy overlay stub for backward compat #}
+{# Hidden stubs kept for sidebar.js backward compatibility #}
+<div id="fabContainer" style="display:none"></div>
 <div class="quick-modal-overlay" id="quickAddOverlay" style="display:none"></div>
 
 <script>
@@ -533,7 +534,7 @@ function qcfSubmit(type) {
     const summary = document.getElementById('qcf-fu-summary').value.trim();
     name = document.getElementById('qcf-fu-search').value.trim();
     if (!cid) { _qcmShowErr(type, _QC_IS_AR ? 'يرجى اختيار جهة اتصال' : 'Please select a contact'); return; }
-    url = '/follow_up/quick-add'; body = { customer_id: parseInt(cid), date, summary };
+    url = '/followup/quick-add'; body = { customer_id: parseInt(cid), date, summary };
   } else if (type === 'product') {
     name = document.getElementById('qcf-product-name').value.trim();
     const price = parseFloat(document.getElementById('qcf-product-price').value) || 0;
