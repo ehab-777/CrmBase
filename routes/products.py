@@ -265,6 +265,42 @@ def api_search():
     return jsonify([dict(r) for r in rows])
 
 
+# ── Quick-add (FAB) ───────────────────────────────────────────────────────────
+
+@products_bp.route('/quick-add', methods=['POST'])
+@require_tenant
+def quick_add():
+    if 'salesperson_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    if session.get('role') not in ['admin', 'manager']:
+        return jsonify({'error': 'Insufficient permissions'}), 403
+    data  = request.get_json(force=True, silent=True) or {}
+    name  = (data.get('name') or '').strip()
+    price = data.get('selling_price', 0)
+    try:
+        price = float(price)
+    except (ValueError, TypeError):
+        price = 0.0
+    if not name:
+        return jsonify({'error': 'Product name is required'}), 400
+    ensure_products_table()
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO products (name, selling_price, tenant_id) VALUES (?, ?, ?)",
+            (name, price, tenant_id)
+        )
+        conn.commit()
+        product_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({'product_id': product_id, 'name': name}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _form_data():

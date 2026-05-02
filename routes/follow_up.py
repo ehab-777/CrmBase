@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from tenant_utils import get_db, get_current_tenant_id, require_tenant
 from activity_logger import log_activity
 
@@ -212,3 +212,45 @@ def edit_followup(customer_id, followup_id):
     finally:
         if conn:
             conn.close()
+
+
+@follow_up_bp.route('/quick-add', methods=['POST'])
+@require_tenant
+def quick_add():
+    if 'salesperson_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    data        = request.get_json(force=True, silent=True) or {}
+    customer_id = data.get('customer_id')
+    summary     = (data.get('summary') or '').strip()
+    date        = (data.get('date') or '').strip()
+    if not customer_id:
+        return jsonify({'error': 'Contact is required'}), 400
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        customer = conn.execute(
+            "SELECT customer_id, company_id FROM customers WHERE customer_id = ? AND tenant_id = ?",
+            (customer_id, tenant_id)
+        ).fetchone()
+        if not customer:
+            return jsonify({'error': 'Contact not found'}), 404
+        conn.execute("""
+            INSERT INTO activities (
+                tenant_id, entity_type, entity_id, action,
+                actor_name, details, summary, contact_date,
+                created_by, company_id, created_at
+            ) VALUES (?, 'customer', ?, 'follow_up', ?, ?, ?, ?, ?, ?, datetime('now','localtime'))
+        """, (
+            tenant_id, customer_id,
+            session.get('salesperson_name', ''), 'Quick follow-up',
+            summary, date or None,
+            session['salesperson_id'], customer['company_id']
+        ))
+        conn.commit()
+        activity_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return jsonify({'activity_id': activity_id, 'customer_id': customer_id}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()

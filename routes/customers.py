@@ -575,6 +575,30 @@ def quick_add():
         conn.close()
 
 
+@customers_bp.route('/api/search')
+@require_tenant
+def api_search():
+    if 'salesperson_id' not in session:
+        return jsonify([]), 401
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return jsonify([])
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            """SELECT customer_id, contact_person, company_name
+               FROM customers
+               WHERE tenant_id = ?
+                 AND (contact_person LIKE ? OR company_name LIKE ? OR phone_number LIKE ?)
+               ORDER BY contact_person LIMIT 8""",
+            (tenant_id, f'%{q}%', f'%{q}%', f'%{q}%')
+        ).fetchall()
+        return jsonify([{'id': r['customer_id'], 'name': r['contact_person'] or r['company_name'], 'company': r['company_name']} for r in rows])
+    finally:
+        conn.close()
+
+
 @customers_bp.route('/<int:customer_id>/delete', methods=['POST'])
 @require_tenant
 def delete_customer(customer_id):

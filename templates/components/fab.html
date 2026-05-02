@@ -14,350 +14,608 @@
   <button onclick="document.getElementById('pwaBanner').style.display='none'" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;font-size:1.2rem;line-height:1;">&times;</button>
 </div>
 
-{# Floating Action Button — mobile only #}
-<div class="fab-container" id="fabContainer">
-  <div class="fab-actions">
-    <button class="fab-action" onclick="openQuickCreate('contact')">
-      <span class="fab-action-label">{{ _('Add Contact') }}</span>
-      <div class="fab-action-btn color-blue">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-      </div>
-    </button>
-    <button class="fab-action" onclick="openQuickCreate('company')">
-      <span class="fab-action-label">{{ _('Add Company') }}</span>
-      <div class="fab-action-btn color-green">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </div>
-    </button>
-    <button class="fab-action" onclick="openQuickCreate('project')">
-      <span class="fab-action-label">{{ _('Add Project') }}</span>
-      <div class="fab-action-btn color-purple">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-      </div>
-    </button>
-    <a href="/quotations/new" class="fab-action">
-      <span class="fab-action-label">{{ _('New Quotation') }}</span>
-      <div class="fab-action-btn" style="background:#f59e0b">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-      </div>
-    </a>
-  </div>
-  <button class="fab-main" id="fabMain" aria-label="{{ _('Quick actions') }}">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-</div>
+{# ── Floating Action Button ────────────────────────────────────── #}
+<button class="fab-main" id="fabMain" onclick="openQuickCreate()" aria-label="{{ _('Quick actions') }}">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
 
-{# ── Quick Create Drawer ── #}
+{# ── Quick Create Modal ────────────────────────────────────────── #}
 <style>
-.qc-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.4); z-index: 900; backdrop-filter: blur(2px);
+/* ── Overlay ── */
+.qcm-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.55);
+  z-index: 900;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  align-items: flex-end;
+  justify-content: center;
 }
-.qc-overlay.open { display: flex; align-items: flex-end; justify-content: center; }
+.qcm-overlay.open { display: flex; }
 @media (min-width: 640px) {
-  .qc-overlay.open { align-items: center; justify-content: flex-end; }
+  .qcm-overlay.open { align-items: center; }
 }
 
-.qc-drawer {
+/* ── Dialog ── */
+.qcm-dialog {
   background: #fff;
-  border-radius: 20px 20px 0 0;
   width: 100%;
-  max-height: 92vh;
+  max-width: 520px;
+  border-radius: 20px 20px 0 0;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 -8px 40px rgba(0,0,0,.18);
+  box-shadow: 0 -4px 40px rgba(0,0,0,.22);
   transform: translateY(100%);
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  transition: transform .3s cubic-bezier(.32,0,.15,1);
   display: flex; flex-direction: column;
 }
 @media (min-width: 640px) {
-  .qc-drawer {
-    border-radius: 16px 0 0 16px;
-    width: 400px; max-width: 95vw;
-    max-height: 100vh;
-    transform: translateX(100%);
-    transition: transform .28s cubic-bezier(.4,0,.2,1);
+  .qcm-dialog {
+    border-radius: 18px;
+    max-height: 88vh;
+    transform: scale(.94) translateY(12px);
+    opacity: 0;
+    transition: transform .25s cubic-bezier(.32,0,.15,1), opacity .2s;
   }
 }
-.qc-overlay.open .qc-drawer { transform: none; }
+.qcm-overlay.open .qcm-dialog { transform: none; opacity: 1; }
 
-.qc-handle {
-  width: 40px; height: 4px; background: #e2e8f0; border-radius: 99px;
-  margin: 12px auto 0;
+/* ── Handle (mobile) ── */
+.qcm-handle {
+  width: 38px; height: 4px; background: #e2e8f0;
+  border-radius: 99px; margin: 10px auto 0; flex-shrink: 0;
 }
-@media (min-width:640px) { .qc-handle { display: none; } }
+@media (min-width: 640px) { .qcm-handle { display: none; } }
 
-.qc-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1.25rem 0;
+/* ── Header ── */
+.qcm-header {
+  display: flex; align-items: center;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 0.6rem; flex-shrink: 0;
 }
-.qc-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
-.qc-close {
+.qcm-back-btn {
+  display: none;
   background: #f1f5f9; border: none; border-radius: 50%;
-  width: 32px; height: 32px; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; color: #64748b;
+  width: 32px; height: 32px; cursor: pointer;
+  align-items: center; justify-content: center;
+  color: #64748b; flex-shrink: 0;
   transition: background .15s;
 }
-.qc-close:hover { background: #e2e8f0; }
+.qcm-back-btn:hover { background: #e2e8f0; }
+.qcm-back-btn.visible { display: flex; }
+.qcm-title {
+  flex: 1; font-size: 1rem; font-weight: 700;
+  color: #1e293b;
+}
+.qcm-close-btn {
+  background: #f1f5f9; border: none; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #64748b; flex-shrink: 0;
+  transition: background .15s;
+}
+.qcm-close-btn:hover { background: #fee2e2; color: #ef4444; }
 
-.qc-tabs {
-  display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;
-  margin: 0.85rem 1.25rem 0; padding-bottom: 0;
-}
-.qc-tab {
-  flex: 1; padding: 0.6rem 0; border: none; background: none;
-  font-size: 0.82rem; font-weight: 500; color: #64748b; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -2px;
-  transition: all .15s; font-family: inherit;
-  display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-}
-.qc-tab.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+/* ── Body ── */
+.qcm-body { padding: 1.25rem; flex: 1; }
 
-.qc-body { padding: 1.25rem; flex: 1; }
-.qc-pane { display: none; }
-.qc-pane.active { display: flex; flex-direction: column; gap: 0.85rem; }
+/* ── Option grid ── */
+.qcm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+@media (max-width: 400px) { .qcm-grid { grid-template-columns: repeat(2, 1fr); } }
 
-.qc-field { display: flex; flex-direction: column; gap: 0.3rem; }
-.qc-label {
-  font-size: 0.78rem; font-weight: 600; color: #64748b;
-  text-transform: uppercase; letter-spacing: .04em;
+.qcm-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.55rem; padding: 1rem 0.5rem;
+  border: 2px solid #f1f5f9; border-radius: 14px;
+  background: #fff; cursor: pointer;
+  font-family: inherit; font-size: 0.82rem; font-weight: 600;
+  color: #334155; text-align: center;
+  transition: border-color .18s, background .18s, transform .15s, box-shadow .18s;
 }
-.qc-input, .qc-select {
-  padding: 0.65rem 0.85rem; border: 1.5px solid #e2e8f0; border-radius: 9px;
-  font-size: 0.9rem; font-family: inherit; background: #fafafa;
-  transition: border-color .2s, box-shadow .2s; width: 100%;
+.qcm-card:hover {
+  border-color: var(--card-color, #2563eb);
+  background: color-mix(in srgb, var(--card-color, #2563eb) 6%, white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--card-color, #2563eb) 20%, transparent);
 }
-.qc-input:focus, .qc-select:focus {
-  outline: none; border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff;
-}
-
-.qc-submit {
-  padding: 0.75rem; background: #2563eb; color: #fff;
-  border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: background .15s;
-  width: 100%; margin-top: 0.25rem;
-}
-.qc-submit:hover { background: #1d4ed8; }
-.qc-submit:disabled { opacity: .6; cursor: not-allowed; }
-
-.qc-success {
-  display: none; flex-direction: column; align-items: center;
-  justify-content: center; padding: 2rem; gap: 0.75rem; text-align: center;
-}
-.qc-success-icon {
-  width: 56px; height: 56px; border-radius: 50%; background: #dcfce7;
+.qcm-card-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: color-mix(in srgb, var(--card-color, #2563eb) 12%, white);
+  color: var(--card-color, #2563eb);
   display: flex; align-items: center; justify-content: center;
 }
-.qc-success-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
-.qc-success-sub { font-size: 0.875rem; color: #64748b; }
-.qc-success-link { color: #2563eb; text-decoration: none; font-size: 0.875rem; }
-.qc-success-link:hover { text-decoration: underline; }
+.qcm-card-icon svg { width: 22px; height: 22px; }
 
-.qc-err {
+/* ── Inline form ── */
+.qcm-form { display: none; flex-direction: column; gap: 0.9rem; }
+.qcm-form.active { display: flex; }
+
+.qcm-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.qcm-label {
+  font-size: 0.75rem; font-weight: 700;
+  color: #64748b; text-transform: uppercase; letter-spacing: .04em;
+}
+.qcm-input, .qcm-select {
+  padding: 0.65rem 0.9rem; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; font-size: 0.9rem; font-family: inherit;
+  background: #f8fafc; width: 100%;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.qcm-input:focus, .qcm-select:focus {
+  outline: none; border-color: var(--form-color, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--form-color, #2563eb) 14%, transparent);
+  background: #fff;
+}
+.qcm-submit {
+  padding: 0.75rem; background: var(--form-color, #2563eb); color: #fff;
+  border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; width: 100%;
+  transition: opacity .15s, filter .15s;
+}
+.qcm-submit:hover { filter: brightness(1.07); }
+.qcm-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Customer autocomplete */
+.qcm-autocomplete { position: relative; }
+.qcm-suggestions {
+  display: none; position: absolute; top: 100%; inset-inline-start: 0;
+  width: 100%; background: #fff; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  z-index: 10; max-height: 180px; overflow-y: auto;
+  margin-top: 3px;
+}
+.qcm-suggestions.open { display: block; }
+.qcm-suggestion-item {
+  padding: 0.6rem 0.9rem; cursor: pointer; font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9; transition: background .1s;
+}
+.qcm-suggestion-item:last-child { border-bottom: none; }
+.qcm-suggestion-item:hover { background: #f8fafc; }
+.qcm-suggestion-name { font-weight: 600; color: #1e293b; }
+.qcm-suggestion-co  { font-size: 0.78rem; color: #64748b; }
+
+/* Error / success */
+.qcm-err {
   background: #fef2f2; color: #dc2626; border-radius: 8px;
-  padding: 0.6rem 0.85rem; font-size: 0.85rem; display: none;
+  padding: 0.55rem 0.85rem; font-size: 0.85rem; display: none;
+  border: 1px solid #fecaca;
+}
+.qcm-success {
+  display: none; flex-direction: column; align-items: center;
+  gap: 0.6rem; padding: 1.25rem 0.5rem; text-align: center;
+}
+.qcm-success-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #dcfce7; display: flex; align-items: center; justify-content: center;
+}
+.qcm-success-title { font-size: 1rem; font-weight: 700; color: #1e293b; }
+.qcm-success-sub { font-size: 0.85rem; color: #64748b; }
+.qcm-success-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+.qcm-success-link {
+  color: var(--form-color, #2563eb); text-decoration: none;
+  font-size: 0.875rem; font-weight: 600;
+  padding: 0.4rem 0.9rem; border: 1.5px solid var(--form-color, #2563eb);
+  border-radius: 8px; transition: background .15s;
+}
+.qcm-success-link:hover {
+  background: color-mix(in srgb, var(--form-color, #2563eb) 8%, white);
+}
+.qcm-add-another {
+  background: none; border: none; color: #64748b;
+  font-size: 0.875rem; cursor: pointer; font-family: inherit;
+  text-decoration: underline; padding: 0;
 }
 </style>
 
-<div class="qc-overlay" id="qcOverlay" onclick="closeQC(event)">
-  <div class="qc-drawer" id="qcDrawer">
-    <div class="qc-handle"></div>
-    <div class="qc-header">
-      <span class="qc-title">⚡ {{ _('Quick Create') }}</span>
-      <button class="qc-close" onclick="closeQuickCreate()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+<div class="qcm-overlay" id="qcmOverlay" onclick="qcmBgClick(event)">
+  <div class="qcm-dialog" id="qcmDialog">
+    <div class="qcm-handle"></div>
+    <div class="qcm-header">
+      <button class="qcm-back-btn" id="qcmBackBtn" onclick="qcmShowPicker()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="qcm-title" id="qcmTitle">
+        {% if session.get('lang') == 'ar' %}⚡ إضافة سريعة{% else %}⚡ Quick Create{% endif %}
+      </span>
+      <button class="qcm-close-btn" onclick="closeQuickCreate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
 
-    <div class="qc-tabs">
-      <button class="qc-tab" id="tab-contact" onclick="switchQCTab('contact')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        {{ _('Contact') }}
-      </button>
-      <button class="qc-tab" id="tab-company" onclick="switchQCTab('company')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        {{ _('Company') }}
-      </button>
-      <button class="qc-tab" id="tab-project" onclick="switchQCTab('project')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        {{ _('Project') }}
-      </button>
-    </div>
+    <div class="qcm-body">
 
-    <div class="qc-body">
-
-      {# ── Contact pane ── #}
-      <div class="qc-pane" id="pane-contact">
-        <div id="qc-err-contact" class="qc-err"></div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Name') }} *</label>
-          <input class="qc-input" id="qc-c-name" type="text" placeholder="e.g. Ahmed Hassan" autocomplete="off">
-        </div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Phone') }}</label>
-          <input class="qc-input" id="qc-c-phone" type="tel" placeholder="+20 100 000 0000">
-        </div>
-        <button class="qc-submit" onclick="submitQC('contact')">{{ _('Save Contact') }}</button>
-        <div class="qc-success" id="qc-ok-contact">
-          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="qc-success-title">{{ _('Contact saved!') }}</div>
-          <div class="qc-success-sub" id="qc-ok-contact-name"></div>
-          <a href="#" class="qc-success-link" id="qc-ok-contact-link">{{ _('View contact →') }}</a>
+      {# ── Step 1: Option picker ── #}
+      <div id="qcmPicker">
+        <div class="qcm-grid">
+          <button class="qcm-card" style="--card-color:#2563eb" onclick="qcmShowForm('contact')">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}جهة اتصال{% else %}Contact{% endif %}
+          </button>
+          <button class="qcm-card" style="--card-color:#7c3aed" onclick="qcmShowForm('company')">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}شركة{% else %}Company{% endif %}
+          </button>
+          <button class="qcm-card" style="--card-color:#16a34a" onclick="qcmShowForm('project')">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}مشروع{% else %}Project{% endif %}
+          </button>
+          <button class="qcm-card" style="--card-color:#d97706" onclick="qcmShowForm('followup')">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.27 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.62-.62a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}متابعة{% else %}Follow-up{% endif %}
+          </button>
+          <button class="qcm-card" style="--card-color:#0891b2" onclick="qcmShowForm('product')">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}منتج{% else %}Product{% endif %}
+          </button>
+          <a class="qcm-card" style="--card-color:#dc2626; text-decoration:none;" href="/quotations/new">
+            <div class="qcm-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </div>
+            {% if session.get('lang') == 'ar' %}عرض سعر{% else %}Quotation{% endif %}
+          </a>
         </div>
       </div>
 
-      {# ── Company pane ── #}
-      <div class="qc-pane" id="pane-company">
-        <div id="qc-err-company" class="qc-err"></div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Company Name') }} *</label>
-          <input class="qc-input" id="qc-co-name" type="text" placeholder="e.g. TechCorp Ltd" autocomplete="off">
+      {# ── Step 2: Forms ── #}
+
+      {# Contact #}
+      <div class="qcm-form" id="qcf-contact" style="--form-color:#2563eb">
+        <div class="qcm-err" id="qcf-err-contact"></div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}الاسم{% else %}Name{% endif %} *</label>
+          <input class="qcm-input" id="qcf-contact-name" type="text" autocomplete="off"
+                 placeholder="{% if session.get('lang') == 'ar' %}مثال: أحمد محمد{% else %}e.g. Ahmed Hassan{% endif %}">
         </div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Phone') }}</label>
-          <input class="qc-input" id="qc-co-phone" type="tel" placeholder="+20 100 000 0000">
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}الهاتف{% else %}Phone{% endif %}</label>
+          <input class="qcm-input" id="qcf-contact-phone" type="tel" placeholder="+20 100 000 0000">
         </div>
-        <button class="qc-submit" onclick="submitQC('company')">{{ _('Save Company') }}</button>
-        <div class="qc-success" id="qc-ok-company">
-          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="qc-success-title">{{ _('Company saved!') }}</div>
-          <div class="qc-success-sub" id="qc-ok-company-name"></div>
-          <a href="#" class="qc-success-link" id="qc-ok-company-link">{{ _('View company →') }}</a>
+        <button class="qcm-submit" onclick="qcfSubmit('contact')">
+          {% if session.get('lang') == 'ar' %}حفظ جهة الاتصال{% else %}Save Contact{% endif %}
+        </button>
+        <div class="qcm-success" id="qcf-ok-contact">
+          <div class="qcm-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qcm-success-title">{% if session.get('lang') == 'ar' %}تم الحفظ!{% else %}Saved!{% endif %}</div>
+          <div class="qcm-success-sub" id="qcf-ok-contact-sub"></div>
+          <div class="qcm-success-actions">
+            <a href="#" class="qcm-success-link" id="qcf-ok-contact-link">{% if session.get('lang') == 'ar' %}عرض{% else %}View{% endif %} →</a>
+            <button class="qcm-add-another" onclick="qcmShowForm('contact')">{% if session.get('lang') == 'ar' %}إضافة أخرى{% else %}Add another{% endif %}</button>
+          </div>
         </div>
       </div>
 
-      {# ── Project pane ── #}
-      <div class="qc-pane" id="pane-project">
-        <div id="qc-err-project" class="qc-err"></div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Project Name') }} *</label>
-          <input class="qc-input" id="qc-p-name" type="text" placeholder="e.g. Website Redesign" autocomplete="off">
+      {# Company #}
+      <div class="qcm-form" id="qcf-company" style="--form-color:#7c3aed">
+        <div class="qcm-err" id="qcf-err-company"></div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}اسم الشركة{% else %}Company Name{% endif %} *</label>
+          <input class="qcm-input" id="qcf-company-name" type="text" autocomplete="off"
+                 placeholder="{% if session.get('lang') == 'ar' %}مثال: شركة النور{% else %}e.g. TechCorp Ltd{% endif %}">
         </div>
-        <div class="qc-field">
-          <label class="qc-label">{{ _('Status') }}</label>
-          <select class="qc-select" id="qc-p-status">
-            <option value="New">{{ _('New') }}</option>
-            <option value="Active">{{ _('Active') }}</option>
-            <option value="On Hold">{{ _('On Hold') }}</option>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}الهاتف{% else %}Phone{% endif %}</label>
+          <input class="qcm-input" id="qcf-company-phone" type="tel" placeholder="+20 100 000 0000">
+        </div>
+        <button class="qcm-submit" onclick="qcfSubmit('company')">
+          {% if session.get('lang') == 'ar' %}حفظ الشركة{% else %}Save Company{% endif %}
+        </button>
+        <div class="qcm-success" id="qcf-ok-company">
+          <div class="qcm-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qcm-success-title">{% if session.get('lang') == 'ar' %}تم الحفظ!{% else %}Saved!{% endif %}</div>
+          <div class="qcm-success-sub" id="qcf-ok-company-sub"></div>
+          <div class="qcm-success-actions">
+            <a href="#" class="qcm-success-link" id="qcf-ok-company-link">{% if session.get('lang') == 'ar' %}عرض{% else %}View{% endif %} →</a>
+            <button class="qcm-add-another" onclick="qcmShowForm('company')">{% if session.get('lang') == 'ar' %}إضافة أخرى{% else %}Add another{% endif %}</button>
+          </div>
+        </div>
+      </div>
+
+      {# Project #}
+      <div class="qcm-form" id="qcf-project" style="--form-color:#16a34a">
+        <div class="qcm-err" id="qcf-err-project"></div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}اسم المشروع{% else %}Project Name{% endif %} *</label>
+          <input class="qcm-input" id="qcf-project-name" type="text" autocomplete="off"
+                 placeholder="{% if session.get('lang') == 'ar' %}مثال: موقع إلكتروني{% else %}e.g. Website Redesign{% endif %}">
+        </div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}الحالة{% else %}Status{% endif %}</label>
+          <select class="qcm-select" id="qcf-project-status">
+            <option value="New">{% if session.get('lang') == 'ar' %}جديد{% else %}New{% endif %}</option>
+            <option value="Active">{% if session.get('lang') == 'ar' %}نشط{% else %}Active{% endif %}</option>
+            <option value="On Hold">{% if session.get('lang') == 'ar' %}معلق{% else %}On Hold{% endif %}</option>
           </select>
         </div>
-        <button class="qc-submit" onclick="submitQC('project')">{{ _('Save Project') }}</button>
-        <div class="qc-success" id="qc-ok-project">
-          <div class="qc-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="qc-success-title">{{ _('Project saved!') }}</div>
-          <div class="qc-success-sub" id="qc-ok-project-name"></div>
-          <a href="#" class="qc-success-link" id="qc-ok-project-link">{{ _('View project →') }}</a>
+        <button class="qcm-submit" onclick="qcfSubmit('project')">
+          {% if session.get('lang') == 'ar' %}حفظ المشروع{% else %}Save Project{% endif %}
+        </button>
+        <div class="qcm-success" id="qcf-ok-project">
+          <div class="qcm-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qcm-success-title">{% if session.get('lang') == 'ar' %}تم الحفظ!{% else %}Saved!{% endif %}</div>
+          <div class="qcm-success-sub" id="qcf-ok-project-sub"></div>
+          <div class="qcm-success-actions">
+            <a href="#" class="qcm-success-link" id="qcf-ok-project-link">{% if session.get('lang') == 'ar' %}عرض{% else %}View{% endif %} →</a>
+            <button class="qcm-add-another" onclick="qcmShowForm('project')">{% if session.get('lang') == 'ar' %}إضافة أخرى{% else %}Add another{% endif %}</button>
+          </div>
         </div>
       </div>
 
-    </div>
+      {# Follow-up #}
+      <div class="qcm-form" id="qcf-followup" style="--form-color:#d97706">
+        <div class="qcm-err" id="qcf-err-followup"></div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}جهة الاتصال{% else %}Contact{% endif %} *</label>
+          <div class="qcm-autocomplete">
+            <input class="qcm-input" id="qcf-fu-search" type="text" autocomplete="off"
+                   placeholder="{% if session.get('lang') == 'ar' %}ابحث بالاسم...{% else %}Search by name…{% endif %}"
+                   oninput="qcfSearchCustomer(this.value)">
+            <input type="hidden" id="qcf-fu-customer-id">
+            <div class="qcm-suggestions" id="qcf-fu-suggestions"></div>
+          </div>
+        </div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}الموعد{% else %}Date{% endif %}</label>
+          <input class="qcm-input" id="qcf-fu-date" type="date">
+        </div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}ملخص{% else %}Summary{% endif %}</label>
+          <input class="qcm-input" id="qcf-fu-summary" type="text"
+                 placeholder="{% if session.get('lang') == 'ar' %}ملاحظات سريعة...{% else %}Quick notes…{% endif %}">
+        </div>
+        <button class="qcm-submit" onclick="qcfSubmit('followup')">
+          {% if session.get('lang') == 'ar' %}حفظ المتابعة{% else %}Save Follow-up{% endif %}
+        </button>
+        <div class="qcm-success" id="qcf-ok-followup">
+          <div class="qcm-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qcm-success-title">{% if session.get('lang') == 'ar' %}تم الحفظ!{% else %}Saved!{% endif %}</div>
+          <div class="qcm-success-sub" id="qcf-ok-followup-sub"></div>
+          <div class="qcm-success-actions">
+            <a href="#" class="qcm-success-link" id="qcf-ok-followup-link">{% if session.get('lang') == 'ar' %}عرض{% else %}View{% endif %} →</a>
+            <button class="qcm-add-another" onclick="qcmShowForm('followup')">{% if session.get('lang') == 'ar' %}إضافة أخرى{% else %}Add another{% endif %}</button>
+          </div>
+        </div>
+      </div>
+
+      {# Product #}
+      <div class="qcm-form" id="qcf-product" style="--form-color:#0891b2">
+        <div class="qcm-err" id="qcf-err-product"></div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}اسم المنتج{% else %}Product Name{% endif %} *</label>
+          <input class="qcm-input" id="qcf-product-name" type="text" autocomplete="off"
+                 placeholder="{% if session.get('lang') == 'ar' %}مثال: خدمة صيانة{% else %}e.g. Maintenance Service{% endif %}">
+        </div>
+        <div class="qcm-field">
+          <label class="qcm-label">{% if session.get('lang') == 'ar' %}السعر{% else %}Selling Price{% endif %}</label>
+          <input class="qcm-input" id="qcf-product-price" type="number" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <button class="qcm-submit" onclick="qcfSubmit('product')">
+          {% if session.get('lang') == 'ar' %}حفظ المنتج{% else %}Save Product{% endif %}
+        </button>
+        <div class="qcm-success" id="qcf-ok-product">
+          <div class="qcm-success-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="qcm-success-title">{% if session.get('lang') == 'ar' %}تم الحفظ!{% else %}Saved!{% endif %}</div>
+          <div class="qcm-success-sub" id="qcf-ok-product-sub"></div>
+          <div class="qcm-success-actions">
+            <a href="#" class="qcm-success-link" id="qcf-ok-product-link">{% if session.get('lang') == 'ar' %}عرض{% else %}View{% endif %} →</a>
+            <button class="qcm-add-another" onclick="qcmShowForm('product')">{% if session.get('lang') == 'ar' %}إضافة أخرى{% else %}Add another{% endif %}</button>
+          </div>
+        </div>
+      </div>
+
+    </div>{# /qcm-body #}
   </div>
 </div>
 
-{# Keep old modal overlay for backward compat (used by sidebar JS openQuickAdd) #}
+{# Keep legacy overlay stub for backward compat #}
 <div class="quick-modal-overlay" id="quickAddOverlay" style="display:none"></div>
 
 <script>
-const _QC_CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-let _qcActiveTab = 'contact';
+const _QCMCSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+const _QC_IS_AR = document.documentElement.dir === 'rtl';
 
-function openQuickCreate(tab) {
-  tab = tab || 'contact';
-  document.getElementById('qcOverlay').classList.add('open');
-  switchQCTab(tab);
-  // close FAB
-  document.getElementById('fabContainer')?.classList.remove('open');
+const _QCM_TITLES = {
+  contact:  _QC_IS_AR ? 'جهة اتصال'  : 'Contact',
+  company:  _QC_IS_AR ? 'شركة'        : 'Company',
+  project:  _QC_IS_AR ? 'مشروع'       : 'Project',
+  followup: _QC_IS_AR ? 'متابعة'      : 'Follow-up',
+  product:  _QC_IS_AR ? 'منتج'        : 'Product',
+};
+
+function openQuickCreate(type) {
+  document.getElementById('qcmOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (type) qcmShowForm(type); else qcmShowPicker();
 }
-// Keep legacy name working
-function openQuickAdd() { openQuickCreate('contact'); }
+// Legacy aliases
+function openQuickAdd() { openQuickCreate(); }
 
 function closeQuickCreate() {
-  document.getElementById('qcOverlay').classList.remove('open');
+  document.getElementById('qcmOverlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
-function closeQC(e) {
-  if (e.target === document.getElementById('qcOverlay')) closeQuickCreate();
-}
-
-function switchQCTab(tab) {
-  _qcActiveTab = tab;
-  document.querySelectorAll('.qc-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.qc-pane').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab)?.classList.add('active');
-  document.getElementById('pane-' + tab)?.classList.add('active');
+function qcmBgClick(e) {
+  if (e.target === document.getElementById('qcmOverlay')) closeQuickCreate();
 }
 
-function _showErr(tab, msg) {
-  const el = document.getElementById('qc-err-' + tab);
+function qcmShowPicker() {
+  document.getElementById('qcmPicker').style.display = '';
+  document.querySelectorAll('.qcm-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('qcmBackBtn').classList.remove('visible');
+  document.getElementById('qcmTitle').textContent = _QC_IS_AR ? '⚡ إضافة سريعة' : '⚡ Quick Create';
+}
+
+function qcmShowForm(type) {
+  document.getElementById('qcmPicker').style.display = 'none';
+  document.querySelectorAll('.qcm-form').forEach(f => f.classList.remove('active'));
+  document.querySelectorAll('.qcm-success').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.qcm-err').forEach(e => e.style.display = 'none');
+
+  const form = document.getElementById('qcf-' + type);
+  if (form) form.classList.add('active');
+  document.getElementById('qcmBackBtn').classList.add('visible');
+  document.getElementById('qcmTitle').textContent = (_QC_IS_AR ? '⚡ ' : '⚡ ') + (_QCM_TITLES[type] || type);
+
+  // Focus first input
+  setTimeout(() => { form?.querySelector('.qcm-input')?.focus(); }, 120);
+
+  // Set today's date for follow-up
+  if (type === 'followup') {
+    const d = document.getElementById('qcf-fu-date');
+    if (d && !d.value) d.value = new Date().toISOString().slice(0,10);
+  }
+}
+
+function _qcmShowErr(type, msg) {
+  const el = document.getElementById('qcf-err-' + type);
   if (!el) return;
   el.textContent = msg; el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
-}
-function _showSuccess(tab, name, link) {
-  document.getElementById('qc-ok-' + tab).style.display = 'flex';
-  document.getElementById('qc-ok-' + tab + '-name').textContent = name;
-  document.getElementById('qc-ok-' + tab + '-link').href = link;
-  setTimeout(() => {
-    document.getElementById('qc-ok-' + tab).style.display = 'none';
-  }, 5000);
-}
-function _clearForm(tab) {
-  document.querySelectorAll(`#pane-${tab} .qc-input`).forEach(i => i.value = '');
+  setTimeout(() => el.style.display = 'none', 4500);
 }
 
-function submitQC(tab) {
-  let url, body, nameVal;
-  if (tab === 'contact') {
-    nameVal = document.getElementById('qc-c-name').value.trim();
-    const phone = document.getElementById('qc-c-phone').value.trim();
-    if (!nameVal) { _showErr(tab, '{{ _("Name is required") }}'); return; }
-    url  = '/customers/quick-add';
-    body = { name: nameVal, phone };
-  } else if (tab === 'company') {
-    nameVal = document.getElementById('qc-co-name').value.trim();
-    const phone = document.getElementById('qc-co-phone').value.trim();
-    if (!nameVal) { _showErr(tab, '{{ _("Company name is required") }}'); return; }
-    url  = '/companies/quick-add';
-    body = { name: nameVal, phone };
-  } else {
-    nameVal = document.getElementById('qc-p-name').value.trim();
-    const status = document.getElementById('qc-p-status').value;
-    if (!nameVal) { _showErr(tab, '{{ _("Project name is required") }}'); return; }
-    url  = '/projects/quick-add';
-    body = { name: nameVal, status };
+function _qcmShowSuccess(type, sub, link) {
+  const form = document.getElementById('qcf-' + type);
+  if (!form) return;
+  form.querySelectorAll('.qcm-field, .qcm-submit').forEach(el => el.style.display = 'none');
+  const ok = document.getElementById('qcf-ok-' + type);
+  ok.style.display = 'flex';
+  document.getElementById('qcf-ok-' + type + '-sub').textContent = sub;
+  document.getElementById('qcf-ok-' + type + '-link').href = link;
+}
+
+function _qcmResetForm(type) {
+  const form = document.getElementById('qcf-' + type);
+  if (!form) return;
+  form.querySelectorAll('.qcm-input').forEach(i => i.value = '');
+  form.querySelectorAll('.qcm-field, .qcm-submit').forEach(el => el.style.display = '');
+  document.getElementById('qcf-ok-' + type).style.display = 'none';
+  if (type === 'followup') {
+    document.getElementById('qcf-fu-customer-id').value = '';
+    document.getElementById('qcf-fu-suggestions').classList.remove('open');
   }
+}
 
-  const btn = document.querySelector(`#pane-${tab} .qc-submit`);
+function qcfSubmit(type) {
+  let url, body, name;
+  if (type === 'contact') {
+    name = document.getElementById('qcf-contact-name').value.trim();
+    const phone = document.getElementById('qcf-contact-phone').value.trim();
+    if (!name) { _qcmShowErr(type, _QC_IS_AR ? 'الاسم مطلوب' : 'Name is required'); return; }
+    url = '/customers/quick-add'; body = { name, phone };
+  } else if (type === 'company') {
+    name = document.getElementById('qcf-company-name').value.trim();
+    const phone = document.getElementById('qcf-company-phone').value.trim();
+    if (!name) { _qcmShowErr(type, _QC_IS_AR ? 'الاسم مطلوب' : 'Name is required'); return; }
+    url = '/companies/quick-add'; body = { name, phone };
+  } else if (type === 'project') {
+    name = document.getElementById('qcf-project-name').value.trim();
+    const status = document.getElementById('qcf-project-status').value;
+    if (!name) { _qcmShowErr(type, _QC_IS_AR ? 'الاسم مطلوب' : 'Name is required'); return; }
+    url = '/projects/quick-add'; body = { name, status };
+  } else if (type === 'followup') {
+    const cid = document.getElementById('qcf-fu-customer-id').value;
+    const date = document.getElementById('qcf-fu-date').value;
+    const summary = document.getElementById('qcf-fu-summary').value.trim();
+    name = document.getElementById('qcf-fu-search').value.trim();
+    if (!cid) { _qcmShowErr(type, _QC_IS_AR ? 'يرجى اختيار جهة اتصال' : 'Please select a contact'); return; }
+    url = '/follow_up/quick-add'; body = { customer_id: parseInt(cid), date, summary };
+  } else if (type === 'product') {
+    name = document.getElementById('qcf-product-name').value.trim();
+    const price = parseFloat(document.getElementById('qcf-product-price').value) || 0;
+    if (!name) { _qcmShowErr(type, _QC_IS_AR ? 'الاسم مطلوب' : 'Name is required'); return; }
+    url = '/products/quick-add'; body = { name, selling_price: price };
+  } else return;
+
+  const btn = document.querySelector('#qcf-' + type + ' .qcm-submit');
   btn.disabled = true;
   btn.textContent = '...';
 
   fetch(url, {
     method: 'POST',
-    headers: { 'X-CSRFToken': _QC_CSRF, 'Content-Type': 'application/json' },
+    headers: { 'X-CSRFToken': _QCMCSRF, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
   .then(r => r.json())
   .then(data => {
     btn.disabled = false;
-    btn.textContent = btn.getAttribute('data-label') || btn.textContent.replace('...','Save');
-    if (data.error) { _showErr(tab, data.error); return; }
-    _clearForm(tab);
+    btn.textContent = btn.getAttribute('data-orig') || btn.textContent.replace('...', _QC_IS_AR ? 'حفظ' : 'Save');
+    if (data.error) { _qcmShowErr(type, data.error); return; }
     let link = '#';
-    if (tab === 'contact')  link = '/customers/' + data.customer_id;
-    if (tab === 'company')  link = '/companies/' + data.company_id;
-    if (tab === 'project')  link = '/projects/' + data.project_id;
-    _showSuccess(tab, nameVal, link);
+    if (type === 'contact')  link = '/customers/'  + data.customer_id;
+    if (type === 'company')  link = '/companies/'  + data.company_id;
+    if (type === 'project')  link = '/projects/'   + data.project_id;
+    if (type === 'followup') link = '/customers/'  + data.customer_id;
+    if (type === 'product')  link = '/products';
+    _qcmShowSuccess(type, name, link);
   })
   .catch(() => {
     btn.disabled = false;
-    _showErr(tab, '{{ _("Something went wrong") }}');
+    _qcmShowErr(type, _QC_IS_AR ? 'حدث خطأ، حاول مرة أخرى' : 'Something went wrong');
   });
 }
 
-// Allow Enter key submission
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.getElementById('qcOverlay').classList.contains('open')) {
-    const pane = document.getElementById('pane-' + _qcActiveTab);
-    if (pane && !e.target.classList.contains('qc-select')) submitQC(_qcActiveTab);
+// Customer autocomplete for follow-up
+let _fuSearchTimer = null;
+function qcfSearchCustomer(q) {
+  document.getElementById('qcf-fu-customer-id').value = '';
+  clearTimeout(_fuSearchTimer);
+  const sug = document.getElementById('qcf-fu-suggestions');
+  if (q.length < 2) { sug.classList.remove('open'); return; }
+  _fuSearchTimer = setTimeout(() => {
+    fetch('/customers/api/search?q=' + encodeURIComponent(q), {
+      headers: { 'X-CSRFToken': _QCMCSRF }
+    })
+    .then(r => r.json())
+    .then(results => {
+      sug.innerHTML = '';
+      if (!results.length) { sug.classList.remove('open'); return; }
+      results.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'qcm-suggestion-item';
+        el.innerHTML = `<div class="qcm-suggestion-name">${c.name}</div>` +
+                       (c.company && c.company !== c.name ? `<div class="qcm-suggestion-co">${c.company}</div>` : '');
+        el.onclick = () => {
+          document.getElementById('qcf-fu-search').value = c.name;
+          document.getElementById('qcf-fu-customer-id').value = c.id;
+          sug.classList.remove('open');
+        };
+        sug.appendChild(el);
+      });
+      sug.classList.add('open');
+    })
+    .catch(() => sug.classList.remove('open'));
+  }, 280);
+}
+
+// Close suggestions on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.qcm-autocomplete')) {
+    document.getElementById('qcf-fu-suggestions')?.classList.remove('open');
   }
+});
+
+// Escape key closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeQuickCreate();
+});
+
+// Save original button labels
+document.querySelectorAll('.qcm-submit').forEach(btn => {
+  btn.setAttribute('data-orig', btn.textContent.trim());
 });
 </script>

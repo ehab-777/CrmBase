@@ -73,7 +73,7 @@
 
 /* ── FAB ─────────────────────────────────────────────────────── */
 .fab-container {
-  display: none;
+  display: none; /* legacy speed-dial, kept for compat */
   position: fixed;
   bottom: calc(var(--bottom-nav-h, 64px) + 12px);
   inset-inline-end: 20px;
@@ -171,6 +171,35 @@
 @media (max-width: 768px) {
   .bottom-nav { display: block; }
   .fab-container { display: flex; }
+}
+
+/* ── Standalone FAB main button (always visible) ─────────────── */
+.fab-main {
+  position: fixed;
+  bottom: 24px;
+  inset-inline-end: 28px;   /* right in LTR, LEFT in RTL = far left in Arabic */
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 18px rgba(37,99,235,.45);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 800;
+  transition: transform .18s, box-shadow .18s, background .18s;
+}
+.fab-main:hover {
+  background: #1d4ed8;
+  transform: scale(1.07);
+  box-shadow: 0 6px 24px rgba(37,99,235,.55);
+}
+.fab-main:active { transform: scale(0.95); }
+.fab-main svg { width: 24px; height: 24px; }
+
+@media (max-width: 768px) {
+  /* On mobile, lift above the bottom navigation bar */
+  .fab-main { bottom: calc(var(--bottom-nav-h, 64px) + 14px); }
 }
 
 /* ── Quick-add modal ─────────────────────────────────────────── */
