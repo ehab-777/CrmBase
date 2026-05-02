@@ -278,7 +278,14 @@
             </div>
             <div class="form-group">
                 <label>{{ _('Industry') }}</label>
-                <input type="text" id="modal-co-industry" placeholder="{{ _('e.g. Technology') }}">
+                <select id="modal-co-industry" class="form-control">
+                  <option value="">-- {{ _('Select') }} --</option>
+                  {% for opt in config.industry %}
+                  <option value="{{ opt.value }}">
+                    {% if session.get('lang') == 'ar' and opt.label_ar %}{{ opt.label_ar }}{% else %}{{ opt.value }}{% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
             </div>
             <div class="form-group">
                 <label>{{ _('Phone') }}</label>
@@ -420,10 +427,13 @@
 
         fetch('/companies/quick-add', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
             body: JSON.stringify({
                 name:     name,
-                industry: modalInd.value.trim(),
+                industry: modalInd.value,
                 phone:    modalPhone.value.trim()
             })
         })
