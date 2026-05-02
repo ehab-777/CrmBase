@@ -33,6 +33,7 @@
   margin-inline-start: var(--sb-width-collapsed);
   transition: margin-inline-start var(--sb-transition);
   background: var(--background-color);
+  padding: 1.5rem;
 }
 
 .app-layout.sb-pinned .main-area {
@@ -365,6 +366,7 @@
   .sidebar { display: none; }
   .main-area {
     margin-inline-start: 0 !important;
+    padding: 1rem;
     padding-bottom: calc(var(--bottom-nav-h) + 16px);
   }
   .app-layout.sb-pinned .main-area {
