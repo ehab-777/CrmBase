@@ -222,6 +222,7 @@
     {% if p.value %}<div class="card-value">{{ p.value }}</div>{% endif %}
     {% if p.start_date or p.end_date %}<div class="card-dates">{{ p.start_date or '?' }} → {{ p.end_date or '?' }}</div>{% endif %}
     <div class="card-footer" onclick="event.stopPropagation()">
+      <button class="btn btn-success btn-sm" onclick="openFollowUpSearch('{{ (p.company_name or p.name)|e }}')">+ {{ _('Follow-up') }}</button>
       <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
       <button class="btn btn-danger btn-sm" onclick="deleteProject({{ p.id }}, '{{ p.name|e }}')">{{ _('Delete') }}</button>
     </div>
@@ -248,6 +249,7 @@
         <td>{{ p.start_date or '—' }}</td>
         <td>
           <div style="display:flex;gap:.4rem">
+            <button class="btn btn-success btn-sm" onclick="openFollowUpSearch('{{ (p.company_name or p.name)|e }}')">+ {{ _('Follow-up') }}</button>
             <a href="{{ url_for('projects.edit_project', project_id=p.id) }}" class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
             <button class="btn btn-danger btn-sm" onclick="deleteProject({{ p.id }}, '{{ p.name|e }}')">{{ _('Delete') }}</button>
           </div>

@@ -194,6 +194,7 @@
         {{ c.contact_count }} {{ _('contacts') }} · {{ c.project_count }} {{ _('projects') }}
       </span>
       <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-success btn-sm" onclick="openFollowUpSearch('{{ c.name|e }}')">+ {{ _('Follow-up') }}</button>
         <a href="{{ url_for('companies.edit_company', company_id=c.id) }}" class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
         <button class="btn btn-danger btn-sm" onclick="deleteCompany({{ c.id }}, '{{ c.name|e }}')">{{ _('Delete') }}</button>
       </div>
@@ -229,6 +230,7 @@
         <td>{{ c.project_count }}</td>
         <td>
           <div style="display:flex;gap:.4rem">
+            <button class="btn btn-success btn-sm" onclick="openFollowUpSearch('{{ c.name|e }}')">+ {{ _('Follow-up') }}</button>
             <a href="{{ url_for('companies.edit_company', company_id=c.id) }}" class="btn btn-outline btn-sm">{{ _('Edit') }}</a>
             <button class="btn btn-danger btn-sm" onclick="deleteCompany({{ c.id }}, '{{ c.name|e }}')">{{ _('Delete') }}</button>
           </div>
