@@ -186,7 +186,7 @@
   box-shadow: 0 3px 14px rgba(37,99,235,.4);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  z-index: 800;
+  z-index: 1001;
   transition: transform .18s, box-shadow .18s, background .18s;
 }
 .fab-main:hover {
