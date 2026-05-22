@@ -110,7 +110,7 @@ def _ensure_schema():
         conn = get_db()
 
         # sales_team columns
-        for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT', 'preferred_lang TEXT DEFAULT "en"']:
+        for col in ['telegram_chat_id TEXT', 'telegram_link_token TEXT', 'telegram_token_expires TEXT', 'preferred_lang TEXT DEFAULT "en"']:
             try:
                 conn.execute(f'ALTER TABLE sales_team ADD COLUMN {col}')
             except Exception:

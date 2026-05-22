@@ -16,7 +16,6 @@ import os
 import tempfile
 import secrets
 import string
-import json
 import requests
 from datetime import datetime
 from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
@@ -162,7 +161,17 @@ def get_salesperson_by_token(conn, token):
         "SELECT * FROM sales_team WHERE telegram_link_token = ?",
         (token.upper().strip(),)
     )
-    return cursor.fetchone()
+    sp = cursor.fetchone()
+    if not sp:
+        return None
+    expires = sp['telegram_token_expires'] if 'telegram_token_expires' in sp.keys() else None
+    if expires:
+        try:
+            if datetime.fromisoformat(expires) < datetime.now():
+                return None  # expired
+        except Exception:
+            pass
+    return sp
 
 
 def ensure_telegram_columns(conn):
@@ -228,7 +237,7 @@ def parse_message_text(text, salesperson_id, tenant_id):
 
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT customer_id, company_name FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ?",
+        "SELECT customer_id, company_name, company_id FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ?",
         (tenant_id, salesperson_id)
     )
     customers = cursor.fetchall()
@@ -774,6 +783,76 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
     return '⚠️ حدث خطأ. أرسل /start للبدء من جديد.'
 
 
+HELP_TEXT = (
+    '📖 <b>الأوامر المتاحة:</b>\n\n'
+    '📝 <b>متابعة تلقائية</b>\n'
+    'أرسل أي نص أو رسالة صوتية باسم العميل\n\n'
+    '🏢 <b>عميل جديد</b>\n'
+    '<code>عميل جديد: شركة النور، خالد، 0556789012</code>\n\n'
+    '📄 <b>عرض سعر</b>\n'
+    '<code>عرض سعر</code>\n\n'
+    '📑 <b>PDF عرض سعر</b>\n'
+    '<code>pdf QT-2026-0001</code>\n\n'
+    '📋 <b>عملائي</b>\n'
+    '<code>/customers</code>\n\n'
+    '🗓️ <b>متابعات اليوم</b>\n'
+    '<code>/today</code>\n\n'
+    '❌ <b>إلغاء عملية جارية</b>\n'
+    '<code>/cancel</code>'
+)
+
+
+def handle_today_command(salesperson_id, tenant_id):
+    """Return a summary of today's follow-up activities for this salesperson."""
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return '⚠️ خطأ في قاعدة البيانات.'
+    today = datetime.now().strftime('%Y-%m-%d')
+    rows = conn.execute('''
+        SELECT a.summary, a.sales_stage, a.next_action,
+               c.company_name
+        FROM activities a
+        JOIN customers c ON a.entity_id = c.customer_id
+        WHERE a.tenant_id = ? AND a.created_by = ?
+          AND a.entity_type = 'customer' AND a.action = 'follow_up'
+          AND date(a.created_at) = ?
+        ORDER BY a.id DESC LIMIT 10
+    ''', (tenant_id, salesperson_id, today)).fetchall()
+    conn.close()
+    if not rows:
+        return f'📋 لا توجد متابعات مسجلة اليوم ({today}).'
+    lines = [f'🗓️ <b>متابعات اليوم — {today}</b>\n']
+    for i, r in enumerate(rows, 1):
+        stage = f' [{r["sales_stage"]}]' if r['sales_stage'] else ''
+        summary = (r['summary'] or '')[:60]
+        lines.append(f'{i}. <b>{r["company_name"]}</b>{stage}\n   {summary}')
+    return '\n\n'.join(lines)
+
+
+def handle_customers_command(salesperson_id, tenant_id):
+    """Return the salesperson's customer list."""
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return '⚠️ خطأ في قاعدة البيانات.'
+    rows = conn.execute('''
+        SELECT company_name, current_stage, phone_number
+        FROM customers
+        WHERE tenant_id = ? AND assigned_salesperson_id = ?
+          AND is_active = 1
+        ORDER BY company_name LIMIT 20
+    ''', (tenant_id, salesperson_id)).fetchall()
+    conn.close()
+    if not rows:
+        return '📋 لا يوجد عملاء مسجلون باسمك.'
+    lines = [f'🏢 <b>عملاؤك ({len(rows)})</b>\n']
+    for i, r in enumerate(rows, 1):
+        stage = f' — {r["current_stage"]}' if r['current_stage'] else ''
+        lines.append(f'{i}. {r["company_name"]}{stage}')
+    if len(rows) == 20:
+        lines.append('\n(تعرض أول 20 عميل)')
+    return '\n'.join(lines)
+
+
 def get_db_for_tenant(tenant_id):
     """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
     try:
@@ -815,8 +894,6 @@ def webhook():
     if not conn:
         send_message(chat_id, '⚠️ Database connection error.')
         return jsonify({'ok': True})
-
-    ensure_telegram_columns(conn)
 
     # ── /start or /link <code> ──
     if text.startswith('/start') or text.startswith('/link'):
@@ -874,6 +951,25 @@ def webhook():
 
     salesperson_id = sp['salesperson_id']
     tenant_id = sp['tenant_id']
+    conn.close()
+
+    # ── Built-in commands ──
+    if text == '/help':
+        send_message(chat_id, HELP_TEXT)
+        return jsonify({'ok': True})
+
+    if text in ('/today', '/اليوم'):
+        send_message(chat_id, handle_today_command(salesperson_id, tenant_id))
+        return jsonify({'ok': True})
+
+    if text in ('/customers', '/عملاء'):
+        send_message(chat_id, handle_customers_command(salesperson_id, tenant_id))
+        return jsonify({'ok': True})
+
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        send_message(chat_id, '⚠️ Database connection error.')
+        return jsonify({'ok': True})
 
     # ── Voice note → transcribe then treat as text ──
     if voice:
@@ -946,20 +1042,28 @@ def webhook():
         if parsed and parsed['customer']:
             customer = parsed['customer']
             today = datetime.now().strftime('%Y-%m-%d')
+            actor = sp['salesperson_name'] or sp['first_name'] or ''
 
             try:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO sales_followup (
-                        customer_id, assigned_salesperson_id, last_contact_date,
-                        last_contact_method, summary_last_contact, next_action,
-                        current_sales_stage, tenant_id, created_at, created_by
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), ?)
+                    INSERT INTO activities (
+                        tenant_id, entity_type, entity_id, action,
+                        actor_name, details,
+                        activity_type, contact_date, summary,
+                        sales_stage, next_action,
+                        created_by, company_id, created_at
+                    ) VALUES (?, 'customer', ?, 'follow_up',
+                              ?, ?,
+                              ?, ?, ?,
+                              ?, ?,
+                              ?, ?, datetime('now','localtime'))
                 ''', (
-                    customer['customer_id'], salesperson_id, today,
-                    'رسالة تيليجرام', text,
-                    parsed['action'] or 'متابعة اتصال',
-                    parsed['stage'], tenant_id, salesperson_id
+                    tenant_id, customer['customer_id'],
+                    actor, f'متابعة تيليجرام — {parsed["stage"] or "—"}',
+                    'تيليجرام', today, text,
+                    parsed['stage'], parsed['action'] or 'متابعة اتصال',
+                    salesperson_id, customer.get('company_id'),
                 ))
                 conn.commit()
                 conn.close()
@@ -968,11 +1072,11 @@ def webhook():
                 action_str = f"\n⏭️ التالي: {parsed['action']}" if parsed['action'] else ''
                 send_message(chat_id,
                     f'✅ تمت إضافة متابعة لـ <b>{customer["company_name"]}</b>{stage_str}{action_str}\n\n'
-                    f'📝 الملخص: {text[:100]}{"..." if len(text)>100 else ""}'
+                    f'📝 الملخص: {text[:100]}{"..." if len(text) > 100 else ""}'
                 )
             except Exception as e:
                 conn.close()
-                send_message(chat_id, f'❌ حدث خطأ أثناء الحفظ. حاول مرة أخرى.')
+                send_message(chat_id, f'❌ حدث خطأ أثناء الحفظ: {e}')
         else:
             # Couldn't match a customer — ask for clarification
             conn2 = get_db_for_tenant(tenant_id)
@@ -1044,9 +1148,11 @@ def generate_code():
     ensure_telegram_columns(conn)
 
     token = generate_link_token()
+    from datetime import timedelta
+    expires = (datetime.now() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute(
-        "UPDATE sales_team SET telegram_link_token = ? WHERE salesperson_id = ?",
-        (token, salesperson_id)
+        "UPDATE sales_team SET telegram_link_token = ?, telegram_token_expires = ? WHERE salesperson_id = ?",
+        (token, expires, salesperson_id)
     )
     conn.commit()
     conn.close()
