@@ -1118,19 +1118,35 @@ def link_account():
     ensure_telegram_columns(conn)
 
     cursor.execute(
-        "SELECT first_name, telegram_chat_id, telegram_link_token FROM sales_team WHERE salesperson_id = ?",
+        "SELECT first_name, telegram_chat_id, telegram_link_token, telegram_token_expires FROM sales_team WHERE salesperson_id = ?",
         (salesperson_id,)
     )
     sp = cursor.fetchone()
     conn.close()
 
     is_linked = bool(sp and sp['telegram_chat_id'])
-    link_token = sp['telegram_link_token'] if sp else None
     bot_username = os.getenv('TELEGRAM_BOT_USERNAME', 'YourCRMBot')
+
+    # Only show token if it hasn't expired yet
+    link_token = None
+    token_expires = None
+    if sp and sp['telegram_link_token']:
+        raw_expires = sp['telegram_token_expires']
+        if raw_expires:
+            try:
+                exp_dt = datetime.fromisoformat(raw_expires)
+                if exp_dt > datetime.now():
+                    link_token = sp['telegram_link_token']
+                    token_expires = exp_dt.strftime('%H:%M — %Y/%m/%d')
+            except Exception:
+                pass
+        else:
+            link_token = sp['telegram_link_token']  # legacy token with no expiry
 
     return render_template('telegram/link.html',
         is_linked=is_linked,
         link_token=link_token,
+        token_expires=token_expires,
         bot_username=bot_username,
     )
 

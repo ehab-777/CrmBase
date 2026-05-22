@@ -219,6 +219,9 @@
         <p class="code-label">{{ _('Your link code') }}</p>
         <div class="code-value" onclick="copyCode('{{ link_token }}')" title="Click to copy">{{ link_token }}</div>
         <p class="code-hint">{{ _('Tap to copy · expires after use') }}</p>
+        {% if token_expires %}
+        <p style="font-size:0.78rem;color:#92400e;margin-top:0.25rem;">⏳ {{ _('Valid until') }}: {{ token_expires }}</p>
+        {% endif %}
         <p class="copied-toast" id="copied-msg">✓ {{ _('Copied!') }}</p>
     </div>
 
