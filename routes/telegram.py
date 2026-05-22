@@ -1063,7 +1063,7 @@ def webhook():
                     actor, f'متابعة تيليجرام — {parsed["stage"] or "—"}',
                     'تيليجرام', today, text,
                     parsed['stage'], parsed['action'] or 'متابعة اتصال',
-                    salesperson_id, customer.get('company_id'),
+                    salesperson_id, customer['company_id'] if 'company_id' in customer.keys() else None,
                 ))
                 conn.commit()
                 conn.close()
