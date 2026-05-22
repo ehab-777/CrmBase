@@ -79,6 +79,10 @@ htmlcov/
 !static/**/*.png
 !static/**/*.jpg
 
+# Local font files (system fonts used in production via Dockerfile)
+static/fonts/*.ttf
+static/fonts/*.otf
+
 # Additional system and temp files
 *.tmp
 *.temp
