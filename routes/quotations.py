@@ -500,6 +500,21 @@ def export_pdf(quotation_id):
         items     = items,
     )
 
+    fname = f"quotation-{dict(q).get('quotation_number', quotation_id)}.pdf"
+
+    # Try WeasyPrint first (full Arabic/RTL support)
+    try:
+        from weasyprint import HTML as WP_HTML
+        base_url = f'file://{_BASE_DIR}/'
+        pdf_bytes = WP_HTML(string=html, base_url=base_url).write_pdf()
+        resp = make_response(pdf_bytes)
+        resp.headers['Content-Type'] = 'application/pdf'
+        resp.headers['Content-Disposition'] = f'attachment; filename="{fname}"'
+        return resp
+    except ImportError:
+        pass
+
+    # Fallback: xhtml2pdf
     try:
         from xhtml2pdf import pisa
         buf = io.BytesIO()
@@ -507,15 +522,12 @@ def export_pdf(quotation_id):
         if status.err:
             flash('PDF generation error — check server logs.', 'error')
             return redirect(url_for('quotations.quotation_detail', quotation_id=quotation_id))
-
         resp = make_response(buf.getvalue())
         resp.headers['Content-Type'] = 'application/pdf'
-        fname = f"quotation-{dict(q).get('quotation_number', quotation_id)}.pdf"
         resp.headers['Content-Disposition'] = f'attachment; filename="{fname}"'
         return resp
-
     except ImportError:
-        flash('xhtml2pdf is not installed. Run: pip install xhtml2pdf', 'error')
+        flash('PDF library not installed.', 'error')
         return redirect(url_for('quotations.quotation_detail', quotation_id=quotation_id))
 
 

@@ -30,3 +30,6 @@ pyTelegramBotAPI==4.14.0
 requests==2.31.0
 faster-whisper==1.1.1
 xhtml2pdf>=0.2.11
+weasyprint>=62.0
+arabic-reshaper>=3.0.0
+python-bidi>=0.4.2

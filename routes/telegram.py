@@ -129,16 +129,27 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
     html = _render('quotations/quotation_pdf.html',
                    quotation=dict(q), items=items)
 
+    q_number = dict(q).get('quotation_number', str(quotation_id))
+    _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Try WeasyPrint first (full Arabic/RTL support)
+    try:
+        from weasyprint import HTML as WP_HTML
+        pdf_bytes = WP_HTML(string=html, base_url=f'file://{_base}/').write_pdf()
+        return pdf_bytes, q_number
+    except ImportError:
+        pass
+
+    # Fallback: xhtml2pdf
     try:
         from xhtml2pdf import pisa
         import io as _io
-        _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         def _cb(uri, rel):
             if uri.startswith('/static/fonts/'):
                 font_name = uri.split('/')[-1]
-                system_path = f'/usr/share/fonts/truetype/amiri/{font_name}'
-                if os.path.exists(system_path):
-                    return system_path
+                sys_path = f'/usr/share/fonts/truetype/amiri/{font_name}'
+                if os.path.exists(sys_path):
+                    return sys_path
                 local = os.path.join(_base, 'static', 'fonts', font_name)
                 if os.path.exists(local) and os.path.getsize(local) > 10000:
                     return local
@@ -149,9 +160,9 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
         status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8', link_callback=_cb)
         if status.err:
             raise RuntimeError('xhtml2pdf error')
-        return buf.getvalue(), dict(q).get('quotation_number', str(quotation_id))
+        return buf.getvalue(), q_number
     except ImportError:
-        raise RuntimeError('xhtml2pdf not installed')
+        raise RuntimeError('No PDF library available')
 
 
 def generate_link_token():

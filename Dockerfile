@@ -12,8 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
     zlib1g-dev \
     libcairo2-dev \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
     pkg-config \
     fonts-hosny-amiri \
+    fonts-noto-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
