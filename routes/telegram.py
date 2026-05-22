@@ -797,9 +797,56 @@ HELP_TEXT = (
     '<code>/customers</code>\n\n'
     '🗓️ <b>متابعات اليوم</b>\n'
     '<code>/today</code>\n\n'
+    '📦 <b>المنتجات والأسعار</b>\n'
+    '<code>/products</code> — كل المنتجات\n'
+    '<code>/products كرسي</code> — بحث باسم منتج\n\n'
     '❌ <b>إلغاء عملية جارية</b>\n'
     '<code>/cancel</code>'
 )
+
+
+def handle_products_command(tenant_id, search=None):
+    """Return product list with description and price, optionally filtered by search term."""
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return '⚠️ خطأ في قاعدة البيانات.'
+
+    if search:
+        rows = conn.execute('''
+            SELECT name, category, description, selling_price, unit
+            FROM products
+            WHERE tenant_id = ? AND is_active = 1
+              AND (name LIKE ? OR category LIKE ? OR description LIKE ?)
+            ORDER BY name LIMIT 15
+        ''', (tenant_id, f'%{search}%', f'%{search}%', f'%{search}%')).fetchall()
+    else:
+        rows = conn.execute('''
+            SELECT name, category, description, selling_price, unit
+            FROM products
+            WHERE tenant_id = ? AND is_active = 1
+            ORDER BY category, name LIMIT 30
+        ''', (tenant_id,)).fetchall()
+    conn.close()
+
+    if not rows:
+        msg = f'📦 لا توجد منتجات مطابقة لـ "{search}".' if search else '📦 لا توجد منتجات مسجلة.'
+        return msg
+
+    header = f'📦 <b>نتائج "{search}"</b>\n' if search else f'📦 <b>المنتجات ({len(rows)})</b>\n'
+    lines = [header]
+    current_cat = None
+    for r in rows:
+        cat = r['category'] or 'عام'
+        if not search and cat != current_cat:
+            lines.append(f'\n<b>— {cat} —</b>')
+            current_cat = cat
+        price = f'{r["selling_price"]:,.0f} ر.س / {r["unit"]}' if r['selling_price'] else 'السعر عند الطلب'
+        desc = f'\n   📝 {r["description"][:80]}' if r['description'] else ''
+        lines.append(f'• <b>{r["name"]}</b> — {price}{desc}')
+
+    if len(rows) == 30:
+        lines.append('\n(تعرض أول 30 منتج — استخدم البحث للتضييق)')
+    return '\n'.join(lines)
 
 
 def handle_today_command(salesperson_id, tenant_id):
@@ -964,6 +1011,12 @@ def webhook():
 
     if text in ('/customers', '/عملاء'):
         send_message(chat_id, handle_customers_command(salesperson_id, tenant_id))
+        return jsonify({'ok': True})
+
+    if text.startswith('/products') or text.startswith('/منتجات'):
+        parts = text.split(maxsplit=1)
+        search = parts[1].strip() if len(parts) > 1 else None
+        send_message(chat_id, handle_products_command(tenant_id, search))
         return jsonify({'ok': True})
 
     conn = get_db_for_tenant(tenant_id)
