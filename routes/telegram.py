@@ -132,8 +132,13 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
     try:
         from xhtml2pdf import pisa
         import io as _io
+        _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        def _cb(uri, rel):
+            if uri.startswith('/static/'):
+                return os.path.join(_base, 'static', uri[8:])
+            return uri
         buf = _io.BytesIO()
-        status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8')
+        status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8', link_callback=_cb)
         if status.err:
             raise RuntimeError('xhtml2pdf error')
         return buf.getvalue(), dict(q).get('quotation_number', str(quotation_id))

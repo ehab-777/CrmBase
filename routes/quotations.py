@@ -15,7 +15,16 @@ Routes:
 
 import json
 import io
+import os
 from datetime import date, timedelta
+
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _pdf_link_callback(uri, rel):
+    """Resolve /static/... URLs to absolute file paths for xhtml2pdf."""
+    if uri.startswith('/static/'):
+        return os.path.join(_BASE_DIR, 'static', uri[8:])
+    return uri
 from flask import (
     Blueprint, render_template, request, redirect,
     url_for, session, flash, abort, make_response
@@ -485,7 +494,7 @@ def export_pdf(quotation_id):
     try:
         from xhtml2pdf import pisa
         buf = io.BytesIO()
-        status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8')
+        status = pisa.CreatePDF(html.encode('utf-8'), dest=buf, encoding='utf-8', link_callback=_pdf_link_callback)
         if status.err:
             flash('PDF generation error — check server logs.', 'error')
             return redirect(url_for('quotations.quotation_detail', quotation_id=quotation_id))

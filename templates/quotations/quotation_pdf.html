@@ -3,17 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <style>
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Regular.ttf');
+        font-weight: normal;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Bold.ttf');
+        font-weight: bold;
+        font-style: normal;
+    }
+
     @page {
         size: A4;
         margin: 1.8cm 2cm;
     }
 
     body {
-        font-family: Helvetica, Arial, sans-serif;
+        font-family: 'Cairo', Helvetica, Arial, sans-serif;
         font-size: 9.5pt;
         color: #1e293b;
         line-height: 1.45;
     }
+
+    .rtl { direction: rtl; text-align: right; }
 
     /* ── Header ── */
     .header-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
@@ -182,9 +197,9 @@
     <tr>
         <td class="addr-cell">
             <div class="addr-label">Bill To</div>
-            <div class="addr-name">{{ quotation.company_name }}</div>
+            <div class="addr-name rtl">{{ quotation.company_name }}</div>
             {% if quotation.contact_person %}
-            <div class="addr-line">Attn: {{ quotation.contact_person }}</div>
+            <div class="addr-line rtl">Attn: {{ quotation.contact_person }}</div>
             {% endif %}
             {% if quotation.phone_number %}
             <div class="addr-line">Tel: {{ quotation.phone_number }}</div>
@@ -227,9 +242,9 @@
     <tr>
         <td>{{ loop.index }}</td>
         <td>
-            <div class="item-name">{{ item['name'] }}</div>
+            <div class="item-name rtl">{{ item['name'] }}</div>
             {% if item['description'] %}
-            <div class="item-desc">{{ item['description'] }}</div>
+            <div class="item-desc rtl">{{ item['description'] }}</div>
             {% endif %}
         </td>
         <td class="num">{{ '{:g}'.format(item['quantity']) }}</td>
