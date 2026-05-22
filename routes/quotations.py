@@ -21,8 +21,17 @@ from datetime import date, timedelta
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def _pdf_link_callback(uri, rel):
-    """Resolve /static/... URLs to absolute file paths for xhtml2pdf."""
-    if uri.startswith('/static/'):
+    """Resolve /static/fonts/... to system Amiri path or local path for xhtml2pdf."""
+    if uri.startswith('/static/fonts/'):
+        font_name = uri.split('/')[-1]
+        # System path (Railway/Docker after fonts-hosny-amiri installed)
+        system_path = f'/usr/share/fonts/truetype/amiri/{font_name}'
+        if os.path.exists(system_path):
+            return system_path
+        local_path = os.path.join(_BASE_DIR, 'static', 'fonts', font_name)
+        if os.path.exists(local_path) and os.path.getsize(local_path) > 10000:
+            return local_path
+    elif uri.startswith('/static/'):
         return os.path.join(_BASE_DIR, 'static', uri[8:])
     return uri
 from flask import (

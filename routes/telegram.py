@@ -134,7 +134,15 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
         import io as _io
         _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         def _cb(uri, rel):
-            if uri.startswith('/static/'):
+            if uri.startswith('/static/fonts/'):
+                font_name = uri.split('/')[-1]
+                system_path = f'/usr/share/fonts/truetype/amiri/{font_name}'
+                if os.path.exists(system_path):
+                    return system_path
+                local = os.path.join(_base, 'static', 'fonts', font_name)
+                if os.path.exists(local) and os.path.getsize(local) > 10000:
+                    return local
+            elif uri.startswith('/static/'):
                 return os.path.join(_base, 'static', uri[8:])
             return uri
         buf = _io.BytesIO()
@@ -691,19 +699,16 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
 
         return (
             f'✅ العميل: <b>{chosen["company_name"]}</b>\n\n'
-            '📦 أرسل المنتجات/الخدمات بهذا الشكل:\n'
-            '<code>اسم المنتج × الكمية × السعر</code>\n\n'
-            'مثال:\n'
-            '<code>كرسي مكتب × 5 × 200</code>\n'
-            '<code>طاولة × 2 × 750</code>\n\n'
+            '📦 أرسل اسم المنتج وسأجلب سعره تلقائياً من النظام.\n\n'
+            'مثال: <code>كاميرا ميجا</code>\n\n'
             'عند الانتهاء أرسل: <b>انتهيت</b>'
         )
 
-    # ── Step 2: Add items ──
+    # ── Step 2: Add items — product search then quantity ──
     if step == 'add_items':
         if any(kw in text.lower() for kw in DONE_KEYWORDS):
             if not state['items']:
-                return '⚠️ لم تضف أي منتجات بعد. أرسل منتجاً واحداً على الأقل.'
+                return '⚠️ لم تضف أي منتجات بعد. أرسل اسم منتج أولاً.'
             state['step'] = 'discount'
             summary = _items_summary(state['items'])
             subtotal = sum(i['line_total'] for i in state['items'])
@@ -716,20 +721,99 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
                 '• أو <b>لا</b> لتخطي الخصم'
             )
 
-        item = parse_item_line(text)
-        if not item:
+        # ── Waiting for quantity after product was found ──
+        if 'pending_product' in state:
+            qty_text = re.sub(r'[^\d.]', '', text.strip())
+            try:
+                qty = float(qty_text)
+                if qty <= 0:
+                    raise ValueError
+            except (ValueError, TypeError):
+                return '❓ أرسل الكمية كرقم. مثال: <code>3</code>'
+
+            prod = state.pop('pending_product')
+            line_total = round(qty * prod['unit_price'], 2)
+            state['items'].append({
+                'name':         prod['name'],
+                'quantity':     qty,
+                'unit_price':   prod['unit_price'],
+                'discount_pct': 0.0,
+                'line_total':   line_total,
+            })
             return (
-                '❓ لم أفهم. أرسل المنتج بهذا الشكل:\n'
-                '<code>اسم المنتج × الكمية × السعر</code>\n\n'
-                'مثال: <code>كرسي مكتب × 5 × 200</code>'
+                f'✅ تمت الإضافة: <b>{prod["name"]}</b> — '
+                f'{qty:g} × {prod["unit_price"]:,.0f} = {line_total:,.0f} SAR\n\n'
+                'أرسل منتجاً آخر أو <b>انتهيت</b> للمتابعة.'
             )
 
-        state['items'].append(item)
-        disc_str = f' (خصم {item["discount_pct"]}%)' if item['discount_pct'] else ''
+        # ── Search product by name ──
+        conn_p = get_db_for_tenant(tenant_id)
+        if not conn_p:
+            return '⚠️ خطأ في قاعدة البيانات.'
+        rows = conn_p.execute('''
+            SELECT name, selling_price, unit
+            FROM products
+            WHERE tenant_id = ? AND is_active = 1
+              AND (name LIKE ? OR description LIKE ?)
+            ORDER BY name LIMIT 8
+        ''', (tenant_id, f'%{text}%', f'%{text}%')).fetchall()
+        conn_p.close()
+
+        if not rows:
+            return (
+                f'❓ لم أجد منتجاً باسم "<b>{text}</b>".\n\n'
+                'جرب اسماً آخر أو أرسل /cancel للإلغاء.'
+            )
+
+        if len(rows) == 1:
+            p = rows[0]
+            state['pending_product'] = {
+                'name': p['name'],
+                'unit_price': p['selling_price'] or 0,
+                'unit': p['unit'],
+            }
+            return (
+                f'✅ وجدت: <b>{p["name"]}</b>\n'
+                f'💰 السعر: {p["selling_price"]:,.0f} SAR / {p["unit"]}\n\n'
+                'أرسل الكمية:'
+            )
+
+        # Multiple matches — let user pick
+        state['pending_products'] = [dict(r) for r in rows]
+        state['step'] = 'select_product'
+        lines = '\n'.join(
+            f'{i+1}. <b>{r["name"]}</b> — {r["selling_price"]:,.0f} SAR / {r["unit"]}'
+            for i, r in enumerate(rows)
+        )
+        return f'🔍 وجدت عدة منتجات، اختر الرقم:\n\n{lines}'
+
+    # ── Step 2b: Select from multiple product matches ──
+    if step == 'select_product':
+        products = state.get('pending_products', [])
+        chosen_p = None
+        num_match = re.fullmatch(r'\d+', text.strip())
+        if num_match:
+            idx = int(text.strip()) - 1
+            if 0 <= idx < len(products):
+                chosen_p = products[idx]
+        if not chosen_p:
+            for p in products:
+                if text.strip().lower() in p['name'].lower():
+                    chosen_p = p
+                    break
+        if not chosen_p:
+            return '❓ أرسل رقم المنتج من القائمة.'
+
+        state['pending_product'] = {
+            'name': chosen_p['name'],
+            'unit_price': chosen_p['selling_price'] or 0,
+            'unit': chosen_p['unit'],
+        }
+        state.pop('pending_products', None)
+        state['step'] = 'add_items'
         return (
-            f'✅ تمت الإضافة: <b>{item["name"]}</b> — '
-            f'{item["quantity"]:g} × {item["unit_price"]:,.0f}{disc_str} = {item["line_total"]:,.0f} SAR\n\n'
-            f'أرسل منتجاً آخر أو <b>انتهيت</b> للمتابعة.'
+            f'✅ <b>{chosen_p["name"]}</b> — {chosen_p["selling_price"]:,.0f} SAR / {chosen_p["unit"]}\n\n'
+            'أرسل الكمية:'
         )
 
     # ── Step 3: Discount ──

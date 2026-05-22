@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     libcairo2-dev \
     pkg-config \
+    fonts-hosny-amiri \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
