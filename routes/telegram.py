@@ -967,7 +967,7 @@ def parse_discount_input(text):
     text = text.strip()
     if any(kw in text.lower() for kw in SKIP_KEYWORDS):
         return 'none', 0.0
-    pct_match = re.search(r'(\d+(?:\.\d+)?)\s*%', text)
+    pct_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:%|بالمئة|بالمائة|في المائة|percent)', text)
     if pct_match:
         return 'percent', float(pct_match.group(1))
     num_match = re.search(r'(\d+(?:\.\d+)?)', text)
@@ -986,6 +986,8 @@ def _items_summary(items):
     return '\n'.join(lines)
 
 
+VAT_PERCENT = 15  # Saudi standard VAT
+
 def _calc_totals_bot(items, discount_type, discount_value):
     subtotal = sum(i['line_total'] for i in items)
     if discount_type == 'percent':
@@ -994,8 +996,10 @@ def _calc_totals_bot(items, discount_type, discount_value):
         disc_amt = min(discount_value, subtotal)
     else:
         disc_amt = 0.0
-    total = subtotal - disc_amt
-    return subtotal, disc_amt, total
+    taxable = subtotal - disc_amt
+    tax_amt = round(taxable * VAT_PERCENT / 100, 2)
+    total   = taxable + tax_amt
+    return subtotal, disc_amt, tax_amt, total
 
 
 def create_quotation_from_state(state):
@@ -1010,7 +1014,7 @@ def create_quotation_from_state(state):
     items = state['items']
     disc_type  = state.get('discount_type', 'none')
     disc_value = state.get('discount_value', 0.0)
-    subtotal, disc_amt, total = _calc_totals_bot(items, disc_type, disc_value)
+    subtotal, disc_amt, tax_amt, total = _calc_totals_bot(items, disc_type, disc_value)
     notes = state.get('notes', '')
 
     from datetime import date as _date
@@ -1023,12 +1027,12 @@ def create_quotation_from_state(state):
              discount_type, discount_value, tax_percent,
              subtotal, discount_amount, tax_amount, total,
              currency, notes, tenant_id)
-        VALUES (?, ?, 'draft', ?, ?, ?, 0, ?, ?, 0, ?, 'SAR', ?, ?)
+        VALUES (?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, 'SAR', ?, ?)
     ''', (
         state['customer_id'], state['salesperson_id'],
         _date.today().isoformat(),
-        disc_type, disc_value,
-        subtotal, disc_amt, total,
+        disc_type, disc_value, VAT_PERCENT,
+        subtotal, disc_amt, tax_amt, total,
         notes, state['tenant_id'],
     ))
     qid = cursor.lastrowid
@@ -1211,14 +1215,16 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
             if not state['items']:
                 return '⚠️ لم تضف أي منتجات بعد. أرسل اسم منتج أولاً.'
             state['step'] = 'discount'
-            summary = _items_summary(state['items'])
+            summary  = _items_summary(state['items'])
             subtotal = sum(i['line_total'] for i in state['items'])
+            vat_preview = round(subtotal * VAT_PERCENT / 100, 2)
             return (
                 f'📋 <b>الطلبيات حتى الآن:</b>\n{summary}\n\n'
-                f'💰 الإجمالي قبل الخصم: <b>{subtotal:,.0f} SAR</b>\n\n'
+                f'💰 الإجمالي الفرعي: <b>{subtotal:,.0f} SAR</b>\n'
+                f'🧾 ضريبة القيمة المضافة ({VAT_PERCENT}%): {vat_preview:,.0f} SAR\n\n'
                 'هل تريد إضافة خصم؟\n'
-                '• أرسل نسبة مثل: <code>10%</code>\n'
-                '• أو مبلغ ثابت مثل: <code>500</code>\n'
+                '• نسبة مثل: <code>10%</code>\n'
+                '• مبلغ ثابت مثل: <code>500</code>\n'
                 '• أو <b>لا</b> لتخطي الخصم'
             )
 
@@ -1324,15 +1330,22 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
         state['discount_value'] = disc_value
         state['step'] = 'notes'
 
-        subtotal, disc_amt, total = _calc_totals_bot(state['items'], disc_type, disc_value)
-        disc_str = (
-            f'\n🏷️ خصم: {disc_amt:,.0f} SAR'
-            if disc_type != 'none' else ''
-        )
-        return (
-            f'💰 الإجمالي: <b>{total:,.0f} SAR</b>{disc_str}\n\n'
-            'أرسل ملاحظات لعرض السعر (أو <b>لا</b> لتخطي):'
-        )
+        subtotal, disc_amt, tax_amt, total = _calc_totals_bot(state['items'], disc_type, disc_value)
+
+        if disc_type == 'percent':
+            disc_label = f'🏷️ خصم ({disc_value:g}%): -{disc_amt:,.0f} SAR'
+        elif disc_type == 'fixed':
+            disc_label = f'🏷️ خصم ثابت: -{disc_amt:,.0f} SAR'
+        else:
+            disc_label = None
+
+        lines = [f'💰 الإجمالي الفرعي: {subtotal:,.0f} SAR']
+        if disc_label:
+            lines.append(disc_label)
+        lines.append(f'🧾 ضريبة القيمة المضافة ({VAT_PERCENT}%): +{tax_amt:,.0f} SAR')
+        lines.append(f'💵 <b>الإجمالي: {total:,.0f} SAR</b>')
+
+        return '\n'.join(lines) + '\n\nأرسل ملاحظات لعرض السعر (أو <b>لا</b> لتخطي):'
 
     # ── Step 4: Notes → Create → Send PDF ──
     if step == 'notes':
@@ -1347,11 +1360,19 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
 
         _QUOTATION_STATE.pop(chat_id, None)
 
-        subtotal, disc_amt, total = _calc_totals_bot(
+        subtotal, disc_amt, tax_amt, total = _calc_totals_bot(
             state['items'], state['discount_type'], state['discount_value']
         )
         summary  = _items_summary(state['items'])
-        disc_line = f'\n🏷️ خصم: {disc_amt:,.0f} SAR' if disc_amt else ''
+
+        disc_type  = state['discount_type']
+        disc_value = state['discount_value']
+        if disc_type == 'percent':
+            disc_line = f'\n🏷️ خصم ({disc_value:g}%): -{disc_amt:,.0f} SAR'
+        elif disc_type == 'fixed':
+            disc_line = f'\n🏷️ خصم ثابت: -{disc_amt:,.0f} SAR'
+        else:
+            disc_line = ''
 
         confirmation = (
             f'✅ <b>تم إنشاء عرض السعر بنجاح!</b>\n\n'
@@ -1360,6 +1381,7 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
             f'<b>المنتجات:</b>\n{summary}\n\n'
             f'💰 الإجمالي الفرعي: {subtotal:,.0f} SAR'
             f'{disc_line}\n'
+            f'🧾 ضريبة القيمة المضافة ({VAT_PERCENT}%): +{tax_amt:,.0f} SAR\n'
             f'💵 <b>الإجمالي: {total:,.0f} SAR</b>\n\n'
             f'⏳ جاري إنشاء ملف PDF...'
         )
