@@ -677,36 +677,107 @@ def detect_new_customer_intent(text):
     return any(trigger in t for trigger in NEW_CUSTOMER_TRIGGERS)
 
 
-def _save_new_customer(state):
-    """Insert collected customer data into DB. Returns (customer_id, error_msg)."""
+def _get_job_titles(tenant_id):
+    """Return list of job title options from config_options table."""
+    conn = get_db_for_tenant(tenant_id)
+    if not conn:
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT value FROM config_options WHERE tenant_id=? AND category='job_title' AND is_active=1 ORDER BY display_order",
+            (tenant_id,)
+        ).fetchall()
+        return [r['value'] for r in rows]
+    except Exception:
+        return []
+    finally:
+        conn.close()
+
+
+def _save_new_record(state):
+    """Save to the correct table based on customer_type. Returns (id, success_msg, error_msg)."""
     conn = get_db_for_tenant(state['tenant_id'])
     if not conn:
-        return None, 'خطأ في قاعدة البيانات'
+        return None, None, 'خطأ في قاعدة البيانات'
     try:
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO customers
-                (company_name, contact_person, phone_number,
-                 email_address, contact_person_position,
-                 assigned_salesperson_id, tenant_id,
-                 lead_source, date_added)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'telegram', datetime('now','localtime'))
-        ''', (
-            state['company_name'],
-            state['contact_person'],
-            state['phone'],
-            state.get('email') or None,
-            state.get('position') or None,
-            state['salesperson_id'],
-            state['tenant_id'],
-        ))
-        conn.commit()
-        customer_id = cursor.lastrowid
-        conn.close()
-        return customer_id, None
+        ctype = state['customer_type']
+
+        if ctype == 'شركة':
+            # 1. Insert into companies
+            cursor.execute('''
+                INSERT INTO companies (name, phone, email, tenant_id)
+                VALUES (?, ?, ?, ?)
+            ''', (
+                state['company_name'],
+                state.get('phone') or None,
+                state.get('email') or None,
+                state['tenant_id'],
+            ))
+            company_id = cursor.lastrowid
+            # 2. Insert linked contact into customers if contact person provided
+            if state.get('contact_person'):
+                cursor.execute('''
+                    INSERT INTO customers
+                        (company_name, contact_person, phone_number,
+                         email_address, contact_person_position,
+                         assigned_salesperson_id, tenant_id,
+                         lead_source, date_added, company_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'telegram', datetime('now','localtime'), ?)
+                ''', (
+                    state['company_name'],
+                    state['contact_person'],
+                    state.get('contact_phone') or state.get('phone') or None,
+                    state.get('email') or None,
+                    state.get('position') or None,
+                    state['salesperson_id'],
+                    state['tenant_id'],
+                    company_id,
+                ))
+            conn.commit()
+            conn.close()
+            return company_id, f'✅ <b>تم إضافة الشركة بنجاح!</b>\n\n🏢 {state["company_name"]}', None
+
+        elif ctype == 'مشروع':
+            company_id = state.get('company_id') or None
+            cursor.execute('''
+                INSERT INTO projects (name, company_id, status, tenant_id)
+                VALUES (?, ?, 'new', ?)
+            ''', (
+                state['company_name'],
+                company_id,
+                state['tenant_id'],
+            ))
+            project_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            return project_id, f'✅ <b>تم إضافة المشروع بنجاح!</b>\n\n📁 {state["company_name"]}', None
+
+        else:  # جهة اتصال
+            cursor.execute('''
+                INSERT INTO customers
+                    (company_name, contact_person, phone_number,
+                     email_address, contact_person_position,
+                     assigned_salesperson_id, tenant_id,
+                     lead_source, date_added)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'telegram', datetime('now','localtime'))
+            ''', (
+                state['company_name'],   # person's name as company_name
+                state['company_name'],   # also as contact_person
+                state.get('phone') or None,
+                state.get('email') or None,
+                state.get('position') or None,
+                state['salesperson_id'],
+                state['tenant_id'],
+            ))
+            conn.commit()
+            customer_id = cursor.lastrowid
+            conn.close()
+            return customer_id, f'✅ <b>تم إضافة جهة الاتصال بنجاح!</b>\n\n👤 {state["company_name"]}', None
+
     except Exception as e:
         conn.close()
-        return None, str(e)
+        return None, None, str(e)
 
 
 # ─── New-customer state machine ───────────────────────────────────────────────
@@ -727,18 +798,50 @@ def _is_valid_email(text):
     return bool(re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', text.strip()))
 
 
+def _position_prompt(tenant_id):
+    """Build the job title selection message with system options."""
+    titles = _get_job_titles(tenant_id)
+    if not titles:
+        return '💼 اكتب <b>المسمى الوظيفي</b> (أو أرسل <b>تخطى</b>):', []
+    lines = '\n'.join(f'{i+1}. {v}' for i, v in enumerate(titles))
+    msg = (
+        f'💼 <b>المسمى الوظيفي</b>\n\n{lines}\n\n'
+        f'أرسل الرقم أو اكتب مسمى مختلف — أو <b>تخطى</b>'
+    )
+    return msg, titles
+
+
+def _build_confirm_msg(state):
+    ctype    = state['customer_type']
+    cname    = state['company_name']
+    phone    = state.get('phone') or '—'
+    email    = state.get('email') or '—'
+    position = state.get('position') or '—'
+    lines = [
+        f'📋 <b>مراجعة البيانات</b>\n',
+        f'النوع: {ctype}',
+        f'الاسم: <b>{cname}</b>',
+    ]
+    if ctype == 'شركة':
+        contact = state.get('contact_person') or '—'
+        lines += [f'المسؤول: {contact}', f'الجوال: {phone}', f'الإيميل: {email}', f'المسمى الوظيفي: {position}']
+    elif ctype == 'مشروع':
+        company = state.get('company_name_linked') or '—'
+        lines.append(f'الشركة: {company}')
+    else:  # جهة اتصال
+        lines += [f'الجوال: {phone}', f'الإيميل: {email}', f'المسمى الوظيفي: {position}']
+    lines += ['\nهل البيانات صحيحة؟', '✅ <b>نعم</b> — للحفظ', '🔄 <b>لا</b> — للبدء من جديد']
+    return '\n'.join(lines)
+
+
 def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
-    """
-    Conversational new-customer creation.
-    Returns reply string, or None if already sent.
-    """
+    """Conversational new-record creation (شركة / مشروع / جهة اتصال)."""
     t = text.strip()
     t_lower = t.lower()
 
-    # Cancel at any point
     if any(kw in t_lower for kw in _NC_CANCEL):
         _NEW_CUSTOMER_STATE.pop(chat_id, None)
-        return '❌ تم إلغاء إضافة العميل.'
+        return '❌ تم إلغاء الإضافة.'
 
     state = _NEW_CUSTOMER_STATE.get(chat_id)
 
@@ -750,17 +853,17 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
             'tenant_id': tenant_id,
         }
         return (
-            '🏢 <b>إضافة عميل جديد</b>\n\n'
-            'هل تريد إضافة:\n\n'
+            '🏢 <b>إضافة جديد</b>\n\n'
+            'اختر النوع:\n\n'
             '1️⃣ شركة\n'
             '2️⃣ مشروع\n'
             '3️⃣ جهة اتصال (شخص)\n\n'
-            'أرسل الرقم أو اكتب نوعه — أو /cancel للإلغاء'
+            'أرسل الرقم أو اكتب النوع — أو /cancel للإلغاء'
         )
 
     step = state['step']
 
-    # ── Step 1: نوع العميل ──
+    # ── Step 1: النوع ──
     if step == 'type_choice':
         if t in ('1', 'شركه', 'شركة', 'company'):
             state['customer_type'] = 'شركة'
@@ -782,31 +885,80 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
         if len(t) < 2:
             return '❓ الاسم قصير جداً. أعد الكتابة:'
         state['company_name'] = t
-        if state.get('customer_type') == 'جهة اتصال':
-            # الشخص هو جهة الاتصال — نتخطى سؤال المسؤول
-            state['contact_person'] = t
+        ctype = state['customer_type']
+
+        if ctype == 'مشروع':
+            # Fetch companies list for optional linking
+            conn = get_db_for_tenant(tenant_id)
+            companies = []
+            if conn:
+                try:
+                    rows = conn.execute(
+                        "SELECT id, name FROM companies WHERE tenant_id=? ORDER BY name LIMIT 15",
+                        (tenant_id,)
+                    ).fetchall()
+                    companies = [dict(r) for r in rows]
+                finally:
+                    conn.close()
+            state['_companies'] = companies
+            if companies:
+                state['step'] = 'project_company'
+                lines = '\n'.join(f'{i+1}. {c["name"]}' for i, c in enumerate(companies))
+                return (
+                    f'🏢 اختر <b>الشركة المرتبطة</b> بالمشروع (أو أرسل <b>تخطى</b>):\n\n{lines}'
+                )
+            else:
+                state['step'] = 'confirm'
+                return _build_confirm_msg(state)
+
+        elif ctype == 'شركة':
+            state['step'] = 'phone'
+            return '📱 اكتب <b>رقم هاتف الشركة</b> (أو أرسل <b>تخطى</b>):'
+
+        else:  # جهة اتصال
             state['step'] = 'phone'
             return '📱 اكتب <b>رقم الجوال</b>:'
-        state['step'] = 'contact_person'
-        return '👤 اكتب <b>اسم المسؤول</b> / جهة الاتصال:'
 
-    # ── Step 3: المسؤول ──
-    if step == 'contact_person':
-        if len(t) < 2:
-            return '❓ الاسم قصير جداً. أعد الكتابة:'
-        state['contact_person'] = t
-        state['step'] = 'phone'
-        return '📱 اكتب <b>رقم الجوال</b>:'
+    # ── Step 2b: ربط المشروع بشركة ──
+    if step == 'project_company':
+        companies = state.get('_companies', [])
+        if any(kw in t_lower for kw in _NC_SKIP):
+            state['company_id'] = None
+            state['company_name_linked'] = '—'
+        else:
+            # Try number pick first, then name match
+            chosen = None
+            if t.isdigit():
+                idx = int(t) - 1
+                if 0 <= idx < len(companies):
+                    chosen = companies[idx]
+            if not chosen:
+                for c in companies:
+                    if t_lower in c['name'].lower():
+                        chosen = c
+                        break
+            if chosen:
+                state['company_id'] = chosen['id']
+                state['company_name_linked'] = chosen['name']
+            else:
+                lines = '\n'.join(f'{i+1}. {c["name"]}' for i, c in enumerate(companies))
+                return f'❓ لم أجد الشركة. اختر رقماً من القائمة أو أرسل <b>تخطى</b>:\n\n{lines}'
+        state['step'] = 'confirm'
+        return _build_confirm_msg(state)
 
-    # ── Step 4: الجوال ──
+    # ── Step 3: الجوال (شركة / جهة اتصال) ──
     if step == 'phone':
-        if not _is_valid_phone(t):
-            return '❓ رقم غير صحيح. أرسل رقم جوال صحيح (مثال: 0556789012):'
-        state['phone'] = re.sub(r'[\s\-]', '', t)
+        ctype = state['customer_type']
+        if any(kw in t_lower for kw in _NC_SKIP) and ctype == 'شركة':
+            state['phone'] = None
+        elif _is_valid_phone(t):
+            state['phone'] = re.sub(r'[\s\-]', '', t)
+        else:
+            return '❓ رقم غير صحيح. أرسل رقم صحيح أو <b>تخطى</b>:'
         state['step'] = 'email'
         return '📧 اكتب <b>الإيميل</b> (أو أرسل <b>تخطى</b>):'
 
-    # ── Step 5: الإيميل ──
+    # ── Step 4: الإيميل ──
     if step == 'email':
         if any(kw in t_lower for kw in _NC_SKIP):
             state['email'] = None
@@ -814,47 +966,55 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
             state['email'] = t.strip()
         else:
             return '❓ الإيميل غير صحيح. أرسل إيميل صحيح أو <b>تخطى</b>:'
-        state['step'] = 'position'
-        return '💼 اكتب <b>المسمى الوظيفي</b> للمسؤول (أو أرسل <b>تخطى</b>):'
+
+        ctype = state['customer_type']
+        if ctype == 'شركة':
+            state['step'] = 'contact_person'
+            return '👤 اكتب <b>اسم المسؤول</b> في الشركة (أو أرسل <b>تخطى</b>):'
+        else:
+            # جهة اتصال → position
+            msg, titles = _position_prompt(tenant_id)
+            state['_position_titles'] = titles
+            state['step'] = 'position'
+            return msg
+
+    # ── Step 5: المسؤول (شركة فقط) ──
+    if step == 'contact_person':
+        if any(kw in t_lower for kw in _NC_SKIP):
+            state['contact_person'] = None
+        elif len(t) >= 2:
+            state['contact_person'] = t
+        else:
+            return '❓ الاسم قصير جداً. أعد الكتابة أو أرسل <b>تخطى</b>:'
+
+        if state.get('contact_person'):
+            msg, titles = _position_prompt(tenant_id)
+            state['_position_titles'] = titles
+            state['step'] = 'position'
+            return msg
+        else:
+            state['step'] = 'confirm'
+            return _build_confirm_msg(state)
 
     # ── Step 6: المسمى الوظيفي ──
     if step == 'position':
-        state['position'] = None if any(kw in t_lower for kw in _NC_SKIP) else t
+        titles = state.get('_position_titles', [])
+        if any(kw in t_lower for kw in _NC_SKIP):
+            state['position'] = None
+        elif t.isdigit() and 1 <= int(t) <= len(titles):
+            state['position'] = titles[int(t) - 1]
+        else:
+            state['position'] = t  # custom value
         state['step'] = 'confirm'
-
-        ctype    = state['customer_type']
-        cname    = state['company_name']
-        contact  = state['contact_person']
-        phone    = state['phone']
-        email    = state.get('email') or '—'
-        position = state.get('position') or '—'
-
-        return (
-            f'📋 <b>مراجعة البيانات</b>\n\n'
-            f'النوع: {ctype}\n'
-            f'الاسم: <b>{cname}</b>\n'
-            f'المسؤول: {contact}\n'
-            f'الجوال: {phone}\n'
-            f'الإيميل: {email}\n'
-            f'المسمى الوظيفي: {position}\n\n'
-            f'هل البيانات صحيحة؟\n'
-            f'✅ <b>نعم</b> — للحفظ\n'
-            f'🔄 <b>لا</b> — للبدء من جديد'
-        )
+        return _build_confirm_msg(state)
 
     # ── Step 7: التأكيد ──
     if step == 'confirm':
         if any(kw in t_lower for kw in ['نعم', 'yes', 'تمام', 'صح', 'اكيد', 'أكيد', 'موافق', '✅']):
-            customer_id, err = _save_new_customer(state)
+            rec_id, success_msg, err = _save_new_record(state)
             _NEW_CUSTOMER_STATE.pop(chat_id, None)
-            if customer_id:
-                return (
-                    f'✅ <b>تم إضافة العميل بنجاح!</b>\n\n'
-                    f'🏢 {state["company_name"]}\n'
-                    f'👤 {state["contact_person"]}\n'
-                    f'📱 {state["phone"]}\n\n'
-                    f'يمكنك الآن إرسال متابعات باسم هذا العميل.'
-                )
+            if rec_id:
+                return success_msg + '\n\nيمكنك الآن إرسال متابعات باسم هذا السجل.'
             else:
                 return f'❌ فشل الحفظ: {err}'
         elif any(kw in t_lower for kw in ['لا', 'no', 'لأ', 'غلط', 'خطأ']):
@@ -863,7 +1023,6 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
         else:
             return '❓ أرسل <b>نعم</b> للحفظ أو <b>لا</b> للإلغاء.'
 
-    # حالة غير معروفة — reset
     _NEW_CUSTOMER_STATE.pop(chat_id, None)
     return '⚠️ حدث خطأ. أرسل /start للبدء من جديد.'
 
