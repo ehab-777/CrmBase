@@ -211,6 +211,12 @@ def _ensure_schema():
         except Exception:
             pass
 
+        # add is_active to customers if missing (default 1 = active)
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+        except Exception:
+            pass
+
         # add city to companies if missing
         try:
             conn.execute("ALTER TABLE companies ADD COLUMN city TEXT")
