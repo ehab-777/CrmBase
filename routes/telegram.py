@@ -13,11 +13,14 @@ Setup (one-time, run from CLI):
 """
 
 import os
+import re
+import sqlite3
 import tempfile
 import secrets
 import string
+import traceback
 import requests
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
 from tenant_utils import get_db, require_tenant
 from security import csrf
@@ -108,7 +111,6 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
     Returns (pdf_bytes, quotation_number) or raises RuntimeError.
     Must be called from within a Flask application context.
     """
-    from flask import render_template as _render
     conn = get_db_for_tenant(tenant_id)
     if not conn:
         raise RuntimeError('DB connection failed')
@@ -135,7 +137,7 @@ def generate_quotation_pdf_bytes(quotation_id, tenant_id):
     ).fetchall()
     conn.close()
 
-    html = _render('quotations/quotation_pdf.html',
+    html = render_template('quotations/quotation_pdf.html',
                    quotation=dict(q), items=items)
 
     q_number = dict(q).get('quotation_number', str(quotation_id))
@@ -343,7 +345,6 @@ def detect_followup_intent(text):
 
 def _parse_date_input(text):
     """Parse Arabic/numeric date. Returns YYYY-MM-DD or None."""
-    from datetime import timedelta
     t = text.strip().lower()
     if t in ('غداً', 'غدا', 'غدًا', 'tomorrow', 'بكرا', 'بكره'):
         return (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
@@ -356,8 +357,7 @@ def _parse_date_input(text):
         if year < 100:
             year += 2000
         try:
-            from datetime import date as _date
-            return _date(year, month, day).strftime('%Y-%m-%d')
+            return date(year, month, day).strftime('%Y-%m-%d')
         except ValueError:
             pass
     return None
@@ -642,8 +642,6 @@ def handle_followup_flow(chat_id, text, salesperson_id, tenant_id, actor_name=''
 
 
 # ─── New customer conversational flow ────────────────────────────────────────
-
-import re
 
 NEW_CUSTOMER_TRIGGERS = [
     # عميل
@@ -1176,7 +1174,6 @@ def create_quotation_from_state(state):
     subtotal, disc_amt, tax_amt, total = _calc_totals_bot(items, disc_type, disc_value)
     notes = state.get('notes', '')
 
-    from datetime import date as _date
     cursor = conn.cursor()
 
     # Insert quotation
@@ -1189,7 +1186,7 @@ def create_quotation_from_state(state):
         VALUES (?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, 'SAR', ?, ?)
     ''', (
         state['customer_id'], state['salesperson_id'],
-        _date.today().isoformat(),
+        date.today().isoformat(),
         disc_type, disc_value, VAT_PERCENT,
         subtotal, disc_amt, tax_amt, total,
         notes, state['tenant_id'],
@@ -1197,7 +1194,7 @@ def create_quotation_from_state(state):
     qid = cursor.lastrowid
 
     # Set quotation number
-    year = _date.today().year
+    year = date.today().year
     q_number = f'QT-{year}-{qid:04d}'
     cursor.execute('UPDATE quotations SET quotation_number = ? WHERE quotation_id = ?',
                    (q_number, qid))
@@ -1678,8 +1675,6 @@ def handle_customers_command(salesperson_id, tenant_id):
 def get_db_for_tenant(tenant_id):
     """Get a DB connection using the tenant_id directly (no Flask request context needed)."""
     try:
-        import sqlite3
-        # Respect the same env var the rest of the app uses
         db_path = os.getenv('DATABASE_NAME', os.getenv('DB_PATH', '/data/crm_multi.db'))
         if not os.path.exists(db_path):
             # fallback for development
@@ -1711,7 +1706,6 @@ def webhook():
     try:
         return _webhook_inner(message)
     except Exception as exc:
-        import traceback
         print(f'[telegram] UNHANDLED EXCEPTION in webhook: {exc}')
         traceback.print_exc()
         chat_id = message.get('chat', {}).get('id')
@@ -1724,12 +1718,9 @@ def webhook():
 
 
 def _webhook_inner(message):
-    print(f'[telegram] incoming message type={list(message.keys())}')
-
     chat_id = message['chat']['id']
     text = message.get('text', '').strip()
     voice = message.get('voice')
-    print(f'[telegram] chat_id={chat_id} text_len={len(text)} has_voice={bool(voice)}')
 
     conn = get_db_for_tenant(None)
     if not conn:
@@ -1754,14 +1745,12 @@ def _webhook_inner(message):
                 conn.close()
                 send_message(chat_id,
                     f'✅ تم ربط حسابك بنجاح! مرحباً {sp["first_name"]}.\n\n'
-                    f'يمكنك الآن:\n\n'
-                    f'📄 <b>إنشاء عرض سعر:</b>\n'
-                    f'أرسل: <code>عرض سعر</code>\n\n'
-                    f'🏢 <b>إنشاء عميل جديد:</b>\n'
-                    f'<code>عميل جديد: شركة النور، المسؤول خالد، 0556789012</code>\n\n'
-                    f'📝 <b>تسجيل متابعة:</b>\n'
-                    f'أرسل ملاحظة نصية أو صوتية باسم العميل\n\n'
-                    f'🎤 الرسائل الصوتية مدعومة بالعربي والإنجليزي'
+                    '📄 <b>عرض سعر:</b> أرسل <code>عرض سعر</code>\n\n'
+                    '🏢 <b>إضافة شركة/مشروع/جهة اتصال:</b> أرسل <code>عميل جديد</code>\n\n'
+                    '📝 <b>متابعة:</b> أرسل ملاحظة باسم العميل أو <code>متابعة</code>\n\n'
+                    '📋 <b>عملائي:</b> <code>/customers</code>\n'
+                    '🗓️ <b>اليوم:</b> <code>/today</code>\n'
+                    '❓ <b>مساعدة:</b> <code>/help</code>'
                 )
             else:
                 conn.close()
@@ -1793,7 +1782,6 @@ def _webhook_inner(message):
     salesperson_id = sp['salesperson_id']
     tenant_id = sp['tenant_id']
     conn.close()
-    print(f'[telegram] linked user salesperson_id={salesperson_id} tenant_id={tenant_id}')
 
     # ── Built-in commands ──
     if text == '/help':
@@ -1837,7 +1825,7 @@ def _webhook_inner(message):
             transcribed = transcribe_voice(audio_bytes)
         except Exception as e:
             conn.close()
-            send_message(chat_id, f'❌ فشل تحميل الرسالة الصوتية. حاول مرة أخرى.')
+            send_message(chat_id, '❌ فشل تحميل الرسالة الصوتية. حاول مرة أخرى.')
             return jsonify({'ok': True})
 
         if not transcribed:
@@ -2008,7 +1996,6 @@ def generate_code():
     ensure_telegram_columns(conn)
 
     token = generate_link_token()
-    from datetime import timedelta
     expires = (datetime.now() + timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute(
         "UPDATE sales_team SET telegram_link_token = ?, telegram_token_expires = ? WHERE salesperson_id = ?",
