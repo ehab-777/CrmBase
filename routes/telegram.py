@@ -664,8 +664,12 @@ NEW_CUSTOMER_TRIGGERS = [
     # إضافة
     'اضافه عميل', 'إضافة عميل', 'اضافة عميل',
     'اضافه شركه', 'إضافة شركة',
+    # جهة اتصال
+    'جهة اتصال', 'جهه اتصال', 'اضف جهة اتصال', 'اضف جهه اتصال',
+    'سجل جهة اتصال', 'شخص جديد', 'اضف شخص', 'فرد جديد',
     # English
     'new customer', 'add customer', 'new client', 'add client',
+    'new contact', 'add contact',
 ]
 
 def detect_new_customer_intent(text):
@@ -749,7 +753,8 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
             '🏢 <b>إضافة عميل جديد</b>\n\n'
             'هل تريد إضافة:\n\n'
             '1️⃣ شركة\n'
-            '2️⃣ مشروع\n\n'
+            '2️⃣ مشروع\n'
+            '3️⃣ جهة اتصال (شخص)\n\n'
             'أرسل الرقم أو اكتب نوعه — أو /cancel للإلغاء'
         )
 
@@ -757,7 +762,7 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
 
     # ── Step 1: نوع العميل ──
     if step == 'type_choice':
-        if t in ('1', 'شركه', 'شركة', 'شركة', 'company'):
+        if t in ('1', 'شركه', 'شركة', 'company'):
             state['customer_type'] = 'شركة'
             state['step'] = 'name'
             return '🏢 اكتب <b>اسم الشركة</b>:'
@@ -765,14 +770,23 @@ def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
             state['customer_type'] = 'مشروع'
             state['step'] = 'name'
             return '📁 اكتب <b>اسم المشروع</b>:'
+        elif t in ('3', 'جهة اتصال', 'جهه اتصال', 'شخص', 'فرد', 'contact', 'person'):
+            state['customer_type'] = 'جهة اتصال'
+            state['step'] = 'name'
+            return '👤 اكتب <b>اسم الشخص</b> كاملاً:'
         else:
-            return '❓ أرسل <b>1</b> للشركة أو <b>2</b> للمشروع.'
+            return '❓ أرسل <b>1</b> للشركة، <b>2</b> للمشروع، أو <b>3</b> لجهة اتصال.'
 
     # ── Step 2: الاسم ──
     if step == 'name':
         if len(t) < 2:
             return '❓ الاسم قصير جداً. أعد الكتابة:'
         state['company_name'] = t
+        if state.get('customer_type') == 'جهة اتصال':
+            # الشخص هو جهة الاتصال — نتخطى سؤال المسؤول
+            state['contact_person'] = t
+            state['step'] = 'phone'
+            return '📱 اكتب <b>رقم الجوال</b>:'
         state['step'] = 'contact_person'
         return '👤 اكتب <b>اسم المسؤول</b> / جهة الاتصال:'
 
