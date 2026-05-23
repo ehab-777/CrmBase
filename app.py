@@ -23,7 +23,7 @@ from routes.follow_up import follow_up_bp
 from routes.users import users_bp
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
-from routes.telegram import telegram_bp
+from routes.telegram import telegram_bp, ensure_webhook
 from routes.products import products_bp
 from routes.quotations import quotations_bp
 from routes.profile import profile_bp
@@ -305,6 +305,8 @@ with app.app_context():
     # Bootstrap quotation tables once at startup
     from routes.quotations import ensure_tables
     ensure_tables()
+    # Re-register Telegram webhook if it has dropped (auto-heals after restart)
+    ensure_webhook()
 
 @app.teardown_appcontext
 def teardown_db(error):

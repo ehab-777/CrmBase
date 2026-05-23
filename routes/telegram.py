@@ -66,15 +66,23 @@ def transcribe_voice(file_bytes: bytes) -> str | None:
 
 telegram_bp = Blueprint('telegram', __name__, url_prefix='/telegram')
 
-BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
-TELEGRAM_API = f'https://api.telegram.org/bot{BOT_TOKEN}'
+
+def get_bot_token():
+    return os.getenv('TELEGRAM_BOT_TOKEN', '')
+
+
+def get_api_base():
+    token = get_bot_token()
+    return f'https://api.telegram.org/bot{token}' if token else ''
+
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def send_message(chat_id, text, parse_mode='HTML'):
-    if not BOT_TOKEN:
+    token = get_bot_token()
+    if not token:
         return
-    requests.post(f'{TELEGRAM_API}/sendMessage', json={
+    requests.post(f'{get_api_base()}/sendMessage', json={
         'chat_id': chat_id,
         'text': text,
         'parse_mode': parse_mode,
@@ -83,10 +91,11 @@ def send_message(chat_id, text, parse_mode='HTML'):
 
 def send_document(chat_id, pdf_bytes, filename, caption=''):
     """Send a PDF file to a Telegram chat via sendDocument."""
-    if not BOT_TOKEN:
+    token = get_bot_token()
+    if not token:
         return
     requests.post(
-        f'{TELEGRAM_API}/sendDocument',
+        f'{get_api_base()}/sendDocument',
         data={'chat_id': chat_id, 'caption': caption, 'parse_mode': 'HTML'},
         files={'document': (filename, pdf_bytes, 'application/pdf')},
         timeout=30,
@@ -283,99 +292,217 @@ def parse_message_text(text, salesperson_id, tenant_id):
     }
 
 
-# ─── New customer parser ──────────────────────────────────────────────────────
-
-# Keywords that signal "create new customer"
-NEW_CUSTOMER_TRIGGERS = [
-    'عميل جديد', 'زبون جديد', 'اضف عميل', 'أضف عميل',
-    'سجل عميل', 'عميل جديده', 'new customer', 'add customer',
-]
+# ─── New customer conversational flow ────────────────────────────────────────
 
 import re
 
+NEW_CUSTOMER_TRIGGERS = [
+    # عميل
+    'عميل جديد', 'عميل جديده', 'عملاء جدد',
+    'اضف عميل', 'أضف عميل', 'اضيف عميل', 'أضيف عميل',
+    'سجل عميل', 'سجّل عميل', 'تسجيل عميل',
+    'اريد اضيف عميل', 'أريد أضيف عميل', 'عايز اضيف عميل',
+    'عايز اسجل عميل', 'اريد تسجيل عميل',
+    # زبون
+    'زبون جديد', 'زبون جديده', 'اضف زبون', 'أضف زبون',
+    # شركة
+    'شركه جديده', 'شركة جديدة', 'شركه جديد',
+    'اضف شركه', 'أضف شركة', 'اضف شركة',
+    'سجل شركه', 'سجل شركة',
+    # مشروع
+    'مشروع جديد', 'مشروع جديده',
+    'اضف مشروع', 'أضف مشروع', 'سجل مشروع',
+    # إضافة
+    'اضافه عميل', 'إضافة عميل', 'اضافة عميل',
+    'اضافه شركه', 'إضافة شركة',
+    # English
+    'new customer', 'add customer', 'new client', 'add client',
+]
+
 def detect_new_customer_intent(text):
-    """Return True if the message is about creating a new customer."""
-    t = text.lower()
+    t = text.strip().lower()
     return any(trigger in t for trigger in NEW_CUSTOMER_TRIGGERS)
 
 
-def parse_new_customer(text):
-    """
-    Extract company_name, contact_person, phone_number from a free-form message.
-    Expected (flexible) format:
-      عميل جديد: [شركة] <name>، [المسؤول] <person>، <phone>
-    Returns dict or None if can't extract minimum fields.
-    """
-    # Remove trigger words so they don't confuse extraction
-    clean = text
-    for trigger in NEW_CUSTOMER_TRIGGERS:
-        clean = re.sub(trigger, '', clean, flags=re.IGNORECASE)
-    clean = clean.strip(' :،,\n')
-
-    # Extract phone number (Saudi/Gulf formats)
-    phone_match = re.search(r'(\+?[\d\s\-]{9,15})', clean)
-    phone = re.sub(r'[\s\-]', '', phone_match.group(1)) if phone_match else None
-    if phone_match:
-        clean = clean[:phone_match.start()] + clean[phone_match.end():]
-
-    # Split remaining text by common separators
-    parts = re.split(r'[،,،\n]+', clean)
-    parts = [p.strip() for p in parts if p.strip()]
-
-    company_name = None
-    contact_person = None
-
-    for part in parts:
-        # Strip label words
-        val = re.sub(r'^(شركة|مؤسسة|مجموعة|اسم الشركة|company)\s*:?\s*', '', part, flags=re.IGNORECASE).strip()
-        if not val:
-            continue
-        p_lower = part.lower()
-        if any(kw in p_lower for kw in ['مسؤول', 'المسؤول', 'الشخص', 'contact', 'اسم المسؤول']):
-            contact_person = re.sub(r'^(المسؤول|مسؤول|الشخص|contact)\s*:?\s*', '', part, flags=re.IGNORECASE).strip()
-        elif company_name is None:
-            company_name = val
-        elif contact_person is None:
-            contact_person = val
-
-    if not company_name:
-        return None
-
-    return {
-        'company_name': company_name,
-        'contact_person': contact_person or 'غير محدد',
-        'phone_number': phone or 'غير محدد',
-    }
-
-
-def create_customer_from_telegram(text, salesperson_id, tenant_id):
-    """
-    Parse text, create customer record, return (customer_id, company_name) or (None, error_msg).
-    """
-    data = parse_new_customer(text)
-    if not data:
-        return None, 'لم أتمكن من استخراج بيانات العميل'
-
-    conn = get_db_for_tenant(tenant_id)
+def _save_new_customer(state):
+    """Insert collected customer data into DB. Returns (customer_id, error_msg)."""
+    conn = get_db_for_tenant(state['tenant_id'])
     if not conn:
         return None, 'خطأ في قاعدة البيانات'
-
     try:
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO customers
                 (company_name, contact_person, phone_number,
-                 assigned_salesperson_id, tenant_id, date_added)
-            VALUES (?, ?, ?, ?, ?, datetime('now','localtime'))
-        ''', (data['company_name'], data['contact_person'], data['phone_number'],
-              salesperson_id, tenant_id))
+                 email_address, contact_person_position,
+                 assigned_salesperson_id, tenant_id,
+                 lead_source, date_added)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'telegram', datetime('now','localtime'))
+        ''', (
+            state['company_name'],
+            state['contact_person'],
+            state['phone'],
+            state.get('email') or None,
+            state.get('position') or None,
+            state['salesperson_id'],
+            state['tenant_id'],
+        ))
         conn.commit()
         customer_id = cursor.lastrowid
         conn.close()
-        return customer_id, data['company_name']
+        return customer_id, None
     except Exception as e:
         conn.close()
-        return None, f'خطأ: {e}'
+        return None, str(e)
+
+
+# ─── New-customer state machine ───────────────────────────────────────────────
+# Steps: type_choice → name → contact_person → phone → email → position → confirm
+
+_NEW_CUSTOMER_STATE: dict = {}
+
+_NC_CANCEL = ['الغ', 'إلغاء', 'الغاء', 'cancel', '/cancel', 'وقف', 'خروج']
+_NC_SKIP   = ['تخطى', 'تخطي', 'skip', 'لا', 'بدون', 'لا يوجد', '/skip']
+
+
+def _is_valid_phone(text):
+    digits = re.sub(r'[\s\-\+]', '', text)
+    return digits.isdigit() and 8 <= len(digits) <= 15
+
+
+def _is_valid_email(text):
+    return bool(re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', text.strip()))
+
+
+def handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id):
+    """
+    Conversational new-customer creation.
+    Returns reply string, or None if already sent.
+    """
+    t = text.strip()
+    t_lower = t.lower()
+
+    # Cancel at any point
+    if any(kw in t_lower for kw in _NC_CANCEL):
+        _NEW_CUSTOMER_STATE.pop(chat_id, None)
+        return '❌ تم إلغاء إضافة العميل.'
+
+    state = _NEW_CUSTOMER_STATE.get(chat_id)
+
+    # ── Step 0: Start ──
+    if state is None:
+        _NEW_CUSTOMER_STATE[chat_id] = {
+            'step': 'type_choice',
+            'salesperson_id': salesperson_id,
+            'tenant_id': tenant_id,
+        }
+        return (
+            '🏢 <b>إضافة عميل جديد</b>\n\n'
+            'هل تريد إضافة:\n\n'
+            '1️⃣ شركة\n'
+            '2️⃣ مشروع\n\n'
+            'أرسل الرقم أو اكتب نوعه — أو /cancel للإلغاء'
+        )
+
+    step = state['step']
+
+    # ── Step 1: نوع العميل ──
+    if step == 'type_choice':
+        if t in ('1', 'شركه', 'شركة', 'شركة', 'company'):
+            state['customer_type'] = 'شركة'
+            state['step'] = 'name'
+            return '🏢 اكتب <b>اسم الشركة</b>:'
+        elif t in ('2', 'مشروع', 'project'):
+            state['customer_type'] = 'مشروع'
+            state['step'] = 'name'
+            return '📁 اكتب <b>اسم المشروع</b>:'
+        else:
+            return '❓ أرسل <b>1</b> للشركة أو <b>2</b> للمشروع.'
+
+    # ── Step 2: الاسم ──
+    if step == 'name':
+        if len(t) < 2:
+            return '❓ الاسم قصير جداً. أعد الكتابة:'
+        state['company_name'] = t
+        state['step'] = 'contact_person'
+        return '👤 اكتب <b>اسم المسؤول</b> / جهة الاتصال:'
+
+    # ── Step 3: المسؤول ──
+    if step == 'contact_person':
+        if len(t) < 2:
+            return '❓ الاسم قصير جداً. أعد الكتابة:'
+        state['contact_person'] = t
+        state['step'] = 'phone'
+        return '📱 اكتب <b>رقم الجوال</b>:'
+
+    # ── Step 4: الجوال ──
+    if step == 'phone':
+        if not _is_valid_phone(t):
+            return '❓ رقم غير صحيح. أرسل رقم جوال صحيح (مثال: 0556789012):'
+        state['phone'] = re.sub(r'[\s\-]', '', t)
+        state['step'] = 'email'
+        return '📧 اكتب <b>الإيميل</b> (أو أرسل <b>تخطى</b>):'
+
+    # ── Step 5: الإيميل ──
+    if step == 'email':
+        if any(kw in t_lower for kw in _NC_SKIP):
+            state['email'] = None
+        elif _is_valid_email(t):
+            state['email'] = t.strip()
+        else:
+            return '❓ الإيميل غير صحيح. أرسل إيميل صحيح أو <b>تخطى</b>:'
+        state['step'] = 'position'
+        return '💼 اكتب <b>المسمى الوظيفي</b> للمسؤول (أو أرسل <b>تخطى</b>):'
+
+    # ── Step 6: المسمى الوظيفي ──
+    if step == 'position':
+        state['position'] = None if any(kw in t_lower for kw in _NC_SKIP) else t
+        state['step'] = 'confirm'
+
+        ctype    = state['customer_type']
+        cname    = state['company_name']
+        contact  = state['contact_person']
+        phone    = state['phone']
+        email    = state.get('email') or '—'
+        position = state.get('position') or '—'
+
+        return (
+            f'📋 <b>مراجعة البيانات</b>\n\n'
+            f'النوع: {ctype}\n'
+            f'الاسم: <b>{cname}</b>\n'
+            f'المسؤول: {contact}\n'
+            f'الجوال: {phone}\n'
+            f'الإيميل: {email}\n'
+            f'المسمى الوظيفي: {position}\n\n'
+            f'هل البيانات صحيحة؟\n'
+            f'✅ <b>نعم</b> — للحفظ\n'
+            f'🔄 <b>لا</b> — للبدء من جديد'
+        )
+
+    # ── Step 7: التأكيد ──
+    if step == 'confirm':
+        if any(kw in t_lower for kw in ['نعم', 'yes', 'تمام', 'صح', 'اكيد', 'أكيد', 'موافق', '✅']):
+            customer_id, err = _save_new_customer(state)
+            _NEW_CUSTOMER_STATE.pop(chat_id, None)
+            if customer_id:
+                return (
+                    f'✅ <b>تم إضافة العميل بنجاح!</b>\n\n'
+                    f'🏢 {state["company_name"]}\n'
+                    f'👤 {state["contact_person"]}\n'
+                    f'📱 {state["phone"]}\n\n'
+                    f'يمكنك الآن إرسال متابعات باسم هذا العميل.'
+                )
+            else:
+                return f'❌ فشل الحفظ: {err}'
+        elif any(kw in t_lower for kw in ['لا', 'no', 'لأ', 'غلط', 'خطأ']):
+            _NEW_CUSTOMER_STATE.pop(chat_id, None)
+            return '🔄 تم الإلغاء. أرسل <b>عميل جديد</b> للبدء من جديد.'
+        else:
+            return '❓ أرسل <b>نعم</b> للحفظ أو <b>لا</b> للإلغاء.'
+
+    # حالة غير معروفة — reset
+    _NEW_CUSTOMER_STATE.pop(chat_id, None)
+    return '⚠️ حدث خطأ. أرسل /start للبدء من جديد.'
 
 
 # ─── Quotation conversation state (in-memory, keyed by chat_id) ───────────────
@@ -887,8 +1014,10 @@ HELP_TEXT = (
     '📖 <b>الأوامر المتاحة:</b>\n\n'
     '📝 <b>متابعة تلقائية</b>\n'
     'أرسل أي نص أو رسالة صوتية باسم العميل\n\n'
-    '🏢 <b>عميل جديد</b>\n'
-    '<code>عميل جديد: شركة النور، خالد، 0556789012</code>\n\n'
+    '🏢 <b>عميل / شركة / مشروع جديد</b>\n'
+    'أرسل أي من:\n'
+    '<code>عميل جديد</code> — <code>شركة جديدة</code> — <code>مشروع جديد</code>\n'
+    'وسيطلب البوت البيانات خطوة بخطوة\n\n'
     '📄 <b>عرض سعر</b>\n'
     '<code>عرض سعر</code>\n\n'
     '📑 <b>PDF عرض سعر</b>\n'
@@ -1022,7 +1151,7 @@ def get_db_for_tenant(tenant_id):
 @csrf.exempt
 def webhook():
     """Telegram sends all updates here."""
-    if not BOT_TOKEN:
+    if not get_bot_token():
         return jsonify({'ok': False, 'error': 'Bot not configured'}), 503
 
     data = request.get_json(force=True, silent=True)
@@ -1130,11 +1259,11 @@ def webhook():
         try:
             # 1. Get the file path from Telegram
             file_id = voice['file_id']
-            r = requests.get(f'{TELEGRAM_API}/getFile', params={'file_id': file_id}, timeout=15)
+            r = requests.get(f'{get_api_base()}/getFile', params={'file_id': file_id}, timeout=15)
             file_path = r.json()['result']['file_path']
 
             # 2. Download the OGG audio
-            audio_url = f'https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}'
+            audio_url = f'https://api.telegram.org/file/bot{get_bot_token()}/{file_path}'
             audio_resp = requests.get(audio_url, timeout=30)
             audio_bytes = audio_resp.content
 
@@ -1165,29 +1294,34 @@ def webhook():
                 send_message(chat_id, reply)
             return jsonify({'ok': True})
 
-        # ── Active quotation conversation ──
-        if chat_id in _QUOTATION_STATE or detect_quotation_intent(text):
+        # ── Active sessions take priority over intent detection ──
+        if chat_id in _NEW_CUSTOMER_STATE:
+            conn.close()
+            reply = handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id)
+            if reply:
+                send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
+        if chat_id in _QUOTATION_STATE:
             conn.close()
             reply = handle_quotation_flow(chat_id, text, salesperson_id, tenant_id)
             if reply:
                 send_message(chat_id, reply)
             return jsonify({'ok': True})
 
-        # Check for new customer intent first
+        # ── Intent detection (fresh start) ──
+        if detect_quotation_intent(text):
+            conn.close()
+            reply = handle_quotation_flow(chat_id, text, salesperson_id, tenant_id)
+            if reply:
+                send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
         if detect_new_customer_intent(text):
-            customer_id, result = create_customer_from_telegram(text, salesperson_id, tenant_id)
-            if customer_id:
-                send_message(chat_id,
-                    f'✅ تم إنشاء العميل بنجاح!\n\n'
-                    f'🏢 <b>{result}</b>\n\n'
-                    f'يمكنك الآن إرسال متابعات باسم هذا العميل.'
-                )
-            else:
-                send_message(chat_id,
-                    f'❌ فشل إنشاء العميل: {result}\n\n'
-                    f'تأكد من إرسال البيانات بهذا الشكل:\n'
-                    f'<code>عميل جديد: شركة النور، المسؤول خالد، 0556789012</code>'
-                )
+            conn.close()
+            reply = handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id)
+            if reply:
+                send_message(chat_id, reply)
             return jsonify({'ok': True})
 
         parsed = parse_message_text(text, salesperson_id, tenant_id)
@@ -1354,8 +1488,32 @@ def set_webhook(base_url=None):
     """Call this once to register the webhook with Telegram."""
     base_url = (base_url or os.getenv('APP_BASE_URL', '')).rstrip('/')
     webhook_url = f'{base_url}/telegram/webhook'
-    resp = requests.post(f'{TELEGRAM_API}/setWebhook', json={'url': webhook_url})
+    resp = requests.post(f'{get_api_base()}/setWebhook', json={'url': webhook_url})
     print(resp.json())
+
+
+def ensure_webhook():
+    """
+    Called on app startup. Re-registers the webhook if it is missing or points
+    to a different URL. This auto-heals the connection after a server restart.
+    """
+    token = get_bot_token()
+    base_url = os.getenv('APP_BASE_URL', '').rstrip('/')
+    if not token or not base_url:
+        return
+
+    expected_url = f'{base_url}/telegram/webhook'
+    try:
+        api = f'https://api.telegram.org/bot{token}'
+        wh = requests.get(f'{api}/getWebhookInfo', timeout=8).json()
+        current_url = wh.get('result', {}).get('url', '')
+        if current_url != expected_url:
+            resp = requests.post(f'{api}/setWebhook', json={'url': expected_url}, timeout=8)
+            print(f'[telegram] webhook re-registered → {expected_url}: {resp.json()}')
+        else:
+            print(f'[telegram] webhook OK → {current_url}')
+    except Exception as e:
+        print(f'[telegram] ensure_webhook error: {e}')
 
 
 @telegram_bp.route('/status')
