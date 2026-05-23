@@ -1549,9 +1549,28 @@ def webhook():
     if not message:
         return jsonify({'ok': True})
 
+    try:
+        return _webhook_inner(message)
+    except Exception as exc:
+        import traceback
+        print(f'[telegram] UNHANDLED EXCEPTION in webhook: {exc}')
+        traceback.print_exc()
+        chat_id = message.get('chat', {}).get('id')
+        if chat_id:
+            try:
+                send_message(chat_id, '⚠️ حدث خطأ داخلي. يرجى المحاولة مرة أخرى.')
+            except Exception:
+                pass
+        return jsonify({'ok': True})  # Always 200 to stop Telegram retries
+
+
+def _webhook_inner(message):
+    print(f'[telegram] incoming message type={list(message.keys())}')
+
     chat_id = message['chat']['id']
     text = message.get('text', '').strip()
     voice = message.get('voice')
+    print(f'[telegram] chat_id={chat_id} text_len={len(text)} has_voice={bool(voice)}')
 
     conn = get_db_for_tenant(None)
     if not conn:
@@ -1615,6 +1634,7 @@ def webhook():
     salesperson_id = sp['salesperson_id']
     tenant_id = sp['tenant_id']
     conn.close()
+    print(f'[telegram] linked user salesperson_id={salesperson_id} tenant_id={tenant_id}')
 
     # ── Built-in commands ──
     if text == '/help':
