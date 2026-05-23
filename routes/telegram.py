@@ -220,57 +220,76 @@ def ensure_telegram_columns(conn):
         pass
     conn.commit()
 
-# ─── Simple NLP parser ────────────────────────────────────────────────────────
+# ─── NLP helpers ─────────────────────────────────────────────────────────────
 
 STAGE_KEYWORDS = {
-    'عميل محتمل':       ['عميل محتمل', 'جديد', 'اتصل', 'اتصلت'],
-    'جاري التواصل':     ['جاري التواصل', 'تواصلنا', 'تواصلت', 'تحدثت', 'كلمته'],
-    'تقديم عرض السعر': ['عرض سعر', 'عرض', 'قدمت عرض', 'ارسلت عرض'],
-    'جاري التفاوض':     ['تفاوض', 'تفاوضنا', 'يفاوض', 'موافق'],
-    'تم التسليم':       ['تسليم', 'تم التسليم', 'سلمنا', 'انتهى', 'اكتمل'],
-    'لم يتم البيع':     ['رفض', 'لم يوافق', 'فشل', 'خسرنا'],
+    'عميل محتمل':       ['عميل محتمل', 'جديد', 'اتصل', 'اتصلت', 'تواصلت معه لأول'],
+    'جاري التواصل':     ['جاري التواصل', 'تواصلنا', 'تواصلت', 'تحدثت', 'كلمته',
+                         'تكلمنا', 'رددت عليه', 'رد علي', 'على تواصل'],
+    'تقديم عرض السعر': ['عرض سعر', 'قدمت عرض', 'ارسلت عرض', 'أرسلت عرض',
+                         'بعثت عرض', 'هبعت عرض', 'طلب عرض'],
+    'جاري التفاوض':     ['تفاوض', 'تفاوضنا', 'يفاوض', 'موافق', 'يناقش',
+                         'نتفاوض', 'مناقشة السعر', 'يريد تعديل'],
+    'تم التسليم':       ['تسليم', 'تم التسليم', 'سلمنا', 'انتهى', 'اكتمل',
+                         'اشترى', 'وقّع', 'دفع', 'تم البيع', 'اتفقنا'],
+    'لم يتم البيع':     ['رفض', 'لم يوافق', 'فشل', 'خسرنا', 'مش مهتم',
+                         'رفض العرض', 'ما وافق', 'انتهى سلباً'],
 }
 
 ACTION_KEYWORDS = {
-    'متابعة اتصال':          ['اتصل', 'اتصال', 'تابع'],
-    'انتظار رد العميل':      ['انتظار', 'ينتظر', 'رد'],
-    'إرسال عرض سعر':         ['ارسل عرض', 'عرض سعر'],
-    'دعوة لزيارة المعرض':    ['زيارة', 'يزور', 'معرض'],
-    'متابعة التمويل / الدفع': ['دفع', 'تمويل', 'فاتورة'],
-    'إغلاق البيع':            ['اغلق', 'اغلاق', 'انهى'],
+    'متابعة اتصال':           ['اتصل', 'اتصال', 'تابع', 'اتصل به', 'هتصل'],
+    'انتظار رد العميل':       ['انتظار', 'ينتظر', 'رد', 'في انتظار', 'ما رد', 'لسه مارد'],
+    'إرسال عرض سعر':          ['ارسل عرض', 'أرسل عرض', 'هبعت عرض', 'عرض سعر'],
+    'دعوة لزيارة المعرض':     ['زيارة', 'يزور', 'معرض', 'يجي', 'يحضر'],
+    'متابعة التمويل / الدفع': ['دفع', 'تمويل', 'فاتورة', 'سداد', 'دفعة'],
+    'إغلاق البيع':             ['اغلق', 'اغلاق', 'انهى', 'نغلق', 'نهائي'],
 }
 
+CONTACT_METHOD_KEYWORDS = {
+    'اتصال':   ['اتصل', 'اتصلت', 'تصلت', 'call', 'كلمته بالتلفون'],
+    'واتساب':  ['واتساب', 'whatsapp', 'واتس', 'رسالة'],
+    'زيارة':   ['زرته', 'زيارة', 'قابلته', 'ذهبت', 'visit'],
+    'إيميل':   ['إيميل', 'ايميل', 'email', 'بعثت ايميل'],
+    'اجتماع':  ['اجتماع', 'اجتمعنا', 'meeting', 'لقاء'],
+}
+
+def _detect_contact_method(text):
+    t = text.lower()
+    for method, kws in CONTACT_METHOD_KEYWORDS.items():
+        if any(kw in t for kw in kws):
+            return method
+    return None
 
 def parse_message_text(text, salesperson_id, tenant_id):
     """
-    Very lightweight Arabic NLP:
-    Returns a dict with fields to insert into sales_followup,
-    or None if we can't extract enough meaningful data.
+    Lightweight Arabic NLP — returns parsed dict for quick-confirm flow.
+    Never saves directly.
     """
     text_lower = text.lower()
 
-    # Detect sales stage
     stage = None
     for s, keywords in STAGE_KEYWORDS.items():
         if any(kw in text_lower for kw in keywords):
             stage = s
             break
 
-    # Detect next action
     action = None
     for a, keywords in ACTION_KEYWORDS.items():
         if any(kw in text_lower for kw in keywords):
             action = a
             break
 
-    # Try to find a customer name – look for longest company_name match
+    contact_method = _detect_contact_method(text)
+
     conn = get_db_for_tenant(tenant_id)
     if not conn:
         return None
 
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT customer_id, company_name, company_id FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ?",
+        '''SELECT customer_id, company_name, company_id, current_stage
+           FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ?
+           AND is_active = 1''',
         (tenant_id, salesperson_id)
     )
     customers = cursor.fetchall()
@@ -285,11 +304,341 @@ def parse_message_text(text, salesperson_id, tenant_id):
             best_len = len(name)
 
     return {
-        'customer': matched_customer,
-        'stage': stage,
-        'action': action,
-        'summary': text,
+        'customer':       matched_customer,
+        'stage':          stage,
+        'action':         action,
+        'contact_method': contact_method,
+        'summary':        text,
     }
+
+
+# ─── Follow-up conversational flow ───────────────────────────────────────────
+
+FOLLOWUP_TRIGGERS = [
+    'متابعة', 'متابعه', 'اضف متابعة', 'اضف متابعه',
+    'إضافة متابعة', 'سجل متابعة', 'سجل متابعه',
+    'تسجيل متابعة', 'اضف تواصل', 'سجل تواصل',
+    'متابعة عميل', 'follow up', 'followup', 'add followup',
+]
+
+CONTACT_METHODS  = ['اتصال', 'واتساب', 'زيارة', 'إيميل', 'اجتماع']
+STAGES_LIST      = [
+    'عميل محتمل', 'جاري التواصل', 'تقديم عرض السعر',
+    'جاري التفاوض', 'تم التسليم', 'لم يتم البيع',
+]
+NEXT_ACTIONS_LIST = [
+    'متابعة اتصال', 'إرسال عرض سعر', 'دعوة لزيارة المعرض',
+    'انتظار رد العميل', 'متابعة التمويل / الدفع', 'إغلاق البيع',
+]
+
+_FOLLOWUP_STATE: dict = {}
+_FU_CANCEL = ['الغ', 'إلغاء', 'الغاء', 'cancel', '/cancel', 'وقف', 'خروج']
+_FU_SKIP   = ['تخطى', 'تخطي', 'skip', 'بدون', 'لا يوجد', '/skip']
+
+
+def detect_followup_intent(text):
+    t = text.strip().lower()
+    return any(trigger in t for trigger in FOLLOWUP_TRIGGERS)
+
+
+def _parse_date_input(text):
+    """Parse Arabic/numeric date. Returns YYYY-MM-DD or None."""
+    from datetime import timedelta
+    t = text.strip().lower()
+    if t in ('غداً', 'غدا', 'غدًا', 'tomorrow', 'بكرا', 'بكره'):
+        return (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+    if t in ('بعد غد', 'بعد غداً', 'بعد غدا'):
+        return (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
+    m = re.match(r'^(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?$', t)
+    if m:
+        day, month = int(m.group(1)), int(m.group(2))
+        year = int(m.group(3)) if m.group(3) else datetime.now().year
+        if year < 100:
+            year += 2000
+        try:
+            from datetime import date as _date
+            return _date(year, month, day).strftime('%Y-%m-%d')
+        except ValueError:
+            pass
+    return None
+
+
+def _save_followup(state, actor_name):
+    """Insert follow-up into activities table. Returns (activity_id, error_msg)."""
+    conn = get_db_for_tenant(state['tenant_id'])
+    if not conn:
+        return None, 'خطأ في قاعدة البيانات'
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO activities (
+                tenant_id, entity_type, entity_id, action,
+                actor_name, details,
+                activity_type, contact_date, summary,
+                sales_stage, next_action, next_action_due,
+                deal_value,
+                created_by, company_id, created_at
+            ) VALUES (?, 'customer', ?, 'follow_up',
+                      ?, ?,
+                      ?, ?, ?,
+                      ?, ?, ?,
+                      ?,
+                      ?, ?, datetime('now','localtime'))
+        ''', (
+            state['tenant_id'], state['customer_id'],
+            actor_name, f'متابعة تيليجرام — {state.get("stage") or "—"}',
+            state.get('contact_method') or 'تيليجرام',
+            state.get('contact_date') or datetime.now().strftime('%Y-%m-%d'),
+            state.get('summary', ''),
+            state.get('stage'), state.get('next_action'), state.get('next_action_date'),
+            state.get('deal_value'),
+            state['salesperson_id'], state.get('company_id'),
+        ))
+        conn.commit()
+        activity_id = cursor.lastrowid
+        conn.close()
+        return activity_id, None
+    except Exception as e:
+        conn.close()
+        return None, str(e)
+
+
+def _followup_confirm_text(state):
+    method   = state.get('contact_method') or '—'
+    stage    = state.get('stage') or '—'
+    summary  = state.get('summary') or '—'
+    action   = state.get('next_action') or '—'
+    act_date = state.get('next_action_date') or '—'
+    deal     = f'{state["deal_value"]:,.0f} ر.س' if state.get('deal_value') else '—'
+    return (
+        f'📋 <b>مراجعة المتابعة</b>\n\n'
+        f'🏢 العميل: <b>{state["customer_name"]}</b>\n'
+        f'📞 طريقة التواصل: {method}\n'
+        f'📊 المرحلة: {stage}\n'
+        f'📝 الملخص: {summary[:80]}{"..." if len(summary) > 80 else ""}\n'
+        f'⏭️ الإجراء القادم: {action}\n'
+        f'📅 تاريخ الإجراء: {act_date}\n'
+        f'💰 قيمة الصفقة: {deal}\n\n'
+        f'✅ <b>نعم</b> — للحفظ\n'
+        f'🔄 <b>لا</b> — للإلغاء'
+    )
+
+
+def handle_followup_flow(chat_id, text, salesperson_id, tenant_id, actor_name=''):
+    """
+    Conversational follow-up creation — two entry modes:
+      • quick_confirm: arrived from free-text detection, customer already matched
+      • guided:        arrived from FOLLOWUP_TRIGGERS, step-by-step selection
+    Returns reply string or None.
+    """
+    t       = text.strip()
+    t_lower = t.lower()
+
+    if any(kw in t_lower for kw in _FU_CANCEL):
+        _FOLLOWUP_STATE.pop(chat_id, None)
+        return '❌ تم إلغاء المتابعة.'
+
+    state = _FOLLOWUP_STATE.get(chat_id)
+    step  = state['step'] if state else None
+
+    # ── Quick confirm (from free-text detection) ──────────────────────────────
+    if step == 'quick_confirm':
+        if any(kw in t_lower for kw in ['نعم', 'yes', 'تمام', 'صح', 'اكيد', 'أكيد', 'موافق']):
+            act_id, err = _save_followup(state, actor_name)
+            _FOLLOWUP_STATE.pop(chat_id, None)
+            if act_id:
+                action_line = f'\n⏭️ {state["next_action"]}' if state.get('next_action') else ''
+                return f'✅ <b>تمت إضافة المتابعة!</b>\n\n🏢 {state["customer_name"]}\n📊 {state.get("stage") or "—"}{action_line}'
+            return f'❌ فشل الحفظ: {err}'
+        elif any(kw in t_lower for kw in ['لا', 'no', 'لأ', 'تعديل', 'غلط', 'خطأ']):
+            # Drop to guided — customer already set, start from contact_method
+            state['step'] = 'contact_method'
+            methods = '\n'.join(f'{i+1}️⃣ {m}' for i, m in enumerate(CONTACT_METHODS))
+            return f'📞 <b>طريقة التواصل:</b>\n\n{methods}'
+        else:
+            return '❓ أرسل <b>نعم</b> للحفظ أو <b>لا</b> للتعديل.'
+
+    # ── Guided Step 0: Start — list customers ────────────────────────────────
+    if state is None:
+        conn = get_db_for_tenant(tenant_id)
+        if not conn:
+            return '⚠️ خطأ في قاعدة البيانات.'
+        rows = conn.execute('''
+            SELECT customer_id, company_name, company_id, current_stage
+            FROM customers
+            WHERE tenant_id = ? AND assigned_salesperson_id = ? AND is_active = 1
+            ORDER BY company_name LIMIT 15
+        ''', (tenant_id, salesperson_id)).fetchall()
+        conn.close()
+        if not rows:
+            return '⚠️ لا يوجد عملاء مسجلون باسمك.'
+        _FOLLOWUP_STATE[chat_id] = {
+            'step': 'customer_select',
+            'salesperson_id': salesperson_id,
+            'tenant_id': tenant_id,
+            'customers': [dict(r) for r in rows],
+        }
+        lines = '\n'.join(
+            f'{i+1}. {r["company_name"]}' + (f' — {r["current_stage"]}' if r['current_stage'] else '')
+            for i, r in enumerate(rows)
+        )
+        return (
+            '📝 <b>إضافة متابعة</b>\n\n'
+            'اختر العميل:\n\n' + lines +
+            '\n\nأرسل الرقم أو جزء من الاسم — أو /cancel للإلغاء'
+        )
+
+    # ── Guided Step 1: Customer selection ────────────────────────────────────
+    if step == 'customer_select':
+        customers = state['customers']
+        chosen = None
+        if re.fullmatch(r'\d+', t):
+            idx = int(t) - 1
+            if 0 <= idx < len(customers):
+                chosen = customers[idx]
+        if not chosen:
+            tl = t.lower()
+            for c in customers:
+                if tl in c['company_name'].lower() or c['company_name'].lower() in tl:
+                    chosen = c
+                    break
+        if not chosen:
+            return '❓ لم أجد هذا العميل. أرسل رقمه من القائمة أو جزءاً من اسمه.'
+
+        state.update({
+            'customer_id':   chosen['customer_id'],
+            'customer_name': chosen['company_name'],
+            'company_id':    chosen.get('company_id'),
+            'current_stage': chosen.get('current_stage'),
+            'step':          'contact_method',
+        })
+        methods = '\n'.join(f'{i+1}️⃣ {m}' for i, m in enumerate(CONTACT_METHODS))
+        return f'📞 <b>طريقة التواصل:</b>\n\n{methods}'
+
+    # ── Guided Step 2: Contact method ────────────────────────────────────────
+    if step == 'contact_method':
+        chosen_m = None
+        if re.fullmatch(r'\d+', t):
+            idx = int(t) - 1
+            if 0 <= idx < len(CONTACT_METHODS):
+                chosen_m = CONTACT_METHODS[idx]
+        if not chosen_m:
+            for m in CONTACT_METHODS:
+                if m in t or t in m:
+                    chosen_m = m
+                    break
+        if not chosen_m:
+            methods = '\n'.join(f'{i+1}️⃣ {m}' for i, m in enumerate(CONTACT_METHODS))
+            return f'❓ اختر رقم طريقة التواصل:\n\n{methods}'
+
+        state['contact_method'] = chosen_m
+        state['step'] = 'stage'
+        cur = state.get('current_stage')
+        header = f'المرحلة الحالية: <b>{cur}</b>\n\n' if cur else ''
+        stages = '\n'.join(f'{i+1}️⃣ {s}' for i, s in enumerate(STAGES_LIST))
+        return f'📊 <b>مرحلة البيع:</b>\n\n{header}{stages}\n\nأو <b>تخطى</b> للإبقاء على المرحلة الحالية'
+
+    # ── Guided Step 3: Stage ─────────────────────────────────────────────────
+    if step == 'stage':
+        if any(kw in t_lower for kw in _FU_SKIP):
+            state['stage'] = state.get('current_stage')
+        elif re.fullmatch(r'\d+', t):
+            idx = int(t) - 1
+            if 0 <= idx < len(STAGES_LIST):
+                state['stage'] = STAGES_LIST[idx]
+            else:
+                stages = '\n'.join(f'{i+1}️⃣ {s}' for i, s in enumerate(STAGES_LIST))
+                return f'❓ أرسل رقماً من 1 إلى {len(STAGES_LIST)}:\n\n{stages}'
+        else:
+            for s in STAGES_LIST:
+                if s in t or t in s:
+                    state['stage'] = s
+                    break
+            else:
+                stages = '\n'.join(f'{i+1}️⃣ {s}' for i, s in enumerate(STAGES_LIST))
+                return f'❓ أرسل رقم المرحلة أو <b>تخطى</b>:\n\n{stages}'
+        state['step'] = 'summary'
+        return '📝 اكتب <b>ملخص المحادثة</b> (أو أرسل رسالة صوتية):'
+
+    # ── Guided Step 4: Summary ───────────────────────────────────────────────
+    if step == 'summary':
+        if len(t) < 3:
+            return '❓ الملخص قصير جداً. اكتب ما تم التحدث عنه:'
+        state['summary'] = t
+        state['step'] = 'next_action'
+        actions = '\n'.join(f'{i+1}️⃣ {a}' for i, a in enumerate(NEXT_ACTIONS_LIST))
+        return f'⏭️ <b>الإجراء القادم:</b>\n\n{actions}\n\nأو <b>تخطى</b>'
+
+    # ── Guided Step 5: Next action ───────────────────────────────────────────
+    if step == 'next_action':
+        if any(kw in t_lower for kw in _FU_SKIP):
+            state['next_action'] = None
+            state['step'] = 'deal_value'
+            return '💰 <b>قيمة الصفقة المتوقعة</b> بالريال (أو <b>تخطى</b>):'
+        chosen_a = None
+        if re.fullmatch(r'\d+', t):
+            idx = int(t) - 1
+            if 0 <= idx < len(NEXT_ACTIONS_LIST):
+                chosen_a = NEXT_ACTIONS_LIST[idx]
+        if not chosen_a:
+            for a in NEXT_ACTIONS_LIST:
+                if a in t or t in a:
+                    chosen_a = a
+                    break
+        if not chosen_a:
+            actions = '\n'.join(f'{i+1}️⃣ {a}' for i, a in enumerate(NEXT_ACTIONS_LIST))
+            return f'❓ أرسل رقم الإجراء أو <b>تخطى</b>:\n\n{actions}'
+        state['next_action'] = chosen_a
+        state['step'] = 'next_action_date'
+        return '📅 <b>تاريخ الإجراء القادم:</b>\n\nمثال: <code>غداً</code> أو <code>25/5</code> أو <b>تخطى</b>'
+
+    # ── Guided Step 6: Next action date ─────────────────────────────────────
+    if step == 'next_action_date':
+        if any(kw in t_lower for kw in _FU_SKIP):
+            state['next_action_date'] = None
+        else:
+            parsed_date = _parse_date_input(t)
+            if not parsed_date:
+                return '❓ تاريخ غير صحيح. مثال: <code>غداً</code> أو <code>25/5</code> أو <b>تخطى</b>'
+            state['next_action_date'] = parsed_date
+        state['step'] = 'deal_value'
+        return '💰 <b>قيمة الصفقة المتوقعة</b> بالريال (أو <b>تخطى</b>):'
+
+    # ── Guided Step 7: Deal value ────────────────────────────────────────────
+    if step == 'deal_value':
+        if any(kw in t_lower for kw in _FU_SKIP):
+            state['deal_value'] = None
+        else:
+            num = re.sub(r'[^\d.]', '', t)
+            if not num:
+                return '❓ أرسل رقماً مثل <code>5000</code> أو <b>تخطى</b>:'
+            state['deal_value'] = float(num)
+        state['step'] = 'confirm'
+        return _followup_confirm_text(state)
+
+    # ── Guided Step 8: Confirm ───────────────────────────────────────────────
+    if step == 'confirm':
+        if any(kw in t_lower for kw in ['نعم', 'yes', 'تمام', 'صح', 'اكيد', 'أكيد', 'موافق']):
+            act_id, err = _save_followup(state, actor_name)
+            _FOLLOWUP_STATE.pop(chat_id, None)
+            if act_id:
+                action_line = f'\n⏭️ الإجراء: {state["next_action"]}' if state.get('next_action') else ''
+                date_line   = f'\n📅 موعده: {state["next_action_date"]}' if state.get('next_action_date') else ''
+                return (
+                    f'✅ <b>تمت إضافة المتابعة!</b>\n\n'
+                    f'🏢 {state["customer_name"]}\n'
+                    f'📊 {state.get("stage") or "—"}'
+                    f'{action_line}{date_line}'
+                )
+            return f'❌ فشل الحفظ: {err}'
+        elif any(kw in t_lower for kw in ['لا', 'no', 'لأ', 'غلط', 'خطأ']):
+            _FOLLOWUP_STATE.pop(chat_id, None)
+            return '🔄 تم الإلغاء. أرسل <b>متابعة</b> للبدء من جديد.'
+        else:
+            return '❓ أرسل <b>نعم</b> للحفظ أو <b>لا</b> للإلغاء.'
+
+    _FOLLOWUP_STATE.pop(chat_id, None)
+    return '⚠️ حدث خطأ. أرسل /start للبدء من جديد.'
 
 
 # ─── New customer conversational flow ────────────────────────────────────────
@@ -1012,8 +1361,10 @@ def handle_quotation_flow(chat_id, text, salesperson_id, tenant_id):
 
 HELP_TEXT = (
     '📖 <b>الأوامر المتاحة:</b>\n\n'
-    '📝 <b>متابعة تلقائية</b>\n'
-    'أرسل أي نص أو رسالة صوتية باسم العميل\n\n'
+    '📝 <b>متابعة سريعة</b>\n'
+    'أرسل نصاً أو صوتاً يذكر اسم العميل وسيقترح البوت الحفظ\n\n'
+    '🗂️ <b>متابعة موجهة</b>\n'
+    '<code>متابعة</code> — خطوة بخطوة مع كل التفاصيل\n\n'
     '🏢 <b>عميل / شركة / مشروع جديد</b>\n'
     'أرسل أي من:\n'
     '<code>عميل جديد</code> — <code>شركة جديدة</code> — <code>مشروع جديد</code>\n'
@@ -1294,10 +1645,19 @@ def webhook():
                 send_message(chat_id, reply)
             return jsonify({'ok': True})
 
+        actor = sp['salesperson_name'] or sp['first_name'] or ''
+
         # ── Active sessions take priority over intent detection ──
         if chat_id in _NEW_CUSTOMER_STATE:
             conn.close()
             reply = handle_new_customer_flow(chat_id, text, salesperson_id, tenant_id)
+            if reply:
+                send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
+        if chat_id in _FOLLOWUP_STATE:
+            conn.close()
+            reply = handle_followup_flow(chat_id, text, salesperson_id, tenant_id, actor)
             if reply:
                 send_message(chat_id, reply)
             return jsonify({'ok': True})
@@ -1324,66 +1684,48 @@ def webhook():
                 send_message(chat_id, reply)
             return jsonify({'ok': True})
 
+        if detect_followup_intent(text):
+            conn.close()
+            reply = handle_followup_flow(chat_id, text, salesperson_id, tenant_id, actor)
+            if reply:
+                send_message(chat_id, reply)
+            return jsonify({'ok': True})
+
+        # ── Free text → try NLP match → quick confirm ────────────────────────
         parsed = parse_message_text(text, salesperson_id, tenant_id)
+        conn.close()
 
         if parsed and parsed['customer']:
             customer = parsed['customer']
-            today = datetime.now().strftime('%Y-%m-%d')
-            actor = sp['salesperson_name'] or sp['first_name'] or ''
-
-            try:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO activities (
-                        tenant_id, entity_type, entity_id, action,
-                        actor_name, details,
-                        activity_type, contact_date, summary,
-                        sales_stage, next_action,
-                        created_by, company_id, created_at
-                    ) VALUES (?, 'customer', ?, 'follow_up',
-                              ?, ?,
-                              ?, ?, ?,
-                              ?, ?,
-                              ?, ?, datetime('now','localtime'))
-                ''', (
-                    tenant_id, customer['customer_id'],
-                    actor, f'متابعة تيليجرام — {parsed["stage"] or "—"}',
-                    'تيليجرام', today, text,
-                    parsed['stage'], parsed['action'] or 'متابعة اتصال',
-                    salesperson_id, customer['company_id'] if 'company_id' in customer.keys() else None,
-                ))
-                conn.commit()
-                conn.close()
-
-                stage_str = f"\n📊 المرحلة: {parsed['stage']}" if parsed['stage'] else ''
-                action_str = f"\n⏭️ التالي: {parsed['action']}" if parsed['action'] else ''
-                send_message(chat_id,
-                    f'✅ تمت إضافة متابعة لـ <b>{customer["company_name"]}</b>{stage_str}{action_str}\n\n'
-                    f'📝 الملخص: {text[:100]}{"..." if len(text) > 100 else ""}'
-                )
-            except Exception as e:
-                conn.close()
-                send_message(chat_id, f'❌ حدث خطأ أثناء الحفظ: {e}')
-        else:
-            # Couldn't match a customer — ask for clarification
-            conn2 = get_db_for_tenant(tenant_id)
-            if conn2:
-                cursor2 = conn2.cursor()
-                cursor2.execute(
-                    "SELECT company_name FROM customers WHERE tenant_id = ? AND assigned_salesperson_id = ? LIMIT 10",
-                    (tenant_id, salesperson_id)
-                )
-                names = [r['company_name'] for r in cursor2.fetchall()]
-                conn2.close()
-                names_str = '\n'.join(f'• {n}' for n in names) if names else '(لا يوجد عملاء)'
-            else:
-                names_str = ''
-
-            conn.close()
+            # Build quick-confirm state
+            _FOLLOWUP_STATE[chat_id] = {
+                'step':          'quick_confirm',
+                'salesperson_id': salesperson_id,
+                'tenant_id':      tenant_id,
+                'customer_id':    customer['customer_id'],
+                'customer_name':  customer['company_name'],
+                'company_id':     customer['company_id'] if 'company_id' in customer.keys() else None,
+                'stage':          parsed['stage'],
+                'next_action':    parsed['action'],
+                'contact_method': parsed['contact_method'],
+                'summary':        text,
+                'contact_date':   datetime.now().strftime('%Y-%m-%d'),
+            }
+            stage_line  = f'\n📊 المرحلة: {parsed["stage"]}' if parsed['stage'] else ''
+            action_line = f'\n⏭️ الإجراء: {parsed["action"]}' if parsed['action'] else ''
+            method_line = f'\n📞 التواصل: {parsed["contact_method"]}' if parsed['contact_method'] else ''
             send_message(chat_id,
-                '🤔 لم أتمكن من تحديد العميل من رسالتك.\n\n'
-                'تأكد من ذكر اسم العميل بوضوح. عملاؤك:\n' + names_str
+                f'🔍 فهمت متابعة لـ <b>{customer["company_name"]}</b>'
+                f'{method_line}{stage_line}{action_line}\n\n'
+                f'📝 الملخص: {text[:80]}{"..." if len(text) > 80 else ""}\n\n'
+                f'✅ <b>نعم</b> للحفظ — <b>لا</b> للتعديل'
             )
+        else:
+            # No customer match → jump straight into guided flow
+            reply = handle_followup_flow(chat_id, text, salesperson_id, tenant_id, actor)
+            if reply:
+                send_message(chat_id, reply)
+
     else:
         conn.close()
 
