@@ -205,6 +205,36 @@ def run(conn):
     else:
         print("⏭  M007: company_profiles already exists")
 
+    # ── M008: departments table ─────────────────────────────────────────────
+    if not _table_exists(cur, 'departments'):
+        cur.executescript("""
+            CREATE TABLE departments (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL,
+                is_active   INTEGER DEFAULT 1,
+                tenant_id   INTEGER NOT NULL REFERENCES tenants(id),
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+        print("✅ M008: departments table created")
+        
+        # Seed default departments
+        cur.execute("SELECT id FROM tenants")
+        tenants = cur.fetchall()
+        default_departments = ["التسويق", "المبيعات", "الحسابات", "الموارد البشرية", "المشتريات", "تطوير الأعمال", "تقنية المعلومات"]
+        for (tenant_id,) in tenants:
+            for dept in default_departments:
+                cur.execute("INSERT INTO departments (name, tenant_id) VALUES (?, ?)", (dept, tenant_id))
+    else:
+        print("⏭  M008: departments already exists")
+
+    # ── M009: Add department_id to tasks ────────────────────────────────────
+    if _table_exists(cur, 'tasks') and not _col_exists(cur, 'tasks', 'department_id'):
+        cur.execute("ALTER TABLE tasks ADD COLUMN department_id INTEGER REFERENCES departments(id)")
+        print("✅ M009: added department_id to tasks")
+    else:
+        print("⏭  M009: department_id already exists in tasks or table missing")
+
     conn.commit()
 
 
