@@ -162,6 +162,49 @@ def run(conn):
     else:
         print("⏭  M006: sales_followup already gone")
 
+    # ── M007: company_profiles table ─────────────────────────────────────────────
+    if not _table_exists(cur, 'company_profiles'):
+        cur.executescript("""
+            CREATE TABLE company_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+                company_name TEXT,
+                company_description TEXT,
+                industry TEXT,
+                websites TEXT,
+                business_units TEXT,
+                core_services TEXT,
+                products TEXT,
+                target_audience TEXT,
+                target_industries TEXT,
+                geographic_market TEXT,
+                competitors TEXT,
+                usps TEXT,
+                vision TEXT,
+                mission TEXT,
+                business_goals TEXT,
+                strategic_priorities TEXT,
+                current_priorities TEXT,
+                things_not_to_focus_on TEXT,
+                decision_rules TEXT,
+                ai_instructions TEXT,
+                updated_at DATETIME DEFAULT (datetime('now')),
+                UNIQUE(tenant_id)
+            );
+        """)
+        print("✅ M007: company_profiles table created")
+        
+        # Seed an empty row for existing tenants
+        cur.execute("SELECT id FROM tenants")
+        tenants = cur.fetchall()
+        for (tenant_id,) in tenants:
+            cur.execute(
+                "INSERT INTO company_profiles (tenant_id, company_name) VALUES (?, ?)", 
+                (tenant_id, "اسم شركتك (يرجى التعديل)")
+            )
+    else:
+        print("⏭  M007: company_profiles already exists")
+
     conn.commit()
 
 

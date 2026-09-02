@@ -15,6 +15,36 @@ class Tenant(db.Model):
     def __repr__(self):
         return f'<Tenant {self.name}>'
 
+class CompanyProfile(db.Model):
+    __tablename__ = 'company_profiles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False, unique=True)
+    company_name = db.Column(db.String(100))
+    company_description = db.Column(db.Text)
+    industry = db.Column(db.String(100))
+    websites = db.Column(db.Text)
+    business_units = db.Column(db.Text)
+    core_services = db.Column(db.Text)
+    products = db.Column(db.Text)
+    target_audience = db.Column(db.Text)
+    target_industries = db.Column(db.Text)
+    geographic_market = db.Column(db.Text)
+    competitors = db.Column(db.Text)
+    usps = db.Column(db.Text)
+    vision = db.Column(db.Text)
+    mission = db.Column(db.Text)
+    business_goals = db.Column(db.Text)
+    strategic_priorities = db.Column(db.Text)
+    current_priorities = db.Column(db.Text)
+    things_not_to_focus_on = db.Column(db.Text)
+    decision_rules = db.Column(db.Text)
+    ai_instructions = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    
+    def __repr__(self):
+        return f'<CompanyProfile {self.company_name}>'
+
 class SalesPerson(db.Model):
     __tablename__ = 'sales_team'
     
@@ -48,6 +78,8 @@ class Customer(db.Model):
     initial_interest = db.Column(db.String(200))
     company_industry = db.Column(db.String(100))
     contact_person_position = db.Column(db.String(100))
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('business_subcategories.id'), nullable=True)
+    current_stage = db.Column(db.String(50))
     assigned_salesperson_id = db.Column(db.Integer, db.ForeignKey('sales_team.salesperson_id'), nullable=False)
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
     date_added = db.Column(db.DateTime, default=db.func.now())
@@ -110,4 +142,46 @@ class Permission(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     
     def __repr__(self):
-        return f'<Permission {self.name}>' 
+        return f'<Permission {self.name}>'
+
+class BusinessTrack(db.Model):
+    __tablename__ = 'business_tracks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))
+    is_active = db.Column(db.Integer, default=1)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    def __repr__(self):
+        return f'<BusinessTrack {self.name}>'
+
+class BusinessSubcategory(db.Model):
+    __tablename__ = 'business_subcategories'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    track_id = db.Column(db.Integer, db.ForeignKey('business_tracks.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Integer, default=1)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    def __repr__(self):
+        return f'<BusinessSubcategory {self.name}>'
+
+class Task(db.Model):
+    __tablename__ = 'tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(50), default='pending')
+    due_date = db.Column(db.DateTime)
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('business_subcategories.id'), nullable=True)
+    assigned_to = db.Column(db.Integer, db.ForeignKey('sales_team.salesperson_id'), nullable=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    def __repr__(self):
+        return f'<Task {self.title}>' 

@@ -28,11 +28,12 @@ from routes.products import products_bp
 from routes.quotations import quotations_bp
 from routes.profile import profile_bp
 from routes.superadmin import superadmin_bp
+from routes.api_n8n import api_n8n_bp
 from routes.companies import companies_bp
 from routes.projects import projects_bp
 from routes.settings_config import settings_config_bp
 from routes.activities import activities_bp
-from security import init_security, bcrypt
+from security import init_security, bcrypt, csrf
 from env_validator import validate_env_vars
 from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db, Tenant, SalesPerson
@@ -75,7 +76,7 @@ login_manager.login_view = 'auth.login'
 
 # Configure Flask-Session (use /data volume so sessions persist on Railway)
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = os.getenv('SESSION_FILE_DIR', '/data/flask_session')
+app.config['SESSION_FILE_DIR'] = os.getenv('SESSION_FILE_DIR', './flask_session')
 app.config['SESSION_FILE_THRESHOLD'] = 100
 app.config['SESSION_COOKIE_SECURE'] = app_config.SESSION_COOKIE_SECURE
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -98,6 +99,8 @@ app.register_blueprint(products_bp)
 app.register_blueprint(quotations_bp)
 app.register_blueprint(profile_bp)
 app.register_blueprint(superadmin_bp)
+app.register_blueprint(api_n8n_bp, url_prefix='/api/n8n')
+csrf.exempt(api_n8n_bp)
 app.register_blueprint(companies_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(settings_config_bp)
@@ -222,6 +225,99 @@ def _ensure_schema():
             conn.execute("ALTER TABLE companies ADD COLUMN city TEXT")
         except Exception:
             pass
+
+        # business_tracks table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS business_tracks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL,
+                description TEXT,
+                is_active   INTEGER DEFAULT 1,
+                tenant_id   INTEGER NOT NULL REFERENCES tenants(id),
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # business_subcategories table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS business_subcategories (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                track_id    INTEGER NOT NULL REFERENCES business_tracks(id),
+                name        TEXT    NOT NULL,
+                is_active   INTEGER DEFAULT 1,
+                tenant_id   INTEGER NOT NULL REFERENCES tenants(id),
+                created_at  DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # tasks table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                title           TEXT    NOT NULL,
+                description     TEXT,
+                status          TEXT    DEFAULT 'pending',
+                due_date        DATETIME,
+                subcategory_id  INTEGER REFERENCES business_subcategories(id),
+                assigned_to     INTEGER REFERENCES sales_team(salesperson_id),
+                tenant_id       INTEGER NOT NULL REFERENCES tenants(id),
+                created_at      DATETIME DEFAULT (datetime('now'))
+            )
+        """)
+
+        # add subcategory_id to customers if missing
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN subcategory_id INTEGER REFERENCES business_subcategories(id)")
+        except Exception:
+            pass
+
+        # add subcategory_id to projects if missing
+        try:
+            conn.execute("ALTER TABLE projects ADD COLUMN subcategory_id INTEGER REFERENCES business_subcategories(id)")
+        except Exception:
+            pass
+
+        # Seed default business tracks for each tenant
+        tenants_list = conn.execute("SELECT id FROM tenants").fetchall()
+        
+        default_tracks = {
+            'Security': ['AI CCTV Systems', 'Smart Home System'],
+            'Tech Services': ['WhatsApp API', 'Car Reservation System'],
+            'Contracting': ['Sanitaryware', 'Countertop']
+        }
+        
+        for t in tenants_list:
+            tid = t['id']
+            # Seed main tracks
+            for track_name, sub_names in default_tracks.items():
+                # Check if track exists
+                track_res = conn.execute(
+                    "SELECT id FROM business_tracks WHERE name = ? AND tenant_id = ?",
+                    (track_name, tid)
+                ).fetchone()
+                
+                if not track_res:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "INSERT INTO business_tracks (name, tenant_id, is_active) VALUES (?, ?, 1)",
+                        (track_name, tid)
+                    )
+                    track_id = cur.lastrowid
+                else:
+                    track_id = track_res['id']
+                
+                # Seed subcategories
+                for sub_name in sub_names:
+                    sub_res = conn.execute(
+                        "SELECT id FROM business_subcategories WHERE name = ? AND track_id = ? AND tenant_id = ?",
+                        (sub_name, track_id, tid)
+                    ).fetchone()
+                    
+                    if not sub_res:
+                        conn.execute(
+                            "INSERT INTO business_subcategories (track_id, name, tenant_id, is_active) VALUES (?, ?, ?, 1)",
+                            (track_id, sub_name, tid)
+                        )
 
         # activities table — append-only audit / timeline feed
         conn.execute("""

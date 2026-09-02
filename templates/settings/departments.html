@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}{% if session.get('lang') == 'ar' %}إدارة الأقسام الداخلية{% else %}Manage Departments{% endif %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px; }
+  
+  .tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .track-card {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .track-card:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+
+  .track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .track-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .track-actions {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    color: var(--text-secondary);
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-icon:hover { background: var(--bg-hover, #f1f5f9); color: var(--text-primary); }
+
+  .inactive-text {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .add-track-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+  
+  .add-track-form button {
+    padding: 0.375rem 0.75rem;
+    background: var(--primary-color, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .add-track-form button:hover {
+    background: var(--primary-hover, #1d4ed8);
+  }
+
+  /* Modals */
+  .modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.5);
+    align-items: center; justify-content: center;
+  }
+  .modal.active { display: flex; }
+  .modal-content {
+    background: var(--bg-card, #fff);
+    padding: 1.5rem; border-radius: 0.75rem;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  }
+  .modal-title { margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+  
+  .btn-secondary {
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color, #e2e8f0);
+    padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2rem; height:1.2rem; margin:0 6px; vertical-align: text-bottom;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      {% if session.get('lang') == 'ar' %}إدارة الأقسام الداخلية{% else %}Manage Departments{% endif %}
+    </h1>
+    <p class="page-subtitle">
+      {% if session.get('lang') == 'ar' %}قم بإضافة وتعديل الأقسام الداخلية في شركتك لربط المهام بها (مثل: المبيعات، الموارد البشرية).{% else %}Add and manage your company's internal departments to link tasks to them (e.g., Sales, HR).{% endif %}
+    </p>
+  </div>
+  
+  <form class="add-track-form" method="POST" action="{{ url_for('settings.manage_departments') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="action" value="add">
+    <input type="text" name="name" required placeholder="{% if session.get('lang') == 'ar' %}اسم القسم الجديد...{% else %}New Department Name...{% endif %}" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+    <button type="submit">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 
+      {% if session.get('lang') == 'ar' %}إضافة قسم{% else %}Add Dept{% endif %}
+    </button>
+  </form>
+</div>
+
+<div class="tracks-grid">
+  {% for dept in departments %}
+  <div class="track-card">
+    <div class="track-header">
+      <div>
+        <h3 class="track-title {% if not dept.is_active %}inactive-text{% endif %}">
+          {{ dept.name }}
+          {% if not dept.is_active %}<span style="font-size: 0.75rem; color: #ef4444; margin:0 4px;">(Inactive)</span>{% endif %}
+        </h3>
+      </div>
+      <div class="track-actions">
+        <!-- Edit Dept -->
+        <button class="btn-icon" onclick="openEditModal({{ dept.id }}, '{{ dept.name }}')" title="Edit">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+        </button>
+        <!-- Toggle Dept -->
+        <form method="POST" action="{{ url_for('settings.manage_departments') }}" style="display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="action" value="toggle">
+          <input type="hidden" name="dept_id" value="{{ dept.id }}">
+          <button type="submit" class="btn-icon" title="{% if dept.is_active %}Deactivate{% else %}Activate{% endif %}">
+            {% if dept.is_active %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            {% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h2 class="modal-title" id="editModalTitle">{% if session.get('lang') == 'ar' %}تعديل القسم{% else %}Edit Department{% endif %}</h2>
+    <form method="POST" action="{{ url_for('settings.manage_departments') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="dept_id" id="editDeptId">
+      
+      <div style="margin-bottom: 1rem;">
+        <label style="display:block; margin-bottom: 0.5rem; font-weight: 500;">{% if session.get('lang') == 'ar' %}الاسم{% else %}Name{% endif %}</label>
+        <input type="text" name="name" id="editName" required style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeEditModal()">{% if session.get('lang') == 'ar' %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="submit" class="btn-primary" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 0.375rem; cursor: pointer;">
+          {% if session.get('lang') == 'ar' %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openEditModal(id, name) {
+    document.getElementById('editDeptId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editModal').classList.add('active');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+</script>
+{% endblock %}

@@ -201,11 +201,13 @@ def force_init_db(app):
             
             # Create admin user
             log_message("👤 Creating admin user...")
-            admin_user = User(
-                username='admin',
-                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                first_name='Admin',
-                last_name='User',
+            admin_user = SalesPerson(
+                username='superadmin@crmbase.com',
+                password=bcrypt.generate_password_hash('pass123').decode('utf-8'),
+                first_name='Super',
+                last_name='Admin',
+                salesperson_name='Super Admin',
+                work_email='superadmin@crmbase.com',
                 role='admin',
                 tenant_id=default_tenant.id
             )
@@ -270,11 +272,13 @@ def init_db():
             
             # Create admin user
             log_message("👤 Creating admin user...")
-            admin_user = User(
-                username='admin',
-                password=bcrypt.generate_password_hash('admin123').decode('utf-8'),
-                first_name='Admin',
-                last_name='User',
+            admin_user = SalesPerson(
+                username='superadmin@crmbase.com',
+                password=bcrypt.generate_password_hash('pass123').decode('utf-8'),
+                first_name='Super',
+                last_name='Admin',
+                salesperson_name='Super Admin',
+                work_email='superadmin@crmbase.com',
                 role='admin',
                 tenant_id=default_tenant.id
             )

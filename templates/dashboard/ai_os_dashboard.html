@@ -1,0 +1,852 @@
+{% extends "base.html" %}
+{% block title %}AI OS Dashboard{% endblock %}
+
+{% block extra_styles %}
+<style>
+  :root {
+    --kanban-bg: #f8fafc;
+    --column-bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --primary-color: #3b82f6;
+    --hover-bg: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+  }
+
+  body {
+    background-color: var(--kanban-bg);
+  }
+
+  .kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .kanban-title h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .kanban-title p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0 0 0;
+  }
+
+  .kanban-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .filter-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .btn-primary:hover {
+    background-color: #2563eb;
+  }
+
+  /* Kanban Board Grid */
+  .kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+    min-height: calc(100vh - 200px);
+    overflow-x: auto;
+  }
+
+  .kanban-column {
+    background-color: var(--column-bg);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 500px;
+    border: 1px solid var(--border-color);
+  }
+
+  .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid transparent;
+  }
+
+  .column-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .column-count {
+    background: #e2e8f0;
+    color: var(--text-secondary);
+    padding: 0.1rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  #col-pending .column-header { border-bottom-color: var(--warning-color); }
+  #col-in-progress .column-header { border-bottom-color: var(--primary-color); }
+  #col-done .column-header { border-bottom-color: var(--success-color); }
+
+  /* Task Cards */
+  .task-card {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: grab;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--border-color);
+  }
+
+  .task-card:active {
+    cursor: grabbing;
+  }
+
+  .task-card:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+
+  .task-card.dragging {
+    opacity: 0.5;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  }
+
+  .task-card[data-status="pending"] { border-left-color: var(--warning-color); }
+  .task-card[data-status="in-progress"] { border-left-color: var(--primary-color); }
+  .task-card[data-status="done"] { border-left-color: var(--success-color); }
+
+  .task-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+  }
+
+  .task-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.75rem;
+  }
+  
+  .task-track {
+    background: #f1f5f9;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+  
+  .task-date {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .kanban-zone {
+    flex-grow: 1;
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  /* Accordions */
+  .accordion {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: #fff;
+    overflow: hidden;
+  }
+  .accordion-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem; cursor: pointer;
+    background: #f8fafc; user-select: none;
+    transition: background 0.2s;
+  }
+  .accordion-header:hover { background: #f1f5f9; }
+  .accordion-title {
+    font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+    display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase;
+  }
+  .accordion-icon {
+    transition: transform 0.2s;
+  }
+  .accordion.open .accordion-icon {
+    transform: rotate(180deg);
+  }
+  .accordion-badge {
+    background: var(--primary-color); color: white;
+    font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 1rem; font-weight: 600;
+  }
+  .accordion-body {
+    padding: 0.75rem;
+    display: none;
+    background: #fdfdfd;
+  }
+  .accordion.open .accordion-body {
+    display: flex;
+  }
+
+  /* Modals */
+  .modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .modal.active { display: flex; opacity: 1; }
+  
+  .modal-content {
+    background: #ffffff;
+    padding: 2.5rem; 
+    border-radius: 1.5rem;
+    width: 100%; max-width: 550px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #f1f5f9;
+  }
+  .modal.active .modal-content { transform: translateY(0) scale(1); }
+  
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 1rem;
+  }
+  .modal-title { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+  .close-btn { 
+    background: #f1f5f9; border: none; cursor: pointer; 
+    color: #64748b; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .close-btn:hover { background: #ef4444; color: white; }
+  
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { 
+    display: block; margin-bottom: 0.5rem; font-size: 0.85rem; 
+    font-weight: 700; color: #94a3b8; text-transform: uppercase; 
+    letter-spacing: 0.5px;
+  }
+  .form-control { 
+    width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; 
+    border-radius: 0.75rem; font-family: inherit; font-size: 1rem;
+    background: #f8fafc; color: #1e293b; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--primary-color); background: #ffffff; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+  
+  .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2.5rem; }
+  .btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { background-color: #e2e8f0; color: #1e293b; }
+  .btn-primary { 
+    padding: 0.75rem 1.5rem; 
+    border-radius: 0.75rem; 
+    font-size: 1rem; 
+    font-weight: 600; 
+  }
+  
+  .task-detail-block {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+  .task-detail-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+  .task-detail-value { font-size: 0.95rem; color: var(--text-primary); }
+
+  /* Stats Top Cards */
+  .stats-row {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--card-bg); border-radius: 0.75rem; padding: 1rem 1.5rem;
+    border: 1px solid var(--border-color);
+    flex: 1; min-width: 200px;
+    display: flex; flex-direction: column; gap: 0.25rem;
+  }
+  .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+  .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header & Filters -->
+<div class="kanban-header">
+  <div class="kanban-title">
+    <h1>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+      AI OS Command Center
+    </h1>
+    <p>Manage your tasks, leads, and automated processes.</p>
+  </div>
+  
+  <div class="kanban-filters">
+    <select id="filterDate" class="filter-select" onchange="filterTasks()">
+      <option value="all">All Dates</option>
+      <option value="Today">Today</option>
+      <option value="Tomorrow">Tomorrow</option>
+      <option value="Upcoming">Upcoming</option>
+      <option value="Overdue">Overdue</option>
+      <option value="No Date">No Date</option>
+    </select>
+    <select id="filterDept" class="filter-select" onchange="filterTasks()">
+      <option value="all">All Departments</option>
+      {% for dept in departments %}
+      <option value="{{ dept.id }}">{{ dept.name }}</option>
+      {% endfor %}
+    </select>
+    <select id="filterTrack" class="filter-select" onchange="filterTasks()">
+      <option value="all">All Tracks</option>
+      {% for track in tracks %}
+      <option value="{{ track.id }}">{{ track.name }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn-primary" onclick="openAddTaskModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Add Task
+    </button>
+  </div>
+</div>
+
+<!-- Stats (Aggregated from tracks) -->
+{% set total_leads = tracks | map(attribute='lead_count') | sum %}
+{% set total_mrr = tracks | map(attribute='total_value') | sum %}
+{% set total_tasks = tasks.pending|length + tasks.in_progress|length + tasks.done|length %}
+<div class="stats-row">
+  <div class="stat-card">
+    <span class="stat-label">Active Leads</span>
+    <span class="stat-value">{{ total_leads }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Potential Revenue</span>
+    <span class="stat-value">${{ "%.2f"|format(total_mrr) }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Open Tasks</span>
+    <span class="stat-value">{{ tasks.pending|length + tasks.in_progress|length }}</span>
+  </div>
+</div>
+
+<!-- Task Card Macro -->
+{% macro task_card(t) %}
+<div class="task-card" 
+     draggable="true" 
+     data-id="{{ t.id }}" 
+     data-status="{{ t.status }}"
+     data-track-id="{{ t.track_id or '' }}"
+     data-sub-id="{{ t.subcategory_id or '' }}"
+     data-dept-id="{{ t.department_id or '' }}"
+     data-track-name="{{ t.track_name or '' }}"
+     data-sub-name="{{ t.subcategory_name or '' }}"
+     data-dept-name="{{ t.department_name or '' }}"
+     data-desc="{{ t.description or '' }}"
+     data-date="{{ t.due_date or '' }}"
+     onclick="openTaskDetails(this)">
+  <div class="task-title">{{ t.title }}</div>
+  <div class="task-meta">
+    {% if t.department_name %}
+      <span class="task-track" style="background: var(--primary-color); color: white;" title="{{ t.department_name }}">{{ t.department_name }}</span>
+    {% endif %}
+    {% if t.track_name %}
+      <span class="task-track" title="{{ t.track_name }} - {{ t.subcategory_name }}">{{ t.track_name }}</span>
+    {% endif %}
+    {% if not t.department_name and not t.track_name %}
+      <span></span>
+    {% endif %}
+    {% if t.due_date %}
+      <span class="task-date">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        {{ t.due_date[:10] }}
+      </span>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+<!-- Accordion Macro -->
+{% macro accordion_group(title, task_list, status) %}
+  {% if task_list|length > 0 %}
+  <div class="accordion">
+    <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="accordion-title">
+        <svg class="accordion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        {{ title }}
+      </div>
+      <span class="accordion-badge">{{ task_list|length }}</span>
+    </div>
+    <div class="accordion-body kanban-zone" data-status="{{ status }}">
+      {% for t in task_list %}
+        {{ task_card(t) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="kanban-zone" data-status="{{ status }}" style="min-height: 10px; padding:0;"></div>
+  {% endif %}
+{% endmacro %}
+
+<!-- Kanban Board -->
+<div class="kanban-board">
+  
+  <!-- To Do -->
+  <div class="kanban-column" id="col-pending">
+    <div class="column-header">
+      <span class="column-title">To Do</span>
+      <span class="column-count" id="count-pending">{{ task_counts.pending }}</span>
+    </div>
+    <div class="kanban-column-body">
+      {{ accordion_group('Overdue', tasks.pending['Overdue'], 'pending') }}
+      {{ accordion_group('Today', tasks.pending['Today'], 'pending') }}
+      {{ accordion_group('Tomorrow', tasks.pending['Tomorrow'], 'pending') }}
+      {{ accordion_group('Upcoming', tasks.pending['Upcoming'], 'pending') }}
+      {{ accordion_group('No Date', tasks.pending['No Date'], 'pending') }}
+    </div>
+  </div>
+
+  <!-- In Progress -->
+  <div class="kanban-column" id="col-in-progress">
+    <div class="column-header">
+      <span class="column-title">In Progress</span>
+      <span class="column-count" id="count-in-progress">{{ task_counts.in_progress }}</span>
+    </div>
+    <div class="kanban-column-body">
+      {{ accordion_group('Overdue', tasks.in_progress['Overdue'], 'in-progress') }}
+      {{ accordion_group('Today', tasks.in_progress['Today'], 'in-progress') }}
+      {{ accordion_group('Tomorrow', tasks.in_progress['Tomorrow'], 'in-progress') }}
+      {{ accordion_group('Upcoming', tasks.in_progress['Upcoming'], 'in-progress') }}
+      {{ accordion_group('No Date', tasks.in_progress['No Date'], 'in-progress') }}
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div class="kanban-column" id="col-done">
+    <div class="column-header">
+      <span class="column-title">Done</span>
+      <span class="column-count" id="count-done">{{ task_counts.done }}</span>
+    </div>
+    <div class="kanban-column-body">
+      {{ accordion_group('Overdue', tasks.done['Overdue'], 'done') }}
+      {{ accordion_group('Today', tasks.done['Today'], 'done') }}
+      {{ accordion_group('Tomorrow', tasks.done['Tomorrow'], 'done') }}
+      {{ accordion_group('Upcoming', tasks.done['Upcoming'], 'done') }}
+      {{ accordion_group('No Date', tasks.done['No Date'], 'done') }}
+    </div>
+  </div>
+  
+</div>
+</div>
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Create New Task</h3>
+      <button class="close-btn" onclick="closeModals()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <form id="addTaskForm" onsubmit="submitNewTask(event)">
+      <div class="form-group">
+        <label>Task Title *</label>
+        <input type="text" id="newTaskTitle" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="newDepartment" class="form-control">
+          <option value="">-- Select Department --</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Subcategory (Track)</label>
+        <select id="newSubcategory" class="form-control">
+          <option value="">-- Select Subcategory --</option>
+          {% for track in tracks %}
+            <optgroup label="{{ track.name }}">
+              {% for sub in track.subcategories %}
+                <option value="{{ sub.id }}">{{ sub.name }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="newTaskDate" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="newTaskDesc" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Task Details Modal -->
+<div id="taskDetailsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="dtlTitle">Task Details</h3>
+      <button class="close-btn" onclick="closeModals()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    
+    <input type="hidden" id="dtlId">
+    
+    <div class="task-detail-block">
+      <div class="task-detail-label">Description</div>
+      <div class="task-detail-value" id="dtlDesc">No description provided.</div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="task-detail-block form-group">
+        <label class="task-detail-label">Department</label>
+        <select id="dtlDeptInput" class="form-control">
+          <option value="">-- None --</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="task-detail-block form-group">
+        <label class="task-detail-label">Due Date</label>
+        <input type="date" id="dtlDateInput" class="form-control">
+      </div>
+    </div>
+
+    <div class="task-detail-block form-group" style="margin-top:1rem;">
+      <label class="task-detail-label">Track / Subcategory</label>
+      <select id="dtlTrackInput" class="form-control">
+        <option value="">-- None --</option>
+        {% for track in tracks %}
+          <optgroup label="{{ track.name }}">
+            {% for sub in track.subcategories %}
+              <option value="{{ sub.id }}">{{ sub.name }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="form-group" style="margin-top:1rem;">
+      <label>Status</label>
+      <select id="dtlStatus" class="form-control">
+        <option value="pending">To Do</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeModals()">Cancel</button>
+      <button type="button" class="btn-primary" onclick="updateTaskDetails()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Filter Tasks by Track, Department, and Date
+  function filterTasks() {
+    const trackId = document.getElementById('filterTrack').value;
+    const deptId = document.getElementById('filterDept').value;
+    const dateFilter = document.getElementById('filterDate').value;
+    
+    // 1. Filter Individual Cards based on Track and Dept
+    const cards = document.querySelectorAll('.task-card');
+    cards.forEach(card => {
+      const matchTrack = trackId === 'all' || card.dataset.trackId === trackId;
+      const matchDept = deptId === 'all' || card.dataset.deptId === deptId;
+      
+      if (matchTrack && matchDept) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    // 2. Filter Accordions based on Date
+    const accordions = document.querySelectorAll('.accordion');
+    accordions.forEach(acc => {
+      const titleNode = acc.querySelector('.accordion-title');
+      if (titleNode) {
+        const title = titleNode.innerText.trim();
+        if (dateFilter === 'all' || title === dateFilter.toUpperCase()) {
+          acc.style.display = 'block';
+          // Auto-expand if a specific date filter is selected
+          if (dateFilter !== 'all') {
+            acc.classList.add('open');
+          }
+        } else {
+          acc.style.display = 'none';
+        }
+      }
+    });
+    
+    updateCounts();
+  }
+
+  // Calculate dynamic counts
+  function updateCounts() {
+    ['pending', 'in-progress', 'done'].forEach(status => {
+      // Find all VISIBLE cards with this status inside VISIBLE accordions
+      const allCards = Array.from(document.querySelectorAll(`.kanban-column#col-${status} .task-card`));
+      const visibleCards = allCards.filter(card => {
+        // card is visible AND its parent accordion is visible
+        const acc = card.closest('.accordion');
+        return card.style.display !== 'none' && (acc ? acc.style.display !== 'none' : true);
+      });
+      document.getElementById(`count-${status}`).innerText = visibleCards.length;
+    });
+  }
+
+  // Modals
+  function openAddTaskModal() {
+    document.getElementById('addTaskModal').classList.add('active');
+  }
+  
+  function closeModals() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  }
+
+  // Open Task Modal
+  function openTaskDetails(cardEl) {
+    const id = cardEl.dataset.id;
+    const title = cardEl.querySelector('.task-title').innerText;
+    const desc = cardEl.dataset.desc;
+    const subId = cardEl.dataset.subId;
+    const deptId = cardEl.dataset.deptId;
+    const date = cardEl.dataset.date;
+    const status = cardEl.dataset.status;
+
+    document.getElementById('dtlId').value = id;
+    document.getElementById('dtlTitle').innerText = title;
+    document.getElementById('dtlDesc').innerText = desc && desc !== 'None' ? desc : 'No description provided.';
+    
+    document.getElementById('dtlTrackInput').value = subId || '';
+    document.getElementById('dtlDeptInput').value = deptId || '';
+    document.getElementById('dtlDateInput').value = (date && date !== 'None') ? date.substring(0, 10) : '';
+    
+    document.getElementById('dtlStatus').value = status;
+    
+    document.getElementById('taskDetailsModal').classList.add('active');
+  }
+
+  // Create Task
+  async function submitNewTask(e) {
+    e.preventDefault();
+    const title = document.getElementById('newTaskTitle').value;
+    const subId = document.getElementById('newSubcategory').value;
+    const deptId = document.getElementById('newDepartment').value;
+    const date = document.getElementById('newTaskDate').value;
+    const desc = document.getElementById('newTaskDesc').value;
+
+    const payload = { 
+      title, 
+      subcategory_id: subId || null, 
+      department_id: deptId || null,
+      due_date: date || null, 
+      description: desc 
+    };
+
+    try {
+      const res = await fetch("{{ url_for('dashboard.api_create_task') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.reload(); // Simple reload to get new UI
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Update Details from Modal
+  async function updateTaskDetails() {
+    const id = document.getElementById('dtlId').value;
+    const newStatus = document.getElementById('dtlStatus').value;
+    const newDate = document.getElementById('dtlDateInput').value;
+    const newSubId = document.getElementById('dtlTrackInput').value;
+    const newDeptId = document.getElementById('dtlDeptInput').value;
+    
+    try {
+      const res = await fetch("{{ url_for('dashboard.api_update_task') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({ 
+          task_id: id, 
+          status: newStatus,
+          due_date: newDate || null,
+          subcategory_id: newSubId || null,
+          department_id: newDeptId || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.reload();
+      } else {
+        console.error("Error updating details");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // API Call for status update
+  async function updateTaskStatus(taskId, status) {
+    try {
+      const res = await fetch("{{ url_for('dashboard.api_update_task') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({ task_id: taskId, status: status })
+      });
+      const data = await res.json();
+      if (!data.success) console.error("Error updating status");
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- Drag and Drop Logic ---
+  const cards = document.querySelectorAll('.task-card');
+  const zones = document.querySelectorAll('.kanban-zone');
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', () => {
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+  });
+
+  zones.forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      const draggable = document.querySelector('.dragging');
+      zone.appendChild(draggable);
+    });
+    
+    zone.addEventListener('drop', async e => {
+      e.preventDefault();
+      const draggable = document.querySelector('.dragging');
+      const newStatus = zone.dataset.status;
+      
+      // Update UI attributes
+      draggable.dataset.status = newStatus;
+      
+      // Update counts
+      updateCounts();
+      
+      // Persist to backend
+      const taskId = draggable.dataset.id;
+      
+      try {
+        const res = await fetch("{{ url_for('dashboard.api_update_task') }}", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+          body: JSON.stringify({ task_id: taskId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload(); // Reloading ensures it drops into the correct date accordion natively
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  });
+
+  function updateCounts() {
+    document.getElementById('count-pending').innerText = document.getElementById('zone-pending').children.length;
+    document.getElementById('count-in-progress').innerText = document.getElementById('zone-in-progress').children.length;
+    document.getElementById('count-done').innerText = document.getElementById('zone-done').children.length;
+  }
+</script>
+{% endblock %}

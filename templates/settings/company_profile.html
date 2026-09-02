@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}ملف الشركة (Company Profile){% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; color: var(--primary-color);">ملف الشركة (الذاكرة العميقة)</h2>
+    </div>
+
+    {% if success %}
+    <div class="alert alert-success">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-error">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card" style="overflow: hidden;">
+        <!-- Tabs Header -->
+        <div class="custom-tabs">
+            <button class="tab-link active" onclick="openTab(event, 'general')">معلومات أساسية</button>
+            <button class="tab-link" onclick="openTab(event, 'market')">الخدمات والسوق</button>
+            <button class="tab-link" onclick="openTab(event, 'strategy')">الاستراتيجية والأهداف</button>
+            <button class="tab-link" onclick="openTab(event, 'ai')">توجيهات الذكاء الاصطناعي</button>
+        </div>
+        
+        <!-- Tabs Content -->
+        <div style="padding: 1.5rem;">
+            <form method="POST" action="{{ url_for('settings.company_profile') }}">
+                
+                <!-- General Tab -->
+                <div id="general" class="tab-content" style="display: block;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">اسم الشركة (Company Name)</label>
+                            <input type="text" class="form-control" name="company_name" value="{{ profile.company_name or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">مجال العمل (Industry)</label>
+                            <input type="text" class="form-control" name="industry" value="{{ profile.industry or '' }}">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">وصف الشركة (Company Description)</label>
+                            <textarea class="form-control" name="company_description" rows="3">{{ profile.company_description or '' }}</textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">الروابط والمواقع (Websites)</label>
+                            <textarea class="form-control" name="websites" rows="2" placeholder="أدخل الروابط مفصولة بفاصلة...">{{ profile.websites or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market & Services Tab -->
+                <div id="market" class="tab-content">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">وحدات الأعمال (Business Units)</label>
+                            <textarea class="form-control" name="business_units" rows="3">{{ profile.business_units or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الخدمات الأساسية (Core Services)</label>
+                            <textarea class="form-control" name="core_services" rows="3">{{ profile.core_services or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">المنتجات (Products)</label>
+                            <textarea class="form-control" name="products" rows="3">{{ profile.products or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الجمهور المستهدف (Target Audience)</label>
+                            <textarea class="form-control" name="target_audience" rows="3">{{ profile.target_audience or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">القطاعات المستهدفة (Target Industries)</label>
+                            <textarea class="form-control" name="target_industries" rows="3">{{ profile.target_industries or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">السوق الجغرافي (Geographic Market)</label>
+                            <textarea class="form-control" name="geographic_market" rows="3">{{ profile.geographic_market or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">المنافسين (Competitors)</label>
+                            <textarea class="form-control" name="competitors" rows="3">{{ profile.competitors or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الميزة التنافسية (USPs)</label>
+                            <textarea class="form-control" name="usps" rows="3">{{ profile.usps or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy & Goals Tab -->
+                <div id="strategy" class="tab-content">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">الرؤية (Vision)</label>
+                            <textarea class="form-control" name="vision" rows="3">{{ profile.vision or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الرسالة (Mission)</label>
+                            <textarea class="form-control" name="mission" rows="3">{{ profile.mission or '' }}</textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">أهداف العمل (Business Goals)</label>
+                            <textarea class="form-control" name="business_goals" rows="3">{{ profile.business_goals or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الأولويات الاستراتيجية (Strategic Priorities)</label>
+                            <textarea class="form-control" name="strategic_priorities" rows="3">{{ profile.strategic_priorities or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">الأولويات الحالية (Current Priorities)</label>
+                            <textarea class="form-control" name="current_priorities" rows="3">{{ profile.current_priorities or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Instructions Tab -->
+                <div id="ai" class="tab-content">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">أشياء لا نركز عليها (Things not to focus on)</label>
+                            <textarea class="form-control" name="things_not_to_focus_on" rows="3" placeholder="أخبر الذكاء الاصطناعي بالأمور التي يجب تجاهلها...">{{ profile.things_not_to_focus_on or '' }}</textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">قواعد اتخاذ القرار (Decision Rules)</label>
+                            <textarea class="form-control" name="decision_rules" rows="3" placeholder="ما هي القواعد التي يجب على الذكاء الاصطناعي اتباعها عند اقتراح حلول؟">{{ profile.decision_rules or '' }}</textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">تعليمات إضافية للـ AI (AI Instructions)</label>
+                            <textarea class="form-control" name="ai_instructions" rows="4" placeholder="أي توجيهات أخرى تريد إضافتها للاستشاري (مثل نبرة التحدث أو أسلوب التحليل)...">{{ profile.ai_instructions or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; text-align: left;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">حفظ الملف والتوجيهات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom Tabs */
+    .custom-tabs {
+        display: flex;
+        background-color: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+        overflow-x: auto;
+    }
+    .tab-link {
+        background: none;
+        border: none;
+        outline: none;
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-family: inherit;
+        font-size: 0.95rem;
+        border-bottom: 3px solid transparent;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+    .tab-link:hover {
+        color: var(--primary-color);
+        background-color: #f1f5f9;
+    }
+    .tab-link.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+        background-color: #ffffff;
+    }
+    
+    /* Tab Content */
+    .tab-content {
+        display: none;
+        animation: fadeEffect 0.4s;
+    }
+    @keyframes fadeEffect {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+    /* Grid Layout */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .full-width {
+        grid-column: 1 / -1;
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    
+    // Hide all tab content
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    
+    // Remove active class from all links
+    tablinks = document.getElementsByClassName("tab-link");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+{% endblock %}

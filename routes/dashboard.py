@@ -428,3 +428,243 @@ def complete_followup(activity_id):
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         conn.close()
+
+# ── ai os dashboard ──────────────────────────────────────────────────────────
+
+@dashboard_bp.route('/ai_os_dashboard')
+@require_tenant
+def ai_os_dashboard():
+    if 'salesperson_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    salesperson_id = session['salesperson_id']
+    tenant_id      = get_current_tenant_id()
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch main tracks and their stats
+    cursor.execute("""
+        SELECT t.id, t.name, t.description,
+               COUNT(DISTINCT c.customer_id) as lead_count,
+               COALESCE(SUM(c_act.deal_value), 0) as total_value
+        FROM business_tracks t
+        LEFT JOIN business_subcategories s ON s.track_id = t.id
+        LEFT JOIN customers c ON c.subcategory_id = s.id AND c.tenant_id = t.tenant_id
+        LEFT JOIN (
+            SELECT entity_id, MAX(deal_value) as deal_value
+            FROM activities
+            WHERE entity_type = 'customer' AND action = 'follow_up'
+            GROUP BY entity_id
+        ) c_act ON c_act.entity_id = c.customer_id
+        WHERE t.tenant_id = ? AND t.is_active = 1
+        GROUP BY t.id, t.name, t.description
+    """, (tenant_id,))
+    tracks_data = cursor.fetchall()
+
+    tracks = []
+    for track in tracks_data:
+        # Fetch subcategories for this track
+        cursor.execute("""
+            SELECT s.id, s.name,
+                   COUNT(DISTINCT c.customer_id) as lead_count,
+                   COALESCE(SUM(c_act.deal_value), 0) as total_value
+            FROM business_subcategories s
+            LEFT JOIN customers c ON c.subcategory_id = s.id AND c.tenant_id = s.tenant_id
+            LEFT JOIN (
+                SELECT entity_id, MAX(deal_value) as deal_value
+                FROM activities
+                WHERE entity_type = 'customer' AND action = 'follow_up'
+                GROUP BY entity_id
+            ) c_act ON c_act.entity_id = c.customer_id
+            WHERE s.track_id = ? AND s.tenant_id = ? AND s.is_active = 1
+            GROUP BY s.id, s.name
+        """, (track['id'], tenant_id))
+        subcategories = cursor.fetchall()
+
+        tracks.append({
+            'id': track['id'],
+            'name': track['name'],
+            'description': track['description'],
+            'lead_count': track['lead_count'],
+            'total_value': track['total_value'],
+            'subcategories': subcategories
+        })
+
+    # Fetch Departments
+    cursor.execute("SELECT id, name FROM departments WHERE tenant_id = ? AND is_active = 1 ORDER BY id", (tenant_id,))
+    departments = cursor.fetchall()
+
+    # Fetch Tasks
+    cursor.execute("""
+        SELECT t.id, t.title, t.description, t.status, t.due_date, 
+               s.name as subcategory_name, tr.name as track_name, tr.id as track_id, s.id as subcategory_id,
+               d.name as department_name, d.id as department_id
+        FROM tasks t
+        LEFT JOIN business_subcategories s ON t.subcategory_id = s.id
+        LEFT JOIN business_tracks tr ON s.track_id = tr.id
+        LEFT JOIN departments d ON t.department_id = d.id
+        WHERE t.tenant_id = ? AND t.assigned_to = ?
+        ORDER BY t.due_date ASC
+    """, (tenant_id, salesperson_id))
+    tasks_data = cursor.fetchall()
+    
+    from datetime import datetime, date
+    
+    today = date.today()
+    
+    def group_tasks(task_list):
+        # We want to preserve order: Overdue, Today, Tomorrow, Upcoming, No Date
+        groups = {
+            'Overdue': [],
+            'Today': [],
+            'Tomorrow': [],
+            'Upcoming': [],
+            'No Date': []
+        }
+        for t in task_list:
+            if not t['due_date']:
+                groups['No Date'].append(t)
+            else:
+                try:
+                    t_date = datetime.strptime(t['due_date'][:10], '%Y-%m-%d').date()
+                    if t_date < today:
+                        groups['Overdue'].append(t)
+                    elif t_date == today:
+                        groups['Today'].append(t)
+                    elif (t_date - today).days == 1:
+                        groups['Tomorrow'].append(t)
+                    else:
+                        groups['Upcoming'].append(t)
+                except:
+                    groups['No Date'].append(t)
+        return groups
+
+    tasks = {
+        'pending': group_tasks([t for t in tasks_data if t['status'] == 'pending']),
+        'in_progress': group_tasks([t for t in tasks_data if t['status'] == 'in-progress']),
+        'done': group_tasks([t for t in tasks_data if t['status'] == 'done'])
+    }
+    
+    # Also pass a flat count for the headers
+    task_counts = {
+        'pending': sum(len(g) for g in tasks['pending'].values()),
+        'in_progress': sum(len(g) for g in tasks['in_progress'].values()),
+        'done': sum(len(g) for g in tasks['done'].values())
+    }
+
+    conn.close()
+    return render_template('dashboard/ai_os_dashboard.html', tracks=tracks, tasks=tasks, task_counts=task_counts, departments=departments)
+
+
+# ── AI OS Tasks API ─────────────────────────────────────────────────────────
+
+from flask import request
+
+@dashboard_bp.route('/api/tasks/update', methods=['POST'])
+@require_tenant
+def api_update_task():
+    if 'salesperson_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    task_id = data.get('task_id')
+    
+    if not task_id:
+        return jsonify({'success': False, 'error': 'Missing task_id'}), 400
+        
+    tenant_id = get_current_tenant_id()
+    conn = get_db()
+    try:
+        updates = []
+        params = []
+        
+        if 'status' in data and data['status']:
+            updates.append("status = ?")
+            params.append(data['status'])
+            
+        if 'due_date' in data:
+            updates.append("due_date = ?")
+            params.append(data['due_date'] if data['due_date'] else None)
+            
+        if 'subcategory_id' in data:
+            updates.append("subcategory_id = ?")
+            try:
+                sub_id = int(data['subcategory_id']) if data['subcategory_id'] else None
+                params.append(sub_id)
+            except ValueError:
+                params.append(None)
+                
+        if 'department_id' in data:
+            updates.append("department_id = ?")
+            try:
+                dept_id = int(data['department_id']) if data['department_id'] else None
+                params.append(dept_id)
+            except ValueError:
+                params.append(None)
+                
+        if not updates:
+            return jsonify({'success': True})
+            
+        sql = f"UPDATE tasks SET {', '.join(updates)} WHERE id = ? AND tenant_id = ?"
+        params.extend([task_id, tenant_id])
+        
+        conn.execute(sql, tuple(params))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@dashboard_bp.route('/api/tasks/create', methods=['POST'])
+@require_tenant
+def api_create_task():
+    if 'salesperson_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    data = request.json
+    title = data.get('title')
+    description = data.get('description', '')
+    status = data.get('status', 'pending')
+    subcategory_id = data.get('subcategory_id')
+    department_id = data.get('department_id')
+    due_date = data.get('due_date')
+    
+    if not title:
+        return jsonify({'success': False, 'error': 'Title is required'}), 400
+        
+    tenant_id = get_current_tenant_id()
+    salesperson_id = session['salesperson_id']
+    
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO tasks (title, description, status, due_date, subcategory_id, department_id, assigned_to, tenant_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (title, description, status, due_date, subcategory_id, department_id, salesperson_id, tenant_id))
+        conn.commit()
+        
+        new_task_id = cursor.lastrowid
+        
+        # Fetch the created task details to return to frontend
+        cursor.execute("""
+            SELECT t.id, t.title, t.description, t.status, t.due_date, 
+                   s.name as subcategory_name, tr.name as track_name, tr.id as track_id,
+                   d.name as department_name, d.id as department_id
+            FROM tasks t
+            LEFT JOIN business_subcategories s ON t.subcategory_id = s.id
+            LEFT JOIN business_tracks tr ON s.track_id = tr.id
+            LEFT JOIN departments d ON t.department_id = d.id
+            WHERE t.id = ?
+        """, (new_task_id,))
+        new_task = cursor.fetchone()
+        
+        return jsonify({
+            'success': True, 
+            'task': dict(new_task) if new_task else None
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
